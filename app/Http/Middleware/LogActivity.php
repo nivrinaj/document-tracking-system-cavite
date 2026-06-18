@@ -73,7 +73,11 @@ class LogActivity
 
         $route = $request->route();
         $name = $route?->getName();
-        if (! $name || in_array($name, $this->ignore)) {
+
+        // Skip unnamed/framework-internal routes (Laravel auto-names them
+        // "generated::xxxx", e.g. the POST /login route) and auth flows that
+        // are already audited via events.
+        if (! $name || str_starts_with($name, 'generated::') || in_array($name, $this->ignore)) {
             return;
         }
 

@@ -94,7 +94,7 @@
                 </x-nav-item>
                 @endcan
 
-                <x-nav-item :active="request()->routeIs('logs.*')" :href="route('logs.index')" label="Logs &amp; History">
+                <x-nav-item :active="request()->routeIs('logs.*')" :href="route('logs.index')" label="Logs & History">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
                 </x-nav-item>
 
