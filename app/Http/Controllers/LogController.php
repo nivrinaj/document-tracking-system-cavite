@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\DocumentLog;
+use App\Models\ActivityLog;
 use App\Models\User;
 use Illuminate\Http\Request;
 
@@ -10,24 +10,34 @@ class LogController extends Controller
 {
     public function index(Request $request)
     {
-        $query = DocumentLog::with(['document', 'actor', 'toUser', 'fromUser'])->latest();
+        $user = $request->user();
+        // Heads / Super Admin (logs.view) see everyone; others see only their own.
+        $canViewAll = $user->can('logs.view');
+
+        $query = ActivityLog::with('user')->latest();
+
+        if (! $canViewAll) {
+            $query->where('user_id', $user->id);
+        } elseif ($actor = $request->input('actor_id')) {
+            $query->where('user_id', $actor);
+        }
 
         if ($action = $request->input('action')) {
-            $query->where('action', $action);
-        }
-        if ($actor = $request->input('actor_id')) {
-            $query->where('actor_id', $actor);
+            $query->where('action', 'like', "%{$action}%");
         }
         if ($search = $request->input('search')) {
-            $query->whereHas('document', fn ($q) => $q
-                ->where('title', 'like', "%{$search}%")
-                ->orWhere('tracking_code', 'like', "%{$search}%"));
+            $query->where('description', 'like', "%{$search}%");
         }
 
         return view('logs.index', [
-            'logs' => $query->paginate(20)->withQueryString(),
-            'users' => User::orderBy('name')->get(),
-            'actions' => ['encoded', 'assigned', 'released', 'received', 'forwarded', 'archived', 'completed'],
+            'logs' => $query->paginate(25)->withQueryString(),
+            'users' => $canViewAll ? User::orderBy('name')->get() : collect(),
+            'canViewAll' => $canViewAll,
+            'actions' => [
+                'login' => 'Logins', 'logout' => 'Logouts', 'login.failed' => 'Failed logins',
+                'documents' => 'Document actions', 'users' => 'User changes',
+                'settings' => 'Settings changes', 'roles' => 'Role changes', 'divisions' => 'Division changes',
+            ],
         ]);
     }
 }

@@ -41,7 +41,8 @@ class UserController extends Controller
     {
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'email', 'unique:users,email'],
+            'username' => ['required', 'string', 'max:255', 'alpha_dash', 'unique:users,username'],
+            'email' => ['nullable', 'email', 'unique:users,email'],
             'password' => ['required', 'confirmed', Password::defaults()],
             'division_id' => ['nullable', 'exists:divisions,id'],
             'position' => ['nullable', 'string', 'max:255'],
@@ -52,7 +53,8 @@ class UserController extends Controller
 
         $user = User::create([
             'name' => $data['name'],
-            'email' => $data['email'],
+            'username' => $data['username'],
+            'email' => $data['email'] ?? null,
             'password' => Hash::make($data['password']),
             'division_id' => $data['division_id'] ?? null,
             'position' => $data['position'] ?? null,
@@ -79,7 +81,8 @@ class UserController extends Controller
     {
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'email', Rule::unique('users', 'email')->ignore($user->id)],
+            'username' => ['required', 'string', 'max:255', 'alpha_dash', Rule::unique('users', 'username')->ignore($user->id)],
+            'email' => ['nullable', 'email', Rule::unique('users', 'email')->ignore($user->id)],
             'password' => ['nullable', 'confirmed', Password::defaults()],
             'division_id' => ['nullable', 'exists:divisions,id'],
             'position' => ['nullable', 'string', 'max:255'],
@@ -90,7 +93,8 @@ class UserController extends Controller
 
         $user->update([
             'name' => $data['name'],
-            'email' => $data['email'],
+            'username' => $data['username'],
+            'email' => $data['email'] ?? null,
             'division_id' => $data['division_id'] ?? null,
             'position' => $data['position'] ?? null,
             'phone' => $data['phone'] ?? null,

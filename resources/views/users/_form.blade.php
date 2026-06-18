@@ -6,8 +6,13 @@
         <input type="text" name="name" value="{{ old('name', $user?->name) }}" class="input" required>
     </div>
     <div>
-        <label class="label">Email <span class="text-red-500">*</span></label>
-        <input type="email" name="email" value="{{ old('email', $user?->email) }}" class="input" required>
+        <label class="label">Username <span class="text-red-500">*</span></label>
+        <input type="text" name="username" value="{{ old('username', $user?->username) }}" class="input" required autocomplete="off" placeholder="e.g. juan.delacruz">
+        <p class="text-xs text-gray-400 mt-1">Used to log in. Letters, numbers, dashes and underscores only.</p>
+    </div>
+    <div>
+        <label class="label">Email <span class="text-gray-400 text-xs">(optional — for password reset)</span></label>
+        <input type="email" name="email" value="{{ old('email', $user?->email) }}" class="input" autocomplete="off">
     </div>
     <div>
         <label class="label">Division</label>

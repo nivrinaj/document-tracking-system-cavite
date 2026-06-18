@@ -22,6 +22,11 @@ return Application::configure(basePath: dirname(__DIR__))
             'role_or_permission' => \Spatie\Permission\Middleware\RoleOrPermissionMiddleware::class,
             'active' => \App\Http\Middleware\EnsureUserIsActive::class,
         ]);
+
+        // Audit every state-changing web request.
+        $middleware->web(append: [
+            \App\Http\Middleware\LogActivity::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(

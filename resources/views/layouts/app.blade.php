@@ -94,11 +94,9 @@
                 </x-nav-item>
                 @endcan
 
-                @can('logs.view')
-                <x-nav-item :active="request()->routeIs('logs.*')" :href="route('logs.index')" label="Logs & History">
+                <x-nav-item :active="request()->routeIs('logs.*')" :href="route('logs.index')" label="Logs &amp; History">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
                 </x-nav-item>
-                @endcan
 
                 @canany(['users.manage', 'divisions.manage', 'roles.manage', 'settings.manage'])
                 <div class="pt-4 pb-1 px-3 text-[11px] font-semibold uppercase tracking-wider text-gray-400">Administration</div>

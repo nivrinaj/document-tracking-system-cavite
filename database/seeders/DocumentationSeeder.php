@@ -55,7 +55,10 @@ MD,
 
 All demo accounts use the password: **`password`**
 
-| Email | Role |
+**Log in with the username** — that's the part before the `@` in the email below
+(e.g. `superadmin`, `head`, `isda.staff`). The email is only used for password resets.
+
+| Email (username = part before @) | Role |
 |-------|------|
 | superadmin@pgc.test | Super Admin |
 | head@pgc.test | Department Head |
@@ -519,6 +522,59 @@ php artisan config:cache && php artisan route:cache && php artisan view:cache
 
 That's the whole pipeline. After Part F, the system is live and phone-scannable
 from anywhere.
+MD,
+            ],
+            [
+                'category' => 'Deployment', 'sort_order' => 4,
+                'title' => 'Setting Up Email (Free) for Password Resets',
+                'excerpt' => 'Let users reset their own password via email using a free SMTP service.',
+                'content' => <<<'MD'
+# Setting Up Email (Free) for Password Resets
+
+Users log in with their **username**. If they also have an **email** on file, they
+can use **"Forgot your password?"** to reset it themselves. For that, the system
+needs to send email. Here are free options.
+
+> No email configured? No problem — an admin can always reset a password directly
+> from **Users → Edit** (just type a new password). Email is only for self-service resets.
+
+## Option A — Brevo (recommended free tier, 300 emails/day)
+1. Sign up at <https://www.brevo.com> and verify your sender.
+2. Get your SMTP key (Brevo → SMTP & API → SMTP).
+3. In `.env`:
+   ```ini
+   MAIL_MAILER=smtp
+   MAIL_HOST=smtp-relay.brevo.com
+   MAIL_PORT=587
+   MAIL_USERNAME=your-brevo-login
+   MAIL_PASSWORD=your-brevo-smtp-key
+   MAIL_ENCRYPTION=tls
+   MAIL_FROM_ADDRESS="dts@cavite.gov.ph"
+   MAIL_FROM_NAME="${APP_NAME}"
+   ```
+
+## Option B — Gmail (quick, for low volume)
+1. On a Google account, enable **2-Step Verification**, then create an **App Password**.
+2. In `.env`:
+   ```ini
+   MAIL_MAILER=smtp
+   MAIL_HOST=smtp.gmail.com
+   MAIL_PORT=587
+   MAIL_USERNAME=youraccount@gmail.com
+   MAIL_PASSWORD=your-16-char-app-password
+   MAIL_ENCRYPTION=tls
+   MAIL_FROM_ADDRESS="youraccount@gmail.com"
+   MAIL_FROM_NAME="${APP_NAME}"
+   ```
+
+## After editing `.env`
+```bash
+php artisan config:clear
+```
+Then test: log out, click **Forgot your password?**, enter a user's email, and check it arrives.
+
+> If nothing sends, the server's outbound port 587 may be blocked — Brevo also offers
+> port 2525 as an alternative.
 MD,
             ],
             [

@@ -54,7 +54,8 @@ Route::middleware(['auth', 'active'])->group(function () {
     Route::get('/reports/generate', [ReportController::class, 'generate'])->name('reports.generate')->middleware('permission:reports.view');
 
     /* -------------------- Logs / history -------------------- */
-    Route::get('/logs', [LogController::class, 'index'])->name('logs.index')->middleware('permission:logs.view');
+    // Accessible to everyone; the controller scopes what each user can see.
+    Route::get('/logs', [LogController::class, 'index'])->name('logs.index');
 
     /* -------------------- System configuration -------------------- */
     Route::get('/settings', [SettingController::class, 'edit'])->name('settings.edit')->middleware('permission:settings.manage');

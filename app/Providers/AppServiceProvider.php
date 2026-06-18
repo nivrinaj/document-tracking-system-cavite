@@ -38,6 +38,20 @@ class AppServiceProvider extends ServiceProvider
             return $user->hasRole('Super Admin') ? true : null;
         });
 
+        // Audit authentication events.
+        \Illuminate\Support\Facades\Event::listen(\Illuminate\Auth\Events\Login::class, function ($event) {
+            \App\Models\ActivityLog::record('login', 'Logged in', null, $event->user->id);
+        });
+        \Illuminate\Support\Facades\Event::listen(\Illuminate\Auth\Events\Logout::class, function ($event) {
+            if ($event->user) {
+                \App\Models\ActivityLog::record('logout', 'Logged out', null, $event->user->id);
+            }
+        });
+        \Illuminate\Support\Facades\Event::listen(\Illuminate\Auth\Events\Failed::class, function ($event) {
+            $who = $event->credentials['username'] ?? $event->credentials['email'] ?? 'unknown';
+            \App\Models\ActivityLog::record('login.failed', "Failed login attempt for \"{$who}\"", null, null);
+        });
+
         // Make system settings (logo, colors, app name) available to every view as $settings.
         View::composer('*', function ($view) {
             try {

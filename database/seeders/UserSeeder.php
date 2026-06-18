@@ -16,23 +16,24 @@ class UserSeeder extends Seeder
         $ict   = Division::where('code', 'ICT')->first();
         $etd   = Division::where('code', 'ETD')->first();
 
-        // [name, email, role, division, position]
+        // [name, username, email, role, division, position]
         $users = [
-            ['Super Administrator', 'superadmin@pgc.test', 'Super Admin', $isda, 'System Administrator'],
-            ['Department Head', 'head@pgc.test', 'Department Head', $admin, 'Department Head'],
-            ['Assistant Department Head', 'asst.head@pgc.test', 'Assistant Department Head', $admin, 'Assistant Department Head'],
-            ['Receiving Staff', 'receiving@pgc.test', 'Receiving Staff', $admin, 'Records / Receiving Officer'],
-            ['ISDA Staff', 'isda.staff@pgc.test', 'Staff', $isda, 'Database Administrator'],
-            ['ICT Staff', 'ict.staff@pgc.test', 'Staff', $ict, 'Technical Support'],
-            ['ETD Staff', 'etd.staff@pgc.test', 'Staff', $etd, 'Training Officer'],
-            ['Admin Staff', 'admin.staff@pgc.test', 'Staff', $admin, 'Administrative Assistant'],
+            ['Super Administrator', 'superadmin', 'superadmin@pgc.test', 'Super Admin', $isda, 'System Administrator'],
+            ['Department Head', 'head', 'head@pgc.test', 'Department Head', $admin, 'Department Head'],
+            ['Assistant Department Head', 'asst.head', 'asst.head@pgc.test', 'Assistant Department Head', $admin, 'Assistant Department Head'],
+            ['Receiving Staff', 'receiving', 'receiving@pgc.test', 'Receiving Staff', $admin, 'Records / Receiving Officer'],
+            ['ISDA Staff', 'isda.staff', 'isda.staff@pgc.test', 'Staff', $isda, 'Database Administrator'],
+            ['ICT Staff', 'ict.staff', 'ict.staff@pgc.test', 'Staff', $ict, 'Technical Support'],
+            ['ETD Staff', 'etd.staff', 'etd.staff@pgc.test', 'Staff', $etd, 'Training Officer'],
+            ['Admin Staff', 'admin.staff', 'admin.staff@pgc.test', 'Staff', $admin, 'Administrative Assistant'],
         ];
 
-        foreach ($users as [$name, $email, $role, $division, $position]) {
+        foreach ($users as [$name, $username, $email, $role, $division, $position]) {
             $user = User::firstOrCreate(
                 ['email' => $email],
                 [
                     'name' => $name,
+                    'username' => $username,
                     'password' => Hash::make('password'),
                     'division_id' => $division?->id,
                     'position' => $position,
@@ -41,6 +42,7 @@ class UserSeeder extends Seeder
                 ]
             );
 
+            $user->forceFill(['username' => $username])->save();
             $user->syncRoles([$role]);
         }
     }
