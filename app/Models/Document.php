@@ -91,7 +91,8 @@ class Document extends Model
 
     public function logs(): HasMany
     {
-        return $this->hasMany(DocumentLog::class)->latest();
+        // Newest action first so the trail reads top-to-bottom without scrolling.
+        return $this->hasMany(DocumentLog::class)->orderByDesc('created_at')->orderByDesc('id');
     }
 
     /** All staff who have ever been assigned/held this document. */

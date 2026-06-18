@@ -40,3 +40,43 @@
 .prose-doc hr { @apply my-6 border-gray-200 dark:border-gray-700; }
 
 [x-cloak] { display: none !important; }
+
+/* Responsive tables: on small screens each row becomes a stacked "card"
+   while keeping every column (label shown via data-label). Add class
+   "r-table" to <table> and data-label="Header" to each <td>. */
+@media (max-width: 768px) {
+    table.r-table thead { display: none; }
+    table.r-table, table.r-table tbody { display: block; width: 100%; }
+    table.r-table tr {
+        display: block;
+        margin-bottom: 0.75rem;
+        border: 1px solid rgb(229 231 235);
+        border-radius: 0.75rem;
+        padding: 0.25rem 0.75rem;
+        background: #fff;
+    }
+    .dark table.r-table tr { border-color: rgb(55 65 81); background: rgb(31 41 55); }
+    table.r-table td {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 1rem;
+        text-align: right;
+        padding: 0.5rem 0;
+        border: none;
+        border-bottom: 1px solid rgb(243 244 246);
+    }
+    .dark table.r-table td { border-bottom-color: rgb(55 65 81); }
+    table.r-table tr td:last-child { border-bottom: 0; }
+    table.r-table td::before {
+        content: attr(data-label);
+        font-weight: 600;
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+        color: rgb(107 114 128);
+        text-align: left;
+        flex: 0 0 auto;
+    }
+    table.r-table td[data-label=""]::before { content: ""; }
+}

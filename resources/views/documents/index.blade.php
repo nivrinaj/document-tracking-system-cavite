@@ -41,7 +41,7 @@
         {{-- Table --}}
         <x-card padding="p-0">
             <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                <table class="r-table min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                     <thead class="bg-gray-50 dark:bg-gray-700/40">
                         <tr>
                             <th class="table-th">Tracking Code</th>
@@ -50,21 +50,21 @@
                             <th class="table-th">Status</th>
                             <th class="table-th">Current Holder</th>
                             <th class="table-th">Updated</th>
-                            <th class="table-th"></th>
+                            <th class="table-th text-right">Action</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
                         @forelse($documents as $doc)
                             <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/40">
-                                <td class="table-td font-mono text-xs">{{ $doc->tracking_code }}</td>
-                                <td class="table-td">
+                                <td class="table-td font-mono text-xs" data-label="Tracking Code">{{ $doc->tracking_code }}</td>
+                                <td class="table-td" data-label="Title">
                                     <div class="font-medium">{{ $doc->title }}</div>
                                     <div class="text-xs text-gray-400">{{ $doc->document_type }} @if($doc->reference_no) · {{ $doc->reference_no }} @endif</div>
                                 </td>
-                                <td class="table-td"><x-priority-badge :priority="$doc->priority" /></td>
-                                <td class="table-td"><x-status-badge :status="$doc->status" /></td>
-                                <td class="table-td">{{ $doc->currentHolder?->name ?? '—' }}</td>
-                                <td class="table-td text-xs">
+                                <td class="table-td" data-label="Priority"><x-priority-badge :priority="$doc->priority" /></td>
+                                <td class="table-td" data-label="Status"><x-status-badge :status="$doc->status" /></td>
+                                <td class="table-td" data-label="Current Holder">{{ $doc->currentHolder?->name ?? '—' }}</td>
+                                <td class="table-td text-xs" data-label="Updated">
                                     <span class="inline-flex items-center gap-1.5 text-gray-400">
                                         @unless($doc->isClosed())
                                             <span class="w-2 h-2 rounded-full
@@ -77,8 +77,13 @@
                                         {{ $doc->updated_at->diffForHumans() }}
                                     </span>
                                 </td>
-                                <td class="table-td text-right">
-                                    <a href="{{ route('documents.show', $doc) }}" class="link">View</a>
+                                <td class="table-td text-right" data-label="">
+                                    <a href="{{ route('documents.show', $doc) }}"
+                                       class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-white shadow-sm hover:opacity-90"
+                                       style="background: var(--color-primary)">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                                        View
+                                    </a>
                                 </td>
                             </tr>
                         @empty

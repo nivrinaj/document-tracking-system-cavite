@@ -15,6 +15,8 @@ class SettingSeeder extends Seeder
             'organization'   => 'Provincial Government Center',
             'primary_color'  => '#4f46e5',   // indigo-600
             'logo_path'      => '',          // relative path in storage, set via Settings UI
+            'favicon_path'   => '',          // browser tab icon
+            'login_bg_path'  => '',          // login page background image
             'footer_text'    => '© '.date('Y').' PGC Document Tracking System',
             'allow_desktop_receive' => '0', // off by default -> staff should receive via mobile QR scan
         ];

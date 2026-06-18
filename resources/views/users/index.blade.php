@@ -20,15 +20,15 @@
 
         <x-card padding="p-0">
             <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                <table class="r-table min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                     <thead class="bg-gray-50 dark:bg-gray-700/40">
-                        <tr><th class="table-th">Name</th><th class="table-th">Division</th><th class="table-th">Role</th><th class="table-th">Status</th><th class="table-th"></th></tr>
+                        <tr><th class="table-th">Name</th><th class="table-th">Division</th><th class="table-th">Role</th><th class="table-th">Status</th><th class="table-th text-right">Action</th></tr>
                     </thead>
                     <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
                         @forelse($users as $user)
                             <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/40">
-                                <td class="table-td">
-                                    <div class="flex items-center gap-3">
+                                <td class="table-td" data-label="Name">
+                                    <div class="flex items-center gap-3 justify-end sm:justify-start">
                                         <img src="{{ $user->avatar_url }}" class="w-8 h-8 rounded-full">
                                         <div>
                                             <div class="font-medium">{{ $user->name }}</div>
@@ -36,19 +36,27 @@
                                         </div>
                                     </div>
                                 </td>
-                                <td class="table-td">{{ $user->division?->code ?? '—' }}</td>
-                                <td class="table-td">
+                                <td class="table-td" data-label="Division">{{ $user->division?->code ?? '—' }}</td>
+                                <td class="table-td" data-label="Role">
                                     @foreach($user->roles as $r)<x-badge color="indigo">{{ $r->name }}</x-badge>@endforeach
                                 </td>
-                                <td class="table-td">
+                                <td class="table-td" data-label="Status">
                                     @if($user->is_active)<x-badge color="green">Active</x-badge>@else<x-badge color="red">Inactive</x-badge>@endif
                                 </td>
-                                <td class="table-td text-right space-x-2 whitespace-nowrap">
-                                    <a href="{{ route('users.edit', $user) }}" class="link">Edit</a>
-                                    <form method="POST" action="{{ route('users.destroy', $user) }}" class="inline" onsubmit="return confirm('Delete this user?')">
-                                        @csrf @method('DELETE')
-                                        <button class="text-red-600 hover:underline text-sm">Delete</button>
-                                    </form>
+                                <td class="table-td text-right whitespace-nowrap" data-label="">
+                                    <div class="inline-flex items-center gap-2">
+                                        <a href="{{ route('users.edit', $user) }}" class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600">
+                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                                            Edit
+                                        </a>
+                                        <form method="POST" action="{{ route('users.destroy', $user) }}" class="inline" onsubmit="return confirm('Delete this user? This cannot be undone.')">
+                                            @csrf @method('DELETE')
+                                            <button class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20">
+                                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                                Delete
+                                            </button>
+                                        </form>
+                                    </div>
                                 </td>
                             </tr>
                         @empty

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Setting;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 
 class SettingController extends Controller
@@ -22,7 +23,11 @@ class SettingController extends Controller
             'primary_color' => ['required', 'string', 'max:20'],
             'footer_text' => ['nullable', 'string', 'max:255'],
             'logo' => ['nullable', 'image', 'max:2048'],
+            'favicon' => ['nullable', 'image', 'max:1024'],
+            'login_bg' => ['nullable', 'image', 'max:4096'],
             'remove_logo' => ['nullable', 'boolean'],
+            'remove_favicon' => ['nullable', 'boolean'],
+            'remove_login_bg' => ['nullable', 'boolean'],
             'allow_desktop_receive' => ['nullable', 'boolean'],
         ]);
 
@@ -32,24 +37,44 @@ class SettingController extends Controller
 
         Setting::put('allow_desktop_receive', $request->boolean('allow_desktop_receive') ? '1' : '0');
 
-        // Logo upload / removal
-        if ($request->boolean('remove_logo')) {
-            $old = Setting::get('logo_path');
-            if ($old) {
-                Storage::disk('public')->delete($old);
-            }
-            Setting::put('logo_path', '');
-        }
+        // Image fields: [setting key => [form field, remove field]]
+        $images = [
+            'logo_path'     => ['logo', 'remove_logo'],
+            'favicon_path'  => ['favicon', 'remove_favicon'],
+            'login_bg_path' => ['login_bg', 'remove_login_bg'],
+        ];
 
-        if ($request->hasFile('logo')) {
-            $old = Setting::get('logo_path');
-            if ($old) {
-                Storage::disk('public')->delete($old);
-            }
-            $path = $request->file('logo')->store('branding', 'public');
-            Setting::put('logo_path', $path);
+        foreach ($images as $settingKey => [$field, $removeField]) {
+            $this->handleImage($request, $settingKey, $field, $removeField);
         }
 
         return back()->with('success', 'System settings updated.');
+    }
+
+    /** Store/replace/remove one uploaded image setting, safely. */
+    private function handleImage(Request $request, string $settingKey, string $field, string $removeField): void
+    {
+        // Removal
+        if ($request->boolean($removeField)) {
+            $this->deleteIfExists(Setting::get($settingKey));
+            Setting::put($settingKey, '');
+
+            return;
+        }
+
+        // Upload (guard against a failed/empty upload so it never 500s)
+        $file = $request->file($field);
+        if ($file instanceof UploadedFile && $file->isValid()) {
+            $this->deleteIfExists(Setting::get($settingKey));
+            $path = $file->store('branding', 'public');
+            Setting::put($settingKey, $path);
+        }
+    }
+
+    private function deleteIfExists(?string $path): void
+    {
+        if ($path && Storage::disk('public')->exists($path)) {
+            Storage::disk('public')->delete($path);
+        }
     }
 }

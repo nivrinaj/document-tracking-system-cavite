@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{{ $settings['app_name'] ?? config('app.name') }}</title>
+    @if(!empty($settings['favicon_path']))
+        <link rel="icon" href="{{ asset('storage/'.$settings['favicon_path']) }}">
+    @endif
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
 
@@ -28,11 +31,25 @@
         [x-cloak] { display: none !important; }
     </style>
 
-    {{-- Apply dark mode before paint to avoid a flash --}}
+    {{-- Apply dark mode + saved font size before paint to avoid a flash --}}
     <script>
         if (localStorage.getItem('darkMode') === 'true') {
             document.documentElement.classList.add('dark');
         }
+        (function () {
+            var fs = parseInt(localStorage.getItem('fontScale') || '16', 10);
+            document.documentElement.style.fontSize = fs + 'px';
+            window.adjustFont = function (delta) {
+                var v = parseInt(localStorage.getItem('fontScale') || '16', 10) + delta;
+                v = Math.max(14, Math.min(22, v));
+                localStorage.setItem('fontScale', v);
+                document.documentElement.style.fontSize = v + 'px';
+            };
+            window.resetFont = function () {
+                localStorage.setItem('fontScale', '16');
+                document.documentElement.style.fontSize = '16px';
+            };
+        })();
     </script>
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
@@ -135,6 +152,13 @@
                     @isset($header)
                         <div class="font-semibold text-lg truncate">{{ $header }}</div>
                     @endisset
+                </div>
+
+                {{-- Font size control (helps users who need bigger text) --}}
+                <div class="hidden sm:flex items-center rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden" title="Text size">
+                    <button type="button" onclick="adjustFont(-1)" class="px-2 py-1 text-xs text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700" aria-label="Smaller text">A&minus;</button>
+                    <button type="button" onclick="resetFont()" class="px-2 py-1 text-sm font-semibold text-gray-600 dark:text-gray-300 border-x border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700" aria-label="Reset text size">A</button>
+                    <button type="button" onclick="adjustFont(1)" class="px-2 py-1 text-base text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700" aria-label="Larger text">A+</button>
                 </div>
 
                 {{-- Dark mode toggle --}}

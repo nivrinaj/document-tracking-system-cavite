@@ -41,7 +41,8 @@
                 @can('forward', $document)
                     <button @click="panel = panel === 'forward' ? null : 'forward'" class="w-full text-left px-4 py-2 rounded-lg bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 text-sm font-medium">Forward to another staff</button>
                     <div x-show="panel === 'forward'" x-cloak class="p-3 rounded-lg bg-gray-50 dark:bg-gray-700/40">
-                        <form method="POST" action="{{ route('documents.forward', $document) }}" class="space-y-2">
+                        <form method="POST" action="{{ route('documents.forward', $document) }}" class="space-y-2"
+                              onsubmit="return confirm('Forward this document to the selected staff?')">
                             @csrf
                             <select name="to_user_id" class="input" required>
                                 <option value="">— Forward to —</option>
@@ -58,7 +59,8 @@
                 @can('archive', $document)
                     <button @click="panel = panel === 'archive' ? null : 'archive'" class="w-full text-left px-4 py-2 rounded-lg bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-300 text-sm font-medium">Archive / Complete</button>
                     <div x-show="panel === 'archive'" x-cloak class="p-3 rounded-lg bg-gray-50 dark:bg-gray-700/40">
-                        <form method="POST" action="{{ route('documents.archive', $document) }}" class="space-y-2">
+                        <form method="POST" action="{{ route('documents.archive', $document) }}" class="space-y-2"
+                              onsubmit="return confirm('Archive/close this document? This ends its active tracking.')">
                             @csrf
                             <label class="flex items-center gap-2 text-sm"><input type="checkbox" name="completed" value="1" class="rounded"> Mark as fully completed</label>
                             <textarea name="remarks" rows="2" class="input" placeholder="Completion details (required)" required></textarea>

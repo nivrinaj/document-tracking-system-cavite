@@ -45,6 +45,42 @@
                         </div>
                     </div>
                 </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+                    {{-- Favicon --}}
+                    <div>
+                        <label class="label">Favicon (browser tab icon)</label>
+                        <div class="flex items-center gap-3">
+                            @if(!empty($settings['favicon_path']))
+                                <img src="{{ asset('storage/'.$settings['favicon_path']) }}" class="w-8 h-8 rounded object-contain border border-gray-200 dark:border-gray-700 bg-white p-0.5">
+                            @endif
+                            <div>
+                                <input type="file" name="favicon" accept="image/*,.ico" class="text-sm">
+                                @if(!empty($settings['favicon_path']))
+                                    <label class="flex items-center gap-1 text-xs text-red-600 mt-1"><input type="checkbox" name="remove_favicon" value="1"> Remove</label>
+                                @endif
+                                <p class="text-xs text-gray-400 mt-1">Square PNG/ICO, max 1 MB.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- Login background --}}
+                    <div>
+                        <label class="label">Login background image</label>
+                        <div class="flex items-center gap-3">
+                            @if(!empty($settings['login_bg_path']))
+                                <img src="{{ asset('storage/'.$settings['login_bg_path']) }}" class="w-14 h-10 rounded object-cover border border-gray-200 dark:border-gray-700">
+                            @endif
+                            <div>
+                                <input type="file" name="login_bg" accept="image/*" class="text-sm">
+                                @if(!empty($settings['login_bg_path']))
+                                    <label class="flex items-center gap-1 text-xs text-red-600 mt-1"><input type="checkbox" name="remove_login_bg" value="1"> Remove</label>
+                                @endif
+                                <p class="text-xs text-gray-400 mt-1">Wide JPG/PNG, max 4 MB. A themed gradient overlays it automatically.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </x-card>
 
             {{-- Theme color --}}

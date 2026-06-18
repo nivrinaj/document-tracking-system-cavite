@@ -47,6 +47,8 @@ class AppServiceProvider extends ServiceProvider
                     'organization'   => Setting::get('organization', ''),
                     'primary_color'  => Setting::get('primary_color', '#4f46e5'),
                     'logo_path'      => Setting::get('logo_path', ''),
+                    'favicon_path'   => Setting::get('favicon_path', ''),
+                    'login_bg_path'  => Setting::get('login_bg_path', ''),
                     'footer_text'    => Setting::get('footer_text', ''),
                     'allow_desktop_receive' => Setting::get('allow_desktop_receive', '0'),
                 ]);
@@ -58,6 +60,8 @@ class AppServiceProvider extends ServiceProvider
                     'organization' => '',
                     'primary_color' => '#4f46e5',
                     'logo_path' => '',
+                    'favicon_path' => '',
+                    'login_bg_path' => '',
                     'footer_text' => '',
                     'allow_desktop_receive' => '0',
                 ]);

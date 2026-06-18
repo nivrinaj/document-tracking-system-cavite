@@ -42,11 +42,11 @@
             </div>
         @elseif($type === 'staff_workload')
             <x-card padding="p-0">
-                <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                <table class="r-table min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                     <thead class="bg-gray-50 dark:bg-gray-700/40"><tr><th class="table-th">Staff</th><th class="table-th">Division</th><th class="table-th">Open documents</th></tr></thead>
                     <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
                         @forelse($workload as $row)
-                            <tr><td class="table-td">{{ $row->currentHolder?->name ?? '—' }}</td><td class="table-td">{{ $row->currentHolder?->division?->code ?? '—' }}</td><td class="table-td font-medium">{{ $row->total }}</td></tr>
+                            <tr><td class="table-td" data-label="Staff">{{ $row->currentHolder?->name ?? '—' }}</td><td class="table-td" data-label="Division">{{ $row->currentHolder?->division?->code ?? '—' }}</td><td class="table-td font-medium" data-label="Open documents">{{ $row->total }}</td></tr>
                         @empty
                             <tr><td colspan="3" class="px-4 py-8 text-center text-sm text-gray-400">No open documents.</td></tr>
                         @endforelse
@@ -56,20 +56,20 @@
         @else
             <x-card padding="p-0">
                 <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                    <table class="r-table min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                         <thead class="bg-gray-50 dark:bg-gray-700/40"><tr>
                             <th class="table-th">Code</th><th class="table-th">Title</th><th class="table-th">Type</th><th class="table-th">Priority</th><th class="table-th">Status</th><th class="table-th">Holder</th><th class="table-th">Created</th>
                         </tr></thead>
                         <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
                             @forelse($documents as $doc)
                                 <tr>
-                                    <td class="table-td font-mono text-xs">{{ $doc->tracking_code }}</td>
-                                    <td class="table-td">{{ $doc->title }}</td>
-                                    <td class="table-td">{{ $doc->document_type }}</td>
-                                    <td class="table-td">{{ ucfirst($doc->priority) }}</td>
-                                    <td class="table-td">{{ ucfirst($doc->status) }}</td>
-                                    <td class="table-td">{{ $doc->currentHolder?->name ?? '—' }}</td>
-                                    <td class="table-td text-xs text-gray-400">{{ $doc->created_at->format('M d, Y') }}</td>
+                                    <td class="table-td font-mono text-xs" data-label="Code">{{ $doc->tracking_code }}</td>
+                                    <td class="table-td" data-label="Title">{{ $doc->title }}</td>
+                                    <td class="table-td" data-label="Type">{{ $doc->document_type }}</td>
+                                    <td class="table-td" data-label="Priority">{{ ucfirst($doc->priority) }}</td>
+                                    <td class="table-td" data-label="Status">{{ ucfirst($doc->status) }}</td>
+                                    <td class="table-td" data-label="Holder">{{ $doc->currentHolder?->name ?? '—' }}</td>
+                                    <td class="table-td text-xs text-gray-400" data-label="Created">{{ $doc->created_at->format('M d, Y') }}</td>
                                 </tr>
                             @empty
                                 <tr><td colspan="7" class="px-4 py-8 text-center text-sm text-gray-400">No documents match this report.</td></tr>
