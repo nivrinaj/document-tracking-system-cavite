@@ -1,0 +1,67 @@
+<x-app-layout>
+    <x-slot name="header">Edit Document</x-slot>
+
+    <div class="max-w-3xl mx-auto">
+        <x-card>
+            <form method="POST" action="{{ route('documents.update', $document) }}" class="space-y-5"
+                  x-data="{ docType: '{{ old('document_type', $document->document_type) }}' }">
+                @csrf
+                @method('PUT')
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div class="sm:col-span-2">
+                        <label class="label">Document Title <span class="text-red-500">*</span></label>
+                        <input type="text" name="title" value="{{ old('title', $document->title) }}" class="input" required>
+                    </div>
+                    <div>
+                        <label class="label">Document Type <span class="text-red-500">*</span></label>
+                        <select name="document_type" x-model="docType" class="input" required>
+                            @foreach(['Memorandum','Letter','Report','Voucher','Invoice','Purchase Request','Endorsement','Attendance','Other'] as $t)
+                                <option value="{{ $t }}" @selected(old('document_type',$document->document_type)===$t)>{{ $t }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div x-show="docType === 'Voucher'" x-cloak>
+                        <label class="label">Voucher Number</label>
+                        <input type="text" name="voucher_number" value="{{ old('voucher_number', $document->voucher_number) }}" class="input">
+                        <p class="text-xs text-gray-400 mt-1">Note: editing this does not change the existing tracking code <span class="font-mono">{{ $document->tracking_code }}</span>.</p>
+                    </div>
+                    <div>
+                        <label class="label">Reference No.</label>
+                        <input type="text" name="reference_no" value="{{ old('reference_no', $document->reference_no) }}" class="input">
+                    </div>
+                    <div>
+                        <label class="label">Priority <span class="text-red-500">*</span></label>
+                        <select name="priority" class="input" required>
+                            @foreach(['normal','low','high','urgent'] as $p)
+                                <option value="{{ $p }}" @selected(old('priority',$document->priority)===$p)>{{ ucfirst($p) }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div>
+                        <label class="label">Source / Origin</label>
+                        <input type="text" name="source" value="{{ old('source', $document->source) }}" class="input">
+                    </div>
+                    <div>
+                        <label class="label">Division</label>
+                        <select name="division_id" class="input">
+                            <option value="">— Select division —</option>
+                            @foreach($divisions as $div)
+                                <option value="{{ $div->id }}" @selected(old('division_id', $document->division_id)==$div->id)>{{ $div->code }} — {{ $div->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="sm:col-span-2">
+                        <label class="label">Description</label>
+                        <textarea name="description" rows="3" class="input">{{ old('description', $document->description) }}</textarea>
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-end gap-2 pt-2">
+                    <x-btn :href="route('documents.show', $document)" variant="secondary">Cancel</x-btn>
+                    <x-btn type="submit">Save Changes</x-btn>
+                </div>
+            </form>
+        </x-card>
+    </div>
+</x-app-layout>

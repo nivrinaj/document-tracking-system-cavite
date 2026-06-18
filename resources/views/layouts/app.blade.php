@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>{{ $settings['app_name'] ?? config('app.name') }}</title>
+    <link rel="preconnect" href="https://fonts.bunny.net">
+    <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
+
+    @php
+        $primary = $settings['primary_color'] ?? '#4f46e5';
+        // Lighten/darken a hex color so the whole UI can theme from one color.
+        $shade = function (string $hex, int $pct): string {
+            $hex = ltrim($hex, '#');
+            if (strlen($hex) === 3) { $hex = $hex[0].$hex[0].$hex[1].$hex[1].$hex[2].$hex[2]; }
+            $r = hexdec(substr($hex, 0, 2)); $g = hexdec(substr($hex, 2, 2)); $b = hexdec(substr($hex, 4, 2));
+            $adj = fn ($c) => (int) max(0, min(255, $pct > 0 ? $c + (255 - $c) * $pct / 100 : $c + $c * $pct / 100));
+            return sprintf('#%02x%02x%02x', $adj($r), $adj($g), $adj($b));
+        };
+    @endphp
+    <style>
+        :root {
+            --color-primary: {{ $primary }};
+            --color-primary-light: {{ $shade($primary, 35) }};
+            --color-primary-dark: {{ $shade($primary, -18) }};
+        }
+        [x-cloak] { display: none !important; }
+    </style>
+
+    {{-- Apply dark mode before paint to avoid a flash --}}
+    <script>
+        if (localStorage.getItem('darkMode') === 'true') {
+            document.documentElement.classList.add('dark');
+        }
+    </script>
+
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
+</head>
+<body class="font-sans antialiased bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-100"
+      x-data="{ sidebarOpen: false, dark: document.documentElement.classList.contains('dark') }"
+      x-init="$watch('dark', v => { localStorage.setItem('darkMode', v); document.documentElement.classList.toggle('dark', v); })">
+
+    <div class="min-h-screen lg:flex">
+
+        {{-- ===================== Sidebar ===================== --}}
+        <aside class="fixed inset-y-0 left-0 z-40 w-64 transform bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 transition-transform duration-200 lg:translate-x-0 lg:static lg:inset-0"
+               :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'">
+            <div class="flex items-center gap-3 h-16 px-5 border-b border-gray-200 dark:border-gray-700">
+                @if(!empty($settings['logo_path']))
+                    <img src="{{ asset('storage/'.$settings['logo_path']) }}" alt="Logo" class="h-9 w-9 rounded object-contain">
+                @else
+                    <div class="h-9 w-9 rounded-lg flex items-center justify-center text-white font-bold" style="background: var(--color-primary)">
+                        {{ strtoupper(substr($settings['app_short_name'] ?? 'P', 0, 1)) }}
+                    </div>
+                @endif
+                <div class="leading-tight">
+                    <div class="font-semibold text-sm">{{ $settings['app_short_name'] ?? 'PGC-DTS' }}</div>
+                    <div class="text-[11px] text-gray-400">Document Tracking</div>
+                </div>
+            </div>
+
+            <nav class="px-3 py-4 space-y-1 overflow-y-auto h-[calc(100vh-4rem)]">
+                <x-nav-item :active="request()->routeIs('dashboard')" :href="route('dashboard')" label="Dashboard">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+                </x-nav-item>
+
+                @can('documents.view')
+                <x-nav-item :active="request()->routeIs('documents.*')" :href="route('documents.index')" label="Document Tracking">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                </x-nav-item>
+                @endcan
+
+                @can('reports.view')
+                <x-nav-item :active="request()->routeIs('reports.*')" :href="route('reports.index')" label="Reports">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                </x-nav-item>
+                @endcan
+
+                @can('logs.view')
+                <x-nav-item :active="request()->routeIs('logs.*')" :href="route('logs.index')" label="Logs & History">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </x-nav-item>
+                @endcan
+
+                @canany(['users.manage', 'divisions.manage', 'roles.manage', 'settings.manage'])
+                <div class="pt-4 pb-1 px-3 text-[11px] font-semibold uppercase tracking-wider text-gray-400">Administration</div>
+                @endcanany
+
+                @can('users.manage')
+                <x-nav-item :active="request()->routeIs('users.*')" :href="route('users.index')" label="Users">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m6-1.13a4 4 0 10-4-4 4 4 0 004 4z"/>
+                </x-nav-item>
+                @endcan
+
+                @can('divisions.manage')
+                <x-nav-item :active="request()->routeIs('divisions.*')" :href="route('divisions.index')" label="Divisions">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0H5m14 0h2M5 21H3m4-14h2m-2 4h2m6-4h2m-2 4h2"/>
+                </x-nav-item>
+                @endcan
+
+                @can('roles.manage')
+                <x-nav-item :active="request()->routeIs('roles.*')" :href="route('roles.index')" label="Roles & Permissions">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                </x-nav-item>
+                @endcan
+
+                @can('settings.manage')
+                <x-nav-item :active="request()->routeIs('settings.*')" :href="route('settings.edit')" label="System Settings">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                </x-nav-item>
+                @endcan
+
+                <div class="pt-4 pb-1 px-3 text-[11px] font-semibold uppercase tracking-wider text-gray-400">Help</div>
+                <x-nav-item :active="request()->routeIs('documentation.*')" :href="route('documentation.index')" label="Documentation">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+                </x-nav-item>
+            </nav>
+        </aside>
+
+        {{-- Mobile overlay --}}
+        <div x-show="sidebarOpen" x-cloak @click="sidebarOpen = false"
+             class="fixed inset-0 z-30 bg-black/40 lg:hidden"></div>
+
+        {{-- ===================== Main column ===================== --}}
+        <div class="flex-1 flex flex-col min-w-0">
+            {{-- Topbar --}}
+            <header class="sticky top-0 z-20 h-16 flex items-center gap-4 px-4 sm:px-6 bg-white/90 dark:bg-gray-800/90 backdrop-blur border-b border-gray-200 dark:border-gray-700">
+                <button @click="sidebarOpen = true" class="lg:hidden p-2 -ml-2 rounded text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+                </button>
+
+                <div class="flex-1 min-w-0">
+                    @isset($header)
+                        <div class="font-semibold text-lg truncate">{{ $header }}</div>
+                    @endisset
+                </div>
+
+                {{-- Dark mode toggle --}}
+                <button @click="dark = !dark" class="p-2 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700" title="Toggle dark mode">
+                    <svg x-show="!dark" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
+                    <svg x-show="dark" x-cloak class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+                </button>
+
+                {{-- User dropdown --}}
+                <div class="relative" x-data="{ open: false }">
+                    <button @click="open = !open" class="flex items-center gap-2 p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">
+                        <img src="{{ auth()->user()->avatar_url }}" class="w-8 h-8 rounded-full object-cover" alt="">
+                        <span class="hidden sm:block text-sm font-medium">{{ auth()->user()->name }}</span>
+                        <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                    </button>
+                    <div x-show="open" x-cloak @click.outside="open = false"
+                         class="absolute right-0 mt-2 w-56 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-lg py-1">
+                        <div class="px-4 py-2 border-b border-gray-100 dark:border-gray-700">
+                            <div class="text-sm font-medium truncate">{{ auth()->user()->name }}</div>
+                            <div class="text-xs text-gray-400 truncate">{{ auth()->user()->email }}</div>
+                            <div class="mt-1 flex flex-wrap gap-1">
+                                @foreach(auth()->user()->getRoleNames() as $r)
+                                    <span class="text-[10px] px-1.5 py-0.5 rounded-full text-white" style="background: var(--color-primary)">{{ $r }}</span>
+                                @endforeach
+                            </div>
+                        </div>
+                        <a href="{{ route('profile.edit') }}" class="block px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700">My Profile</a>
+                        <form method="POST" action="{{ route('logout') }}">
+                            @csrf
+                            <button type="submit" class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100 dark:hover:bg-gray-700">Log Out</button>
+                        </form>
+                    </div>
+                </div>
+            </header>
+
+            {{-- Flash messages --}}
+            <div class="px-4 sm:px-6 pt-4 space-y-2">
+                @if(session('success'))
+                    <div x-data="{ show: true }" x-show="show" class="flex items-start gap-2 rounded-lg bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800 text-green-800 dark:text-green-200 px-4 py-3 text-sm">
+                        <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                        <span class="flex-1">{{ session('success') }}</span>
+                        <button @click="show = false">&times;</button>
+                    </div>
+                @endif
+                @if(session('error'))
+                    <div x-data="{ show: true }" x-show="show" class="flex items-start gap-2 rounded-lg bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-800 dark:text-red-200 px-4 py-3 text-sm">
+                        <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        <span class="flex-1">{{ session('error') }}</span>
+                        <button @click="show = false">&times;</button>
+                    </div>
+                @endif
+                @if($errors->any())
+                    <div class="rounded-lg bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-800 dark:text-red-200 px-4 py-3 text-sm">
+                        <ul class="list-disc list-inside space-y-0.5">
+                            @foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach
+                        </ul>
+                    </div>
+                @endif
+            </div>
+
+            {{-- Page content --}}
+            <main class="flex-1 p-4 sm:p-6">
+                {{ $slot }}
+            </main>
+
+            <footer class="px-6 py-4 text-center text-xs text-gray-400 border-t border-gray-200 dark:border-gray-700">
+                {{ $settings['footer_text'] ?? '' }}
+            </footer>
+        </div>
+    </div>
+
+    @stack('scripts')
+</body>
+</html>

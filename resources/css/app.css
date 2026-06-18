@@ -1,0 +1,42 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer components {
+    /* Reusable form + table helpers used across the dashboard */
+    .input {
+        @apply w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 text-sm
+               focus:border-[color:var(--color-primary)] focus:ring-[color:var(--color-primary)];
+    }
+    .label {
+        @apply block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1;
+    }
+    .table-th {
+        @apply px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400;
+    }
+    .table-td {
+        @apply px-4 py-3 text-sm align-middle;
+    }
+    .link {
+        @apply text-[color:var(--color-primary)] hover:underline font-medium;
+    }
+}
+
+/* Lightweight Markdown styling for the documentation module */
+.prose-doc { @apply text-sm leading-relaxed text-gray-700 dark:text-gray-200; }
+.prose-doc h1 { @apply text-2xl font-bold mt-6 mb-3; }
+.prose-doc h2 { @apply text-xl font-semibold mt-6 mb-2 pb-1 border-b border-gray-100 dark:border-gray-700; }
+.prose-doc h3 { @apply text-lg font-semibold mt-4 mb-2; }
+.prose-doc p { @apply my-3; }
+.prose-doc ul { @apply list-disc list-inside my-3 space-y-1; }
+.prose-doc ol { @apply list-decimal list-inside my-3 space-y-1; }
+.prose-doc a { @apply text-[color:var(--color-primary)] hover:underline; }
+.prose-doc code { @apply px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-700 text-[0.85em] font-mono; }
+.prose-doc pre { @apply p-4 rounded-lg bg-gray-900 text-gray-100 overflow-x-auto my-4 text-xs; }
+.prose-doc pre code { @apply bg-transparent p-0 text-gray-100; }
+.prose-doc blockquote { @apply border-l-4 border-gray-200 dark:border-gray-600 pl-4 italic text-gray-500 my-3; }
+.prose-doc table { @apply w-full my-4 text-sm; }
+.prose-doc th, .prose-doc td { @apply border border-gray-200 dark:border-gray-700 px-3 py-1.5 text-left; }
+.prose-doc hr { @apply my-6 border-gray-200 dark:border-gray-700; }
+
+[x-cloak] { display: none !important; }

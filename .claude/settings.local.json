@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(composer create-project laravel/laravel D:\\\\PGC --no-interaction 2>&1)",
+      "PowerShell(Get-ChildItem -Force \"D:\\\\PGC\" | Format-Table Name,Length,Mode -AutoSize; Write-Output \"COUNT:\"; \\(Get-ChildItem -Force \"D:\\\\PGC\" | Measure-Object\\).Count)",
+      "PowerShell(robocopy D:\\\\pgc_tmp D:\\\\PGC /E /MOVE /NFL /NDL /NJH /NJS /NP; Write-Output \"ExitCode: $LASTEXITCODE\"; Write-Output \"=== Result ===\"; Get-ChildItem -Force D:\\\\PGC | Select-Object Name | Format-Table -AutoSize)",
+      "mcp__Claude_Preview__preview_start"
+    ]
+  }
+}
