@@ -272,6 +272,9 @@
 
             <footer class="px-6 py-4 text-center text-xs text-gray-400 border-t border-gray-200 dark:border-gray-700">
                 {{ $settings['footer_text'] ?? '' }}
+                @if(!empty($settings['support_contact']))
+                    <span class="block mt-1">Need help? {{ $settings['support_contact'] }}</span>
+                @endif
             </footer>
         </div>
     </div>

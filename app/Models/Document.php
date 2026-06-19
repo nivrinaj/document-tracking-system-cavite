@@ -49,11 +49,17 @@ class Document extends Model
         });
     }
 
+    public static function trackingPrefix(): string
+    {
+        return \App\Models\Setting::get('tracking_prefix', 'PGC') ?: 'PGC';
+    }
+
     public static function generateTrackingCode(): string
     {
         // e.g. PGC-2026-3F9K2A  (human-readable + unique)
+        $prefix = static::trackingPrefix();
         do {
-            $code = 'PGC-'.now()->format('Y').'-'.strtoupper(Str::random(6));
+            $code = $prefix.'-'.now()->format('Y').'-'.strtoupper(Str::random(6));
         } while (static::where('tracking_code', $code)->exists());
 
         return $code;
@@ -67,7 +73,7 @@ class Document extends Model
     {
         $clean = strtoupper(preg_replace('/[^A-Za-z0-9\-]/', '', $voucherNumber));
 
-        return 'PGC-'.now()->format('Y').'-'.$clean;
+        return static::trackingPrefix().'-'.now()->format('Y').'-'.$clean;
     }
 
     /* ----------------------------------------------------------------

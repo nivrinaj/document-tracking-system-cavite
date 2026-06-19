@@ -101,6 +101,30 @@
                 </div>
             </x-card>
 
+            {{-- Operations --}}
+            <x-card title="Operations">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="label">Tracking code prefix</label>
+                        <input type="text" name="tracking_prefix" value="{{ $settings['tracking_prefix'] ?? 'PGC' }}" class="input" maxlength="10" required>
+                        <p class="text-xs text-gray-400 mt-1">New codes look like <span class="font-mono">{{ $settings['tracking_prefix'] ?? 'PGC' }}-{{ date('Y') }}-XXXXX</span>. (Existing codes don't change.)</p>
+                    </div>
+                    <div>
+                        <label class="label">Records per page</label>
+                        <input type="number" name="records_per_page" value="{{ $settings['records_per_page'] ?? '12' }}" class="input" min="5" max="100" required>
+                        <p class="text-xs text-gray-400 mt-1">Rows shown per page in tables (5–100).</p>
+                    </div>
+                    <div class="sm:col-span-2">
+                        <label class="label">Support contact (shown in the footer)</label>
+                        <input type="text" name="support_contact" value="{{ $settings['support_contact'] ?? '' }}" class="input" placeholder="e.g. ISDA Help Desk · local 1234 · support@cavite.gov.ph">
+                    </div>
+                    <div class="sm:col-span-2">
+                        <label class="label">Dashboard announcement (optional)</label>
+                        <textarea name="announcement" rows="2" class="input" placeholder="Shown as a banner on everyone's dashboard. Leave blank to hide.">{{ $settings['announcement'] ?? '' }}</textarea>
+                    </div>
+                </div>
+            </x-card>
+
             {{-- Workflow --}}
             <x-card title="Workflow">
                 <label class="flex items-start gap-3 cursor-pointer">

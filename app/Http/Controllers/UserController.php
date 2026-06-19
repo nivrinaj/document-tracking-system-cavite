@@ -30,7 +30,7 @@ class UserController extends Controller
         }
 
         return view('users.index', [
-            'users' => $query->paginate(12)->withQueryString(),
+            'users' => $query->paginate((int) \App\Models\Setting::get('records_per_page', 12))->withQueryString(),
             'divisions' => Division::orderBy('name')->get(),
             'roles' => \Spatie\Permission\Models\Role::orderBy('name')->get(),
         ]);

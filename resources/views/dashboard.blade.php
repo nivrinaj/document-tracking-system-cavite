@@ -2,6 +2,15 @@
     <x-slot name="header">Dashboard</x-slot>
 
     <div class="space-y-6">
+        @if(!empty($settings['announcement']))
+            <div x-data="{ show: true }" x-show="show"
+                 class="flex items-start gap-3 rounded-xl border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20 text-amber-800 dark:text-amber-200 px-4 py-3">
+                <svg class="w-5 h-5 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z"/></svg>
+                <div class="flex-1 text-sm">{{ $settings['announcement'] }}</div>
+                <button @click="show = false" class="text-amber-600 hover:text-amber-800">&times;</button>
+            </div>
+        @endif
+
         {{-- Greeting --}}
         <div>
             <h1 class="text-xl font-semibold">Welcome back, {{ auth()->user()->name }} 👋</h1>
@@ -39,68 +48,85 @@
             </x-card>
         </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {{-- Action queues --}}
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+            {{-- Action queues (left) --}}
             <div class="lg:col-span-2 space-y-6">
-                <x-card>
-                    <div class="flex items-center justify-between mb-3">
-                        <h2 class="font-semibold">📥 Waiting for you to receive</h2>
-                        <span class="text-xs text-gray-400">{{ $toReceive->count() }} item(s)</span>
-                    </div>
-                    @forelse($toReceive as $doc)
-                        <a href="{{ route('documents.show', $doc) }}" class="flex items-center justify-between gap-3 p-3 -mx-1 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                            <div class="min-w-0">
-                                <div class="font-medium text-sm truncate">{{ $doc->title }}</div>
-                                <div class="text-xs text-gray-400">{{ $doc->tracking_code }} · from {{ $doc->creator?->name }} · ⏱ waiting {{ $doc->updated_at->diffForHumans(null, true) }}</div>
+                @php $nothingPending = $toReceive->isEmpty() && $toAction->isEmpty() && $toRelease->isEmpty(); @endphp
+
+                @if($nothingPending)
+                    <x-card padding="p-10">
+                        <div class="text-center">
+                            <div class="mx-auto w-14 h-14 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center mb-3">
+                                <svg class="w-7 h-7 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
                             </div>
-                            <div class="flex items-center gap-2 shrink-0">
+                            <h2 class="font-semibold">You're all caught up 🎉</h2>
+                            <p class="text-sm text-gray-400 mt-1">No documents are waiting for your action right now.</p>
+                            @can('documents.create')
+                                <div class="mt-4"><x-btn :href="route('documents.create')">Encode a document</x-btn></div>
+                            @endcan
+                        </div>
+                    </x-card>
+                @else
+                    @if($toReceive->isNotEmpty())
+                    <x-card>
+                        <div class="flex items-center justify-between mb-3">
+                            <h2 class="font-semibold">📥 Waiting for you to receive</h2>
+                            <span class="text-xs text-gray-400">{{ $toReceive->count() }} item(s)</span>
+                        </div>
+                        @foreach($toReceive as $doc)
+                            <a href="{{ route('documents.show', $doc) }}" class="flex items-center justify-between gap-3 p-3 -mx-1 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                                <div class="min-w-0">
+                                    <div class="font-medium text-sm truncate">{{ $doc->title }}</div>
+                                    <div class="text-xs text-gray-400">{{ $doc->tracking_code }} · from {{ $doc->creator?->name }} · ⏱ waiting {{ $doc->updated_at->diffForHumans(null, true) }}</div>
+                                </div>
+                                <div class="flex items-center gap-2 shrink-0">
+                                    <x-priority-badge :priority="$doc->priority" />
+                                    <x-status-badge :status="$doc->status" />
+                                </div>
+                            </a>
+                        @endforeach
+                    </x-card>
+                    @endif
+
+                    @if($toAction->isNotEmpty())
+                    <x-card>
+                        <div class="flex items-center justify-between mb-3">
+                            <h2 class="font-semibold">⚡ In your hands (forward or archive)</h2>
+                            <span class="text-xs text-gray-400">{{ $toAction->count() }} item(s)</span>
+                        </div>
+                        @foreach($toAction as $doc)
+                            <a href="{{ route('documents.show', $doc) }}" class="flex items-center justify-between gap-3 p-3 -mx-1 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                                <div class="min-w-0">
+                                    <div class="font-medium text-sm truncate">{{ $doc->title }}</div>
+                                    <div class="text-xs text-gray-400">{{ $doc->tracking_code }} · ⏱ {{ $doc->updated_at->diffForHumans(null, true) }} in your hands</div>
+                                </div>
                                 <x-priority-badge :priority="$doc->priority" />
-                                <x-status-badge :status="$doc->status" />
-                            </div>
-                        </a>
-                    @empty
-                        <p class="text-sm text-gray-400 py-4 text-center">Nothing waiting to be received.</p>
-                    @endforelse
-                </x-card>
+                            </a>
+                        @endforeach
+                    </x-card>
+                    @endif
 
-                <x-card>
-                    <div class="flex items-center justify-between mb-3">
-                        <h2 class="font-semibold">⚡ In your hands (forward or archive)</h2>
-                        <span class="text-xs text-gray-400">{{ $toAction->count() }} item(s)</span>
-                    </div>
-                    @forelse($toAction as $doc)
-                        <a href="{{ route('documents.show', $doc) }}" class="flex items-center justify-between gap-3 p-3 -mx-1 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                            <div class="min-w-0">
-                                <div class="font-medium text-sm truncate">{{ $doc->title }}</div>
-                                <div class="text-xs text-gray-400">{{ $doc->tracking_code }} · ⏱ {{ $doc->updated_at->diffForHumans(null, true) }} in your hands</div>
-                            </div>
-                            <x-priority-badge :priority="$doc->priority" />
-                        </a>
-                    @empty
-                        <p class="text-sm text-gray-400 py-4 text-center">No documents to act on.</p>
-                    @endforelse
-                </x-card>
-
-                @if($toRelease->isNotEmpty())
-                <x-card>
-                    <div class="flex items-center justify-between mb-3">
-                        <h2 class="font-semibold">🚀 Drafts ready to release</h2>
-                        <span class="text-xs text-gray-400">{{ $toRelease->count() }} item(s)</span>
-                    </div>
-                    @foreach($toRelease as $doc)
-                        <a href="{{ route('documents.show', $doc) }}" class="flex items-center justify-between gap-3 p-3 -mx-1 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                            <div class="min-w-0">
-                                <div class="font-medium text-sm truncate">{{ $doc->title }}</div>
-                                <div class="text-xs text-gray-400">{{ $doc->tracking_code }} · assigned to {{ $doc->currentHolder?->name }}</div>
-                            </div>
-                            <x-badge color="amber">Draft</x-badge>
-                        </a>
-                    @endforeach
-                </x-card>
+                    @if($toRelease->isNotEmpty())
+                    <x-card>
+                        <div class="flex items-center justify-between mb-3">
+                            <h2 class="font-semibold">🚀 Drafts ready to release</h2>
+                            <span class="text-xs text-gray-400">{{ $toRelease->count() }} item(s)</span>
+                        </div>
+                        @foreach($toRelease as $doc)
+                            <a href="{{ route('documents.show', $doc) }}" class="flex items-center justify-between gap-3 p-3 -mx-1 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                                <div class="min-w-0">
+                                    <div class="font-medium text-sm truncate">{{ $doc->title }}</div>
+                                    <div class="text-xs text-gray-400">{{ $doc->tracking_code }} · assigned to {{ $doc->currentHolder?->name }}</div>
+                                </div>
+                                <x-badge color="amber">Draft</x-badge>
+                            </a>
+                        @endforeach
+                    </x-card>
+                    @endif
                 @endif
             </div>
 
-            {{-- Sidebar widgets --}}
+            {{-- Right widgets --}}
             <div class="space-y-6">
                 @can('documents.create')
                 <x-card>
@@ -119,35 +145,37 @@
                     <h2 class="font-semibold mb-3">By priority</h2>
                     @if(array_sum($priorityBreakdown) > 0)
                         <div class="h-48"><canvas id="priorityChart"></canvas></div>
+                        <p class="text-[11px] text-gray-400 text-center mt-2">Tip: click a slice to filter documents.</p>
                     @else
                         <p class="text-sm text-gray-400">No data yet.</p>
                     @endif
                 </x-card>
-
-                <x-card>
-                    <h2 class="font-semibold mb-3">Recent activity</h2>
-                    <ol class="space-y-3">
-                        @forelse($activity as $log)
-                            <li class="flex gap-3">
-                                <div class="mt-1.5 w-2 h-2 rounded-full shrink-0" style="background: var(--color-primary)"></div>
-                                <div class="min-w-0">
-                                    <p class="text-sm">
-                                        <span class="font-medium">{{ $log->actor?->name ?? 'System' }}</span>
-                                        {{ strtolower($log->actionLabel()) }}
-                                        @if($log->toUser) → {{ $log->toUser->name }} @endif
-                                    </p>
-                                    <p class="text-xs text-gray-400 truncate">
-                                        {{ $log->document?->title }} · {{ $log->created_at->diffForHumans() }}
-                                    </p>
-                                </div>
-                            </li>
-                        @empty
-                            <p class="text-sm text-gray-400">No activity yet.</p>
-                        @endforelse
-                    </ol>
-                </x-card>
             </div>
         </div>
+
+        {{-- Recent activity (full width, capped height so it never stretches the page) --}}
+        <x-card>
+            <h2 class="font-semibold mb-3">Recent activity</h2>
+            <ol class="space-y-3 max-h-96 overflow-y-auto pr-1">
+                @forelse($activity as $log)
+                    <li class="flex gap-3">
+                        <div class="mt-1.5 w-2 h-2 rounded-full shrink-0" style="background: var(--color-primary)"></div>
+                        <div class="min-w-0">
+                            <p class="text-sm">
+                                <span class="font-medium">{{ $log->actor?->name ?? 'System' }}</span>
+                                {{ strtolower($log->actionLabel()) }}
+                                @if($log->toUser) → {{ $log->toUser->name }} @endif
+                            </p>
+                            <p class="text-xs text-gray-400 truncate">
+                                {{ $log->document?->title }} · {{ $log->created_at->diffForHumans() }}
+                            </p>
+                        </div>
+                    </li>
+                @empty
+                    <p class="text-sm text-gray-400">No activity yet.</p>
+                @endforelse
+            </ol>
+        </x-card>
     </div>
 
     @push('scripts')
@@ -162,6 +190,7 @@
             const palette = ['#6366f1','#0ea5e9','#22c55e','#f59e0b','#ef4444','#a855f7','#14b8a6','#64748b'];
             Chart.defaults.color = tick;
             Chart.defaults.font.family = "Figtree, system-ui, sans-serif";
+            const docsUrl = '{{ route('documents.index') }}';
 
             // Incoming trend (line)
             const trend = @json($trend);
@@ -195,6 +224,7 @@
                         datasets: [{ data: Object.values(status), backgroundColor: palette, borderWidth: 0 }]
                     },
                     options: { responsive: true, maintainAspectRatio: false, cutout: '62%',
+                        onClick: (evt, els, chart) => { if (els.length) { window.location = docsUrl + '?status=' + chart.data.labels[els[0].index].toLowerCase(); } },
                         plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, padding: 12 } } } }
                 });
             }
@@ -211,6 +241,7 @@
                         datasets: [{ data: Object.values(priority), backgroundColor: Object.keys(priority).map(k => pcolors[k] || '#94a3b8'), borderWidth: 0 }]
                     },
                     options: { responsive: true, maintainAspectRatio: false, cutout: '60%',
+                        onClick: (evt, els, chart) => { if (els.length) { window.location = docsUrl + '?priority=' + chart.data.labels[els[0].index].toLowerCase(); } },
                         plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, padding: 12 } } } }
                 });
             }

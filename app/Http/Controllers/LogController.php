@@ -36,7 +36,7 @@ class LogController extends Controller
         }
 
         return view('logs.index', [
-            'logs' => $query->paginate(25)->withQueryString(),
+            'logs' => $query->paginate((int) \App\Models\Setting::get('records_per_page', 12))->withQueryString(),
             'users' => $canViewAll ? User::orderBy('name')->get() : collect(),
             'canViewAll' => $canViewAll,
             'actions' => [

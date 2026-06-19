@@ -6,6 +6,12 @@ reviewed or rolled back. Format based on [Keep a Changelog](https://keepachangel
 
 ---
 
+## v1.6.0 — 2026-06-19
+**Dashboard polish & more settings**
+- Dashboard no longer shows long empty panels — empty queues collapse into a single "You're all caught up" card, and **Recent Activity** is now a full-width, height-capped scrolling panel.
+- **Clickable charts** — clicking a slice on the *By priority* / *By status* charts opens Document Tracking pre-filtered.
+- New **System Settings**: tracking-code **prefix**, **records per page**, **support contact** (footer), and a **dashboard announcement** banner.
+
 ## v1.5.0 — 2026-06-19
 **Dashboard, dialogs & live alerts**
 - **Dashboard counters** reworked into clear life-cycle stages — *Awaiting Release*, *In Transit*, *In Progress*, *Completed* — so a not-yet-released draft no longer looks like it's pending on a recipient.

@@ -29,12 +29,17 @@ class SettingController extends Controller
             'remove_favicon' => ['nullable', 'boolean'],
             'remove_login_bg' => ['nullable', 'boolean'],
             'allow_desktop_receive' => ['nullable', 'boolean'],
+            'tracking_prefix' => ['required', 'string', 'max:10', 'alpha_dash'],
+            'records_per_page' => ['required', 'integer', 'min:5', 'max:100'],
+            'support_contact' => ['nullable', 'string', 'max:255'],
+            'announcement' => ['nullable', 'string', 'max:500'],
         ]);
 
-        foreach (['app_name', 'app_short_name', 'organization', 'primary_color', 'footer_text'] as $key) {
+        foreach (['app_name', 'app_short_name', 'organization', 'primary_color', 'footer_text', 'support_contact', 'announcement', 'records_per_page'] as $key) {
             Setting::put($key, $data[$key] ?? '');
         }
 
+        Setting::put('tracking_prefix', strtoupper($data['tracking_prefix']));
         Setting::put('allow_desktop_receive', $request->boolean('allow_desktop_receive') ? '1' : '0');
 
         // Image fields: [setting key => [form field, remove field]]

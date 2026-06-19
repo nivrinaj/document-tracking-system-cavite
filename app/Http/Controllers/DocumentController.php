@@ -58,7 +58,8 @@ class DocumentController extends Controller
             $query->whereDate('created_at', '<=', $request->date('date_to'));
         }
 
-        $documents = $query->paginate(12)->withQueryString();
+        $perPage = (int) \App\Models\Setting::get('records_per_page', 12);
+        $documents = $query->paginate($perPage)->withQueryString();
 
         return view('documents.index', [
             'documents' => $documents,

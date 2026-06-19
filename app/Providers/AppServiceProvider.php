@@ -65,6 +65,10 @@ class AppServiceProvider extends ServiceProvider
                     'login_bg_path'  => Setting::get('login_bg_path', ''),
                     'footer_text'    => Setting::get('footer_text', ''),
                     'allow_desktop_receive' => Setting::get('allow_desktop_receive', '0'),
+                    'tracking_prefix' => Setting::get('tracking_prefix', 'PGC'),
+                    'records_per_page' => Setting::get('records_per_page', '12'),
+                    'support_contact' => Setting::get('support_contact', ''),
+                    'announcement'   => Setting::get('announcement', ''),
                 ]);
             } catch (\Throwable $e) {
                 // settings table may not exist yet (e.g. before first migrate)
@@ -78,6 +82,10 @@ class AppServiceProvider extends ServiceProvider
                     'login_bg_path' => '',
                     'footer_text' => '',
                     'allow_desktop_receive' => '0',
+                    'tracking_prefix' => 'PGC',
+                    'records_per_page' => '12',
+                    'support_contact' => '',
+                    'announcement' => '',
                 ]);
             }
         });
