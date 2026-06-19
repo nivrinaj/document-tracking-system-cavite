@@ -172,9 +172,7 @@
                 <div class="relative" x-data="{ open: false }">
                     <button @click="open = !open" class="relative p-2 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700" title="Notifications">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
-                        @if($unreadCount > 0)
-                            <span class="absolute -top-0.5 -right-0.5 bg-red-500 text-white text-[10px] leading-none rounded-full px-1.5 py-0.5">{{ $unreadCount > 9 ? '9+' : $unreadCount }}</span>
-                        @endif
+                        <span id="notifBadge" class="absolute -top-0.5 -right-0.5 bg-red-500 text-white text-[10px] leading-none rounded-full px-1.5 py-0.5 {{ $unreadCount > 0 ? '' : 'hidden' }}">{{ $unreadCount > 9 ? '9+' : $unreadCount }}</span>
                     </button>
                     <div x-show="open" x-cloak @click.outside="open = false"
                          class="absolute right-0 mt-2 w-80 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-lg z-30">
@@ -277,6 +275,63 @@
             </footer>
         </div>
     </div>
+
+    {{-- Themed confirmation dialog (replaces the browser's plain confirm) --}}
+    <div id="confirmModal" class="fixed inset-0 z-50 hidden items-center justify-center p-4" role="dialog" aria-modal="true">
+        <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" data-confirm-cancel></div>
+        <div class="relative bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-sm p-6 text-center">
+            <div class="mx-auto w-12 h-12 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center mb-4">
+                <svg class="w-6 h-6 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M5.07 19h13.86c1.54 0 2.5-1.67 1.73-3L13.73 4a2 2 0 00-3.46 0L3.34 16c-.77 1.33.19 3 1.73 3z"/></svg>
+            </div>
+            <h3 class="text-lg font-semibold mb-1">Please confirm</h3>
+            <p id="confirmMessage" class="text-sm text-gray-500 dark:text-gray-400 mb-5"></p>
+            <div class="flex gap-2">
+                <button type="button" data-confirm-cancel class="flex-1 px-4 py-2 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 text-sm font-medium">Cancel</button>
+                <button type="button" id="confirmOk" class="flex-1 px-4 py-2 rounded-lg text-white text-sm font-medium hover:opacity-90" style="background: var(--color-primary)">Confirm</button>
+            </div>
+        </div>
+    </div>
+    <script>
+        (function () {
+            const modal = document.getElementById('confirmModal');
+            const msgEl = document.getElementById('confirmMessage');
+            let pending = null;
+            const close = () => { modal.classList.add('hidden'); modal.classList.remove('flex'); pending = null; };
+            const open = (form, message) => { pending = form; msgEl.textContent = message; modal.classList.remove('hidden'); modal.classList.add('flex'); };
+            // Intercept any form that opts in with data-confirm="..."
+            document.addEventListener('submit', function (e) {
+                const f = e.target;
+                if (f && f.hasAttribute && f.hasAttribute('data-confirm')) {
+                    e.preventDefault();
+                    open(f, f.getAttribute('data-confirm'));
+                }
+            }, true);
+            document.getElementById('confirmOk').addEventListener('click', function () {
+                const f = pending; close();
+                if (f) { f.submit(); } // native submit() bypasses the capture listener
+            });
+            modal.querySelectorAll('[data-confirm-cancel]').forEach(el => el.addEventListener('click', close));
+            document.addEventListener('keydown', e => { if (e.key === 'Escape') close(); });
+        })();
+    </script>
+
+    {{-- Keep the notification badge live without reloading (light: 1 request/min) --}}
+    <script>
+        (function () {
+            const badge = document.getElementById('notifBadge');
+            if (!badge) return;
+            async function poll() {
+                try {
+                    const r = await fetch('{{ route('notifications.unreadCount') }}', { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+                    if (!r.ok) return;
+                    const d = await r.json();
+                    if (d.count > 0) { badge.textContent = d.count > 9 ? '9+' : d.count; badge.classList.remove('hidden'); }
+                    else { badge.classList.add('hidden'); }
+                } catch (e) { /* ignore transient errors */ }
+            }
+            setInterval(poll, 60000); // every 60s
+        })();
+    </script>
 
     @stack('scripts')
 </body>

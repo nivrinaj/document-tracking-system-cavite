@@ -30,4 +30,12 @@ class NotificationController extends Controller
 
         return back()->with('success', 'All notifications marked as read.');
     }
+
+    /** Lightweight endpoint polled by the bell to keep the unread count live. */
+    public function unreadCount(Request $request)
+    {
+        return response()->json([
+            'count' => $request->user()->unreadNotifications()->count(),
+        ]);
+    }
 }

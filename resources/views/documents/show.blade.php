@@ -123,7 +123,7 @@
                             <button @click="panel = panel === 'assign' ? null : 'assign'" class="w-full text-left px-4 py-2 rounded-lg bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 text-sm font-medium hover:opacity-90">Assign / Re-assign</button>
                             <div x-show="panel === 'assign'" x-cloak class="p-3 rounded-lg bg-gray-50 dark:bg-gray-700/40">
                                 <form method="POST" action="{{ route('documents.assign', $document) }}" class="space-y-2"
-                                      onsubmit="return confirm('Assign / re-assign this document to the selected staff?')">
+                                      data-confirm="Assign / re-assign this document to the selected staff?">
                                     @csrf
                                     <select name="assignee_id" class="input" required>
                                         <option value="">— Select staff —</option>
@@ -141,7 +141,7 @@
 
                         @can('release', $document)
                             <form method="POST" action="{{ route('documents.release', $document) }}" class="space-y-2 p-3 rounded-lg bg-amber-50 dark:bg-amber-900/20"
-                                  onsubmit="return confirm('Release this document to {{ $document->currentHolder?->name }}? You will then print and attach the QR.')">
+                                  data-confirm="Release this document to {{ $document->currentHolder?->name }}? You will then print and attach the QR.">
                                 @csrf
                                 <p class="text-xs text-amber-700 dark:text-amber-300">Releasing hands the document to <strong>{{ $document->currentHolder?->name }}</strong>. Print and attach the QR.</p>
                                 <input type="text" name="remarks" class="input" placeholder="Release remarks (optional)">
@@ -168,7 +168,7 @@
                             <button @click="panel = panel === 'forward' ? null : 'forward'" class="w-full text-left px-4 py-2 rounded-lg bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 text-sm font-medium hover:opacity-90">Forward to another staff</button>
                             <div x-show="panel === 'forward'" x-cloak class="p-3 rounded-lg bg-gray-50 dark:bg-gray-700/40">
                                 <form method="POST" action="{{ route('documents.forward', $document) }}" class="space-y-2"
-                                      onsubmit="return confirm('Forward this document to the selected staff?')">
+                                      data-confirm="Forward this document to the selected staff?">
                                     @csrf
                                     <select name="to_user_id" class="input" required>
                                         <option value="">— Forward to —</option>
@@ -188,7 +188,7 @@
                             <button @click="panel = panel === 'archive' ? null : 'archive'" class="w-full text-left px-4 py-2 rounded-lg bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-300 text-sm font-medium hover:opacity-90">Archive / Complete</button>
                             <div x-show="panel === 'archive'" x-cloak class="p-3 rounded-lg bg-gray-50 dark:bg-gray-700/40">
                                 <form method="POST" action="{{ route('documents.archive', $document) }}" class="space-y-2"
-                                      onsubmit="return confirm('Archive/close this document? This ends its active tracking.')">
+                                      data-confirm="Archive/close this document? This ends its active tracking.">
                                     @csrf
                                     <label class="flex items-center gap-2 text-sm">
                                         <input type="checkbox" name="completed" value="1" class="rounded text-[color:var(--color-primary)]"> Mark as fully completed
@@ -204,7 +204,7 @@
                         @endif
 
                         @can('delete', $document)
-                            <form method="POST" action="{{ route('documents.destroy', $document) }}" onsubmit="return confirm('Delete this document permanently?')">
+                            <form method="POST" action="{{ route('documents.destroy', $document) }}" data-confirm="Delete this document permanently?">
                                 @csrf @method('DELETE')
                                 <button type="submit" class="w-full text-center px-4 py-2 rounded-lg text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 text-sm">Delete document</button>
                             </form>

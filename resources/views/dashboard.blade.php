@@ -11,19 +11,19 @@
             </p>
         </div>
 
-        {{-- Stat cards --}}
+        {{-- Stat cards — one per workflow stage --}}
         <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <x-stat-card label="{{ $isHead ? 'Total Documents' : 'My Documents' }}" :value="$stats['total']" color="primary">
-                <x-slot:icon><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></x-slot:icon>
+            <x-stat-card label="{{ $isHead ? 'Awaiting Release' : 'My Drafts (to release)' }}" :value="$stats['awaiting_release']" color="amber">
+                <x-slot:icon><path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></x-slot:icon>
             </x-stat-card>
-            <x-stat-card label="Pending / In Progress" :value="$stats['pending']" color="amber">
-                <x-slot:icon><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></x-slot:icon>
+            <x-stat-card label="In Transit (to receive)" :value="$stats['in_transit']" color="blue">
+                <x-slot:icon><path stroke-linecap="round" stroke-linejoin="round" d="M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1"/></x-slot:icon>
+            </x-stat-card>
+            <x-stat-card label="In Progress (received)" :value="$stats['active']" color="primary">
+                <x-slot:icon><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></x-slot:icon>
             </x-stat-card>
             <x-stat-card label="Completed / Archived" :value="$stats['completed']" color="green">
                 <x-slot:icon><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></x-slot:icon>
-            </x-stat-card>
-            <x-stat-card label="Urgent (open)" :value="$stats['urgent']" color="red">
-                <x-slot:icon><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></x-slot:icon>
             </x-stat-card>
         </div>
 

@@ -18,7 +18,7 @@
                         <div class="flex gap-2">
                             <a href="{{ route('roles.edit', $role) }}" class="link text-sm">Edit</a>
                             @if(!in_array($role->name, ['Super Admin','Department Head','Assistant Department Head','Receiving Staff','Staff']))
-                                <form method="POST" action="{{ route('roles.destroy', $role) }}" onsubmit="return confirm('Delete this role?')">
+                                <form method="POST" action="{{ route('roles.destroy', $role) }}" data-confirm="Delete this role?">
                                     @csrf @method('DELETE')
                                     <button class="text-red-600 hover:underline text-sm">Delete</button>
                                 </form>

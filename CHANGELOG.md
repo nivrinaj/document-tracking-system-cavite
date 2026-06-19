@@ -6,6 +6,12 @@ reviewed or rolled back. Format based on [Keep a Changelog](https://keepachangel
 
 ---
 
+## v1.5.0 — 2026-06-19
+**Dashboard, dialogs & live alerts**
+- **Dashboard counters** reworked into clear life-cycle stages — *Awaiting Release*, *In Transit*, *In Progress*, *Completed* — so a not-yet-released draft no longer looks like it's pending on a recipient.
+- Replaced the browser's plain confirm with a **modern themed confirmation dialog** (dark-mode + theme-color aware).
+- **Live notification badge** — the bell updates every 60 seconds without a page reload (lightweight polling; no WebSocket server needed).
+
 ## v1.4.0 — 2026-06-19
 **Logs, notifications, timezone & quality-of-life**
 - Added **versioning** + this in-app **Changelog** page (Super Admin).

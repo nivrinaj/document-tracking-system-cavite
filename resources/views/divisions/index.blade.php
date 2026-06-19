@@ -26,7 +26,7 @@
                     </div>
                     <div class="flex gap-2 mt-4 pt-3 border-t border-gray-100 dark:border-gray-700">
                         <a href="{{ route('divisions.edit', $div) }}" class="link text-sm">Edit</a>
-                        <form method="POST" action="{{ route('divisions.destroy', $div) }}" onsubmit="return confirm('Delete this division?')">
+                        <form method="POST" action="{{ route('divisions.destroy', $div) }}" data-confirm="Delete this division?">
                             @csrf @method('DELETE')
                             <button class="text-red-600 hover:underline text-sm">Delete</button>
                         </form>

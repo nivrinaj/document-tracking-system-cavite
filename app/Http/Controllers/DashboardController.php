@@ -24,12 +24,17 @@ class DashboardController extends Controller
             });
         }
 
-        // Cards / counters
+        // Cards / counters — split by life-cycle stage so a not-yet-released
+        // draft is NOT mistaken for something pending on a recipient.
         $stats = [
-            'total'     => (clone $base)->count(),
-            'pending'   => (clone $base)->whereIn('status', ['draft', 'released', 'received', 'forwarded'])->count(),
+            // Encoded but not released yet — the receiving staff still has to release it.
+            'awaiting_release' => (clone $base)->where('status', 'draft')->count(),
+            // Released/forwarded and on its way — waiting for the recipient to receive.
+            'in_transit' => (clone $base)->whereIn('status', ['released', 'forwarded'])->count(),
+            // Received and actively being worked on.
+            'active' => (clone $base)->where('status', 'received')->count(),
+            // Finished.
             'completed' => (clone $base)->whereIn('status', ['archived', 'completed'])->count(),
-            'urgent'    => (clone $base)->where('priority', 'urgent')->whereNotIn('status', ['archived', 'completed'])->count(),
         ];
 
         // My action lists
