@@ -47,9 +47,23 @@ class DocumentController extends Controller
             $query->where('priority', $priority);
         }
 
+        if ($division = $request->input('division_id')) {
+            $query->where('division_id', $division);
+        }
+
+        if ($request->filled('date_from')) {
+            $query->whereDate('created_at', '>=', $request->date('date_from'));
+        }
+        if ($request->filled('date_to')) {
+            $query->whereDate('created_at', '<=', $request->date('date_to'));
+        }
+
         $documents = $query->paginate(12)->withQueryString();
 
-        return view('documents.index', compact('documents'));
+        return view('documents.index', [
+            'documents' => $documents,
+            'divisions' => Division::orderBy('name')->get(),
+        ]);
     }
 
     public function create()

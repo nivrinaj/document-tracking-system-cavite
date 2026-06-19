@@ -53,6 +53,11 @@ Route::middleware(['auth', 'active'])->group(function () {
     Route::get('/reports', [ReportController::class, 'index'])->name('reports.index')->middleware('permission:reports.view');
     Route::get('/reports/generate', [ReportController::class, 'generate'])->name('reports.generate')->middleware('permission:reports.view');
 
+    /* -------------------- Notifications -------------------- */
+    Route::get('/notifications', [\App\Http\Controllers\NotificationController::class, 'index'])->name('notifications.index');
+    Route::post('/notifications/{id}/read', [\App\Http\Controllers\NotificationController::class, 'read'])->name('notifications.read');
+    Route::post('/notifications/read-all', [\App\Http\Controllers\NotificationController::class, 'readAll'])->name('notifications.readAll');
+
     /* -------------------- Logs / history -------------------- */
     // Accessible to everyone; the controller scopes what each user can see.
     Route::get('/logs', [LogController::class, 'index'])->name('logs.index');
@@ -61,14 +66,17 @@ Route::middleware(['auth', 'active'])->group(function () {
     Route::get('/settings', [SettingController::class, 'edit'])->name('settings.edit')->middleware('permission:settings.manage');
     Route::put('/settings', [SettingController::class, 'update'])->name('settings.update')->middleware('permission:settings.manage');
 
-    /* -------------------- Documentation module -------------------- */
-    Route::get('/documentation', [DocumentationController::class, 'index'])->name('documentation.index');
-    Route::get('/documentation/create', [DocumentationController::class, 'create'])->name('documentation.create')->middleware('permission:documentation.manage');
-    Route::post('/documentation', [DocumentationController::class, 'store'])->name('documentation.store')->middleware('permission:documentation.manage');
-    Route::get('/documentation/{page:slug}', [DocumentationController::class, 'show'])->name('documentation.show');
-    Route::get('/documentation/{page:slug}/edit', [DocumentationController::class, 'edit'])->name('documentation.edit')->middleware('permission:documentation.manage');
-    Route::put('/documentation/{page}', [DocumentationController::class, 'update'])->name('documentation.update')->middleware('permission:documentation.manage');
-    Route::delete('/documentation/{page}', [DocumentationController::class, 'destroy'])->name('documentation.destroy')->middleware('permission:documentation.manage');
+    /* -------------------- Documentation & Changelog (Super Admin only) -------------------- */
+    Route::middleware('role:Super Admin')->group(function () {
+        Route::get('/changelog', [\App\Http\Controllers\ChangelogController::class, 'index'])->name('changelog.index');
+        Route::get('/documentation', [DocumentationController::class, 'index'])->name('documentation.index');
+        Route::get('/documentation/create', [DocumentationController::class, 'create'])->name('documentation.create');
+        Route::post('/documentation', [DocumentationController::class, 'store'])->name('documentation.store');
+        Route::get('/documentation/{page:slug}', [DocumentationController::class, 'show'])->name('documentation.show');
+        Route::get('/documentation/{page:slug}/edit', [DocumentationController::class, 'edit'])->name('documentation.edit');
+        Route::put('/documentation/{page}', [DocumentationController::class, 'update'])->name('documentation.update');
+        Route::delete('/documentation/{page}', [DocumentationController::class, 'destroy'])->name('documentation.destroy');
+    });
 
     /* -------------------- Profile (Breeze) -------------------- */
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');

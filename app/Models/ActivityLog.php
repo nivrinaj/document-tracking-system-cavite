@@ -44,6 +44,48 @@ class ActivityLog extends Model
         }
     }
 
+    /** Human-friendly label for the action badge. */
+    public function actionLabel(): string
+    {
+        $map = [
+            'login' => 'Logged In',
+            'logout' => 'Logged Out',
+            'login.failed' => 'Failed Login',
+            'documents.store' => 'Encoded Document',
+            'documents.update' => 'Updated Document',
+            'documents.destroy' => 'Deleted Document',
+            'documents.assign' => 'Assigned Document',
+            'documents.release' => 'Released Document',
+            'documents.receive' => 'Received Document',
+            'documents.forward' => 'Forwarded Document',
+            'documents.archive' => 'Archived Document',
+            'users.store' => 'Created User',
+            'users.update' => 'Updated User',
+            'users.destroy' => 'Deleted User',
+            'divisions.store' => 'Created Division',
+            'divisions.update' => 'Updated Division',
+            'divisions.destroy' => 'Deleted Division',
+            'roles.store' => 'Created Role',
+            'roles.update' => 'Updated Role',
+            'roles.destroy' => 'Deleted Role',
+            'settings.update' => 'Updated Settings',
+            'documentation.store' => 'Created Doc Page',
+            'documentation.update' => 'Updated Doc Page',
+            'documentation.destroy' => 'Deleted Doc Page',
+            'profile.update' => 'Updated Profile',
+            'profile.destroy' => 'Deleted Account',
+        ];
+
+        if (isset($map[$this->action])) {
+            return $map[$this->action];
+        }
+        if (str_starts_with($this->action, 'generated::')) {
+            return 'System';
+        }
+
+        return ucwords(str_replace(['.', '_', '::'], ' ', $this->action));
+    }
+
     /** Colour hint for the activity badge. */
     public function actionColor(): string
     {

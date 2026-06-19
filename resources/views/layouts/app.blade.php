@@ -127,10 +127,22 @@
                 </x-nav-item>
                 @endcan
 
+                @role('Super Admin')
                 <div class="pt-4 pb-1 px-3 text-[11px] font-semibold uppercase tracking-wider text-gray-400">Help</div>
                 <x-nav-item :active="request()->routeIs('documentation.*')" :href="route('documentation.index')" label="Documentation">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
                 </x-nav-item>
+                <x-nav-item :active="request()->routeIs('changelog.*')" :href="route('changelog.index')" label="Changelog">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/>
+                </x-nav-item>
+                @endrole
+
+                <div class="px-3 pt-4 mt-2">
+                    <a href="{{ auth()->user()->hasRole('Super Admin') ? route('changelog.index') : '#' }}"
+                       class="block text-[11px] text-gray-400 {{ auth()->user()->hasRole('Super Admin') ? 'hover:text-[color:var(--color-primary)]' : 'pointer-events-none' }}">
+                        Version {{ config('version.number') }}
+                    </a>
+                </div>
             </nav>
         </aside>
 
@@ -150,6 +162,44 @@
                     @isset($header)
                         <div class="font-semibold text-lg truncate">{{ $header }}</div>
                     @endisset
+                </div>
+
+                {{-- Notifications bell --}}
+                @php
+                    $unread = auth()->user()->unreadNotifications()->latest()->take(8)->get();
+                    $unreadCount = $unread->count();
+                @endphp
+                <div class="relative" x-data="{ open: false }">
+                    <button @click="open = !open" class="relative p-2 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700" title="Notifications">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+                        @if($unreadCount > 0)
+                            <span class="absolute -top-0.5 -right-0.5 bg-red-500 text-white text-[10px] leading-none rounded-full px-1.5 py-0.5">{{ $unreadCount > 9 ? '9+' : $unreadCount }}</span>
+                        @endif
+                    </button>
+                    <div x-show="open" x-cloak @click.outside="open = false"
+                         class="absolute right-0 mt-2 w-80 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-lg z-30">
+                        <div class="flex items-center justify-between px-4 py-2 border-b border-gray-100 dark:border-gray-700">
+                            <span class="font-semibold text-sm">Notifications</span>
+                            @if($unreadCount > 0)
+                                <form method="POST" action="{{ route('notifications.readAll') }}">@csrf
+                                    <button class="text-xs link">Mark all read</button>
+                                </form>
+                            @endif
+                        </div>
+                        <div class="max-h-80 overflow-y-auto">
+                            @forelse($unread as $n)
+                                <form method="POST" action="{{ route('notifications.read', $n->id) }}">@csrf
+                                    <button type="submit" class="w-full text-left px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 border-b border-gray-50 dark:border-gray-700/50">
+                                        <div class="text-sm">{{ $n->data['message'] ?? 'Notification' }}</div>
+                                        <div class="text-xs text-gray-400 mt-0.5">{{ $n->data['tracking_code'] ?? '' }} · {{ $n->created_at->diffForHumans() }}</div>
+                                    </button>
+                                </form>
+                            @empty
+                                <p class="px-4 py-8 text-center text-sm text-gray-400">You're all caught up 🎉</p>
+                            @endforelse
+                        </div>
+                        <a href="{{ route('notifications.index') }}" class="block text-center text-xs link py-2 border-t border-gray-100 dark:border-gray-700">View all notifications</a>
+                    </div>
                 </div>
 
                 {{-- Font size control (helps users who need bigger text) --}}

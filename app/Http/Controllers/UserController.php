@@ -17,15 +17,22 @@ class UserController extends Controller
         $query = User::with(['division', 'roles'])->orderBy('name');
 
         if ($search = $request->input('search')) {
-            $query->where(fn ($q) => $q->where('name', 'like', "%{$search}%")->orWhere('email', 'like', "%{$search}%"));
+            $query->where(fn ($q) => $q->where('name', 'like', "%{$search}%")->orWhere('username', 'like', "%{$search}%")->orWhere('email', 'like', "%{$search}%"));
         }
         if ($division = $request->input('division_id')) {
             $query->where('division_id', $division);
+        }
+        if ($role = $request->input('role')) {
+            $query->whereHas('roles', fn ($q) => $q->where('name', $role));
+        }
+        if (($status = $request->input('status')) !== null && $status !== '') {
+            $query->where('is_active', $status === 'active');
         }
 
         return view('users.index', [
             'users' => $query->paginate(12)->withQueryString(),
             'divisions' => Division::orderBy('name')->get(),
+            'roles' => \Spatie\Permission\Models\Role::orderBy('name')->get(),
         ]);
     }
 

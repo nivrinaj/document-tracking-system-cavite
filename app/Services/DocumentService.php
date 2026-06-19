@@ -20,6 +20,17 @@ class DocumentService
         return User::find($userId)?->division_id;
     }
 
+    /** Notify the recipient that a document is coming to them (skips self). */
+    private function notify(?int $recipientId, User $actor, Document $document, string $verb, ?string $remarks): void
+    {
+        if (! $recipientId || $recipientId === $actor->id) {
+            return;
+        }
+
+        $recipient = User::find($recipientId);
+        $recipient?->notify(new \App\Notifications\DocumentRouted($document, $verb, $actor->name, $remarks));
+    }
+
     /** Write one entry to the audit trail / history. */
     public function log(Document $document, string $action, ?User $actor, ?int $toUserId = null, ?int $fromUserId = null, ?string $remarks = null): DocumentLog
     {
@@ -96,6 +107,7 @@ class DocumentService
                 'released_at' => now(),
             ]);
             $this->log($document, 'released', $actor, toUserId: $document->current_holder_id, remarks: $remarks ?? 'Document released.');
+            $this->notify($document->current_holder_id, $actor, $document, 'released', $remarks);
 
             return $document->refresh();
         });
@@ -128,6 +140,7 @@ class DocumentService
             ]);
             $this->addAssignee($document, $toUserId);
             $this->log($document, 'forwarded', $actor, toUserId: $toUserId, fromUserId: $from, remarks: $remarks);
+            $this->notify($toUserId, $actor, $document, 'forwarded', $remarks);
 
             return $document->refresh();
         });

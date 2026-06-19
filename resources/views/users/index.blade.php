@@ -8,13 +8,22 @@
         </div>
 
         <x-card padding="p-4">
-            <form method="GET" class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <input type="text" name="search" value="{{ request('search') }}" placeholder="Search name or email…" class="input">
+            <form method="GET" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                <input type="text" name="search" value="{{ request('search') }}" placeholder="Search name, username or email…" class="input">
                 <select name="division_id" class="input">
                     <option value="">All divisions</option>
                     @foreach($divisions as $d)<option value="{{ $d->id }}" @selected(request('division_id')==$d->id)>{{ $d->name }}</option>@endforeach
                 </select>
-                <div class="flex gap-2"><x-btn type="submit" class="flex-1">Filter</x-btn><x-btn :href="route('users.index')" variant="secondary">Reset</x-btn></div>
+                <select name="role" class="input">
+                    <option value="">All roles</option>
+                    @foreach($roles as $r)<option value="{{ $r->name }}" @selected(request('role')===$r->name)>{{ $r->name }}</option>@endforeach
+                </select>
+                <select name="status" class="input">
+                    <option value="">Any status</option>
+                    <option value="active" @selected(request('status')==='active')>Active</option>
+                    <option value="inactive" @selected(request('status')==='inactive')>Inactive</option>
+                </select>
+                <div class="sm:col-span-2 lg:col-span-4 flex gap-2"><x-btn type="submit">Filter</x-btn><x-btn :href="route('users.index')" variant="secondary">Reset</x-btn></div>
             </form>
         </x-card>
 

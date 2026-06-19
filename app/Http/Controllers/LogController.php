@@ -28,6 +28,12 @@ class LogController extends Controller
         if ($search = $request->input('search')) {
             $query->where('description', 'like', "%{$search}%");
         }
+        if ($request->filled('date_from')) {
+            $query->whereDate('created_at', '>=', $request->date('date_from'));
+        }
+        if ($request->filled('date_to')) {
+            $query->whereDate('created_at', '<=', $request->date('date_to'));
+        }
 
         return view('logs.index', [
             'logs' => $query->paginate(25)->withQueryString(),

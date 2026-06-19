@@ -109,7 +109,13 @@
                     </div>
                 </x-card>
 
-                {{-- Action panel --}}
+                {{-- Action panel (only shown when there is something this user can do) --}}
+                @php
+                    $u = auth()->user();
+                    $canAct = $u->can('assign', $document) || $u->can('release', $document) || $u->can('receive', $document)
+                        || $u->can('forward', $document) || $u->can('archive', $document) || $u->can('delete', $document);
+                @endphp
+                @if($canAct || $document->isClosed())
                 <x-card title="Actions">
                     <div class="space-y-3">
 
@@ -205,6 +211,7 @@
                         @endcan
                     </div>
                 </x-card>
+                @endif
             </div>
         </div>
     </div>

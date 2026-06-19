@@ -44,7 +44,7 @@ class LogActivity
     ];
 
     /** Auth flows are logged via events, so skip them here. */
-    private array $ignore = ['login', 'logout', 'register', 'password.email', 'password.store', 'password.update', 'password.confirm'];
+    private array $ignore = ['login', 'logout', 'register', 'password.email', 'password.store', 'password.update', 'password.confirm', 'notifications.read', 'notifications.readAll'];
 
     public function handle(Request $request, Closure $next): Response
     {

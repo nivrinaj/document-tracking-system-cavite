@@ -17,7 +17,7 @@
 
         {{-- Filters --}}
         <x-card padding="p-4">
-            <form method="GET" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            <form method="GET" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 <input type="text" name="search" value="{{ request('search') }}" placeholder="Search title / code / ref no…" class="input">
                 <select name="status" class="input">
                     <option value="">All statuses</option>
@@ -31,8 +31,20 @@
                         <option value="{{ $p }}" @selected(request('priority')===$p)>{{ ucfirst($p) }}</option>
                     @endforeach
                 </select>
-                <div class="flex gap-2">
-                    <x-btn type="submit" class="flex-1">Filter</x-btn>
+                <select name="division_id" class="input">
+                    <option value="">All divisions</option>
+                    @foreach($divisions as $d)<option value="{{ $d->id }}" @selected(request('division_id')==$d->id)>{{ $d->code }} — {{ $d->name }}</option>@endforeach
+                </select>
+                <div>
+                    <label class="block text-[11px] text-gray-400 mb-0.5">From</label>
+                    <input type="date" name="date_from" value="{{ request('date_from') }}" class="input">
+                </div>
+                <div>
+                    <label class="block text-[11px] text-gray-400 mb-0.5">To</label>
+                    <input type="date" name="date_to" value="{{ request('date_to') }}" class="input">
+                </div>
+                <div class="sm:col-span-2 lg:col-span-3 flex gap-2">
+                    <x-btn type="submit">Filter</x-btn>
                     <x-btn :href="route('documents.index')" variant="secondary">Reset</x-btn>
                 </div>
             </form>

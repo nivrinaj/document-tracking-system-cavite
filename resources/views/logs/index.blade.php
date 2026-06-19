@@ -11,7 +11,7 @@
         </p>
 
         <x-card padding="p-4">
-            <form method="GET" class="grid grid-cols-1 sm:grid-cols-{{ $canViewAll ? '4' : '3' }} gap-3">
+            <form method="GET" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                 <input type="text" name="search" value="{{ request('search') }}" placeholder="Search details…" class="input">
                 <select name="action" class="input">
                     <option value="">All activity</option>
@@ -23,7 +23,15 @@
                         @foreach($users as $u)<option value="{{ $u->id }}" @selected(request('actor_id')==$u->id)>{{ $u->name }}</option>@endforeach
                     </select>
                 @endif
-                <div class="flex gap-2"><x-btn type="submit" class="flex-1">Filter</x-btn><x-btn :href="route('logs.index')" variant="secondary">Reset</x-btn></div>
+                <div>
+                    <label class="block text-[11px] text-gray-400 mb-0.5">From</label>
+                    <input type="date" name="date_from" value="{{ request('date_from') }}" class="input">
+                </div>
+                <div>
+                    <label class="block text-[11px] text-gray-400 mb-0.5">To</label>
+                    <input type="date" name="date_to" value="{{ request('date_to') }}" class="input">
+                </div>
+                <div class="sm:col-span-2 lg:col-span-4 flex gap-2"><x-btn type="submit">Filter</x-btn><x-btn :href="route('logs.index')" variant="secondary">Reset</x-btn></div>
             </form>
         </x-card>
 
@@ -49,7 +57,7 @@
                                 @if($canViewAll)
                                     <td class="table-td" data-label="User">{{ $log->user?->name ?? 'Guest' }}</td>
                                 @endif
-                                <td class="table-td" data-label="Action"><x-badge :color="$log->actionColor()">{{ $log->action }}</x-badge></td>
+                                <td class="table-td" data-label="Action"><x-badge :color="$log->actionColor()">{{ $log->actionLabel() }}</x-badge></td>
                                 <td class="table-td" data-label="Details">{{ $log->description }}</td>
                                 <td class="table-td text-xs text-gray-400" data-label="IP">{{ $log->ip_address }}</td>
                             </tr>
