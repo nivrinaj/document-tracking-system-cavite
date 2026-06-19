@@ -17,8 +17,8 @@
 
             <dl class="grid grid-cols-2 gap-3 text-sm mt-5 border-t border-gray-100 dark:border-gray-700 pt-4">
                 <div><dt class="text-gray-400 text-xs">Type</dt><dd>{{ $document->document_type }}</dd></div>
-                <div><dt class="text-gray-400 text-xs">Current Holder</dt><dd class="font-medium">{{ $document->currentHolder?->name ?? 'Unassigned' }}</dd></div>
-                <div><dt class="text-gray-400 text-xs">From</dt><dd>{{ $document->creator?->name ?? '—' }}</dd></div>
+                <div><dt class="text-gray-400 text-xs">Current Holder</dt><dd class="font-medium">{{ $document->currentHolder?->name ?? 'Unassigned' }}<span class="block text-[11px] text-gray-400 font-normal">{{ $document->currentHolder?->orgUnit() }}</span></dd></div>
+                <div><dt class="text-gray-400 text-xs">From</dt><dd>{{ $document->creator?->name ?? '—' }}<span class="block text-[11px] text-gray-400">{{ $document->creator?->orgUnit() }}</span></dd></div>
                 <div><dt class="text-gray-400 text-xs">Reference</dt><dd>{{ $document->voucher_number ?? $document->reference_no ?? '—' }}</dd></div>
                 <div><dt class="text-gray-400 text-xs">Released</dt><dd>{{ $document->released_at ? $document->released_at->diffForHumans() : '—' }}</dd></div>
                 <div><dt class="text-gray-400 text-xs">Last action</dt><dd>{{ $document->elapsedSinceLastAction() }} ago</dd></div>

@@ -71,6 +71,30 @@ class User extends Authenticatable
         return $this->belongsTo(Department::class);
     }
 
+    /** "PICTO · Software Development" — department code + division name (for detail views). */
+    public function orgUnit(): string
+    {
+        $dept = $this->department?->code;
+        $div = $this->division?->name;
+        if ($dept && $div) {
+            return "{$dept} · {$div}";
+        }
+
+        return $dept ?: ($div ?: '—');
+    }
+
+    /** "PICTO · SOFTDEV" — short codes (for tight table cells). */
+    public function orgShort(): string
+    {
+        $dept = $this->department?->code;
+        $div = $this->division?->code;
+        if ($dept && $div) {
+            return "{$dept} · {$div}";
+        }
+
+        return $dept ?: ($div ?: '—');
+    }
+
     /** May this user see documents across every department? */
     public function canViewAllDepartments(): bool
     {

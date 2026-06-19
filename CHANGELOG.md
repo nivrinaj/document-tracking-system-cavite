@@ -6,6 +6,14 @@ reviewed or rolled back. Format based on [Keep a Changelog](https://keepachangel
 
 ---
 
+## v2.2.1 — 2026-06-20
+**Department/division visibility for inter-department tracking**
+- Documents table now has an **Origin (from)** column and shows each person's **department · division** under the origin and current holder.
+- Document details show **Current location**, origin & current holder units, and each **Concerned staff** member's unit (with memo acknowledgement status).
+- **Tracking history** and the **activity log** now show the department · division of who acted and who received (e.g. "PICTO · TECHSUP → … · PICTO · DBA").
+- The mobile scan page shows holder/origin units too.
+- **Filter layout** rebalanced — date From/To combined into one tidy "Date range" field (no more lonely field).
+
 ## v2.2.0 — 2026-06-19
 **SLA report, fixes & UI polish**
 - **SLA / Turnaround report** — set a per-department SLA (e.g. vouchers must finish in 7 days) under Departments → Edit; the report shows on-time vs overdue (completed and still-open), with PDF export.

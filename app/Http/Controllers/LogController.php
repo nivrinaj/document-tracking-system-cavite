@@ -14,7 +14,7 @@ class LogController extends Controller
         // Heads / Super Admin (logs.view) see everyone; others see only their own.
         $canViewAll = $user->can('logs.view');
 
-        $query = ActivityLog::with('user')->latest();
+        $query = ActivityLog::with('user.department', 'user.division')->latest();
 
         if (! $canViewAll) {
             $query->where('user_id', $user->id);

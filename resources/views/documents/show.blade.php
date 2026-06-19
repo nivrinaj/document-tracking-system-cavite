@@ -31,9 +31,15 @@
                         @endif
                         <div><dt class="text-gray-400 text-xs uppercase">Reference No.</dt><dd>{{ $document->reference_no ?? '—' }}</dd></div>
                         <div><dt class="text-gray-400 text-xs uppercase">Source / Origin</dt><dd>{{ $document->source ?? '—' }}</dd></div>
-                        <div><dt class="text-gray-400 text-xs uppercase">Division</dt><dd>{{ $document->division?->name ?? '—' }}</dd></div>
-                        <div><dt class="text-gray-400 text-xs uppercase">Encoded by</dt><dd>{{ $document->creator?->name ?? '—' }}</dd></div>
-                        <div><dt class="text-gray-400 text-xs uppercase">Current Holder</dt><dd class="font-medium">{{ $document->currentHolder?->name ?? 'Unassigned' }}</dd></div>
+                        <div><dt class="text-gray-400 text-xs uppercase">Current location</dt><dd>{{ $document->department?->code ?? '—' }}@if($document->division) · {{ $document->division->name }}@endif</dd></div>
+                        <div>
+                            <dt class="text-gray-400 text-xs uppercase">Encoded by (origin)</dt>
+                            <dd>{{ $document->creator?->name ?? '—' }}<span class="block text-xs text-gray-400">{{ $document->creator?->orgUnit() }}</span></dd>
+                        </div>
+                        <div>
+                            <dt class="text-gray-400 text-xs uppercase">Current Holder</dt>
+                            <dd class="font-medium">{{ $document->currentHolder?->name ?? ($document->is_broadcast ? 'Broadcast memo' : 'Unassigned') }}<span class="block text-xs text-gray-400 font-normal">{{ $document->currentHolder?->orgUnit() }}</span></dd>
+                        </div>
                         <div><dt class="text-gray-400 text-xs uppercase">Received at dept</dt><dd>{{ $document->received_at?->format('M d, Y g:i A') ?? '—' }}</dd></div>
                         <div><dt class="text-gray-400 text-xs uppercase">Released</dt><dd>{{ $document->released_at?->format('M d, Y g:i A') ?? '—' }}</dd></div>
                         <div>
@@ -60,8 +66,21 @@
                 <x-card title="Concerned staff (can track this document)">
                     <div class="flex flex-wrap gap-2">
                         @foreach($document->assignees as $person)
-                            <span class="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-gray-100 dark:bg-gray-700 text-xs">
-                                <img src="{{ $person->avatar_url }}" class="w-5 h-5 rounded-full"> {{ $person->name }}
+                            <span class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gray-100 dark:bg-gray-700">
+                                <img src="{{ $person->avatar_url }}" class="w-7 h-7 rounded-full shrink-0">
+                                <span class="leading-tight">
+                                    <span class="flex items-center gap-1 text-xs font-medium">
+                                        {{ $person->name }}
+                                        @if($document->is_broadcast)
+                                            @if($person->pivot->acknowledged_at)
+                                                <span class="text-green-500" title="Acknowledged">✓</span>
+                                            @else
+                                                <span class="text-amber-500 text-[10px]" title="Not yet acknowledged">●</span>
+                                            @endif
+                                        @endif
+                                    </span>
+                                    <span class="block text-[11px] text-gray-400">{{ $person->orgUnit() }}</span>
+                                </span>
                             </span>
                         @endforeach
                     </div>
@@ -78,8 +97,10 @@
                                     <span class="text-xs text-gray-400">{{ $log->created_at->format('M d, Y g:i A') }} · {{ $log->created_at->diffForHumans() }}</span>
                                 </div>
                                 <p class="text-sm mt-1">
-                                    <span class="font-medium">{{ $log->actor?->name ?? 'System' }}</span>
-                                    @if($log->toUser) → <span class="font-medium">{{ $log->toUser->name }}</span> @endif
+                                    <span class="font-medium">{{ $log->actor?->name ?? 'System' }}</span>@if($log->actor)<span class="text-xs text-gray-400"> · {{ $log->actor->orgShort() }}</span>@endif
+                                    @if($log->toUser)
+                                        <span class="text-gray-400">→</span> <span class="font-medium">{{ $log->toUser->name }}</span><span class="text-xs text-gray-400"> · {{ $log->toUser->orgShort() }}</span>
+                                    @endif
                                 </p>
                                 @if($log->remarks)
                                     <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5">“{{ $log->remarks }}”</p>

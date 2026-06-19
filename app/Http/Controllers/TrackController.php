@@ -24,7 +24,11 @@ class TrackController extends Controller
             return response()->view('track.not-found', [], 404);
         }
 
-        $document->load(['creator', 'currentHolder', 'division', 'logs.actor', 'logs.toUser']);
+        $document->load([
+            'creator.department', 'creator.division',
+            'currentHolder.department', 'currentHolder.division',
+            'division', 'logs.actor', 'logs.toUser',
+        ]);
 
         return view('track.show', [
             'document' => $document,

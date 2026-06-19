@@ -43,12 +43,12 @@
                     </template>
                 </select>
                 <div>
-                    <label class="block text-[11px] text-gray-400 mb-0.5">From</label>
-                    <input type="date" name="date_from" value="{{ request('date_from') }}" class="input">
-                </div>
-                <div>
-                    <label class="block text-[11px] text-gray-400 mb-0.5">To</label>
-                    <input type="date" name="date_to" value="{{ request('date_to') }}" class="input">
+                    <label class="block text-[11px] text-gray-400 mb-0.5">Date range (encoded)</label>
+                    <div class="flex items-center gap-2">
+                        <input type="date" name="date_from" value="{{ request('date_from') }}" class="input" aria-label="From">
+                        <span class="text-gray-400 text-sm">to</span>
+                        <input type="date" name="date_to" value="{{ request('date_to') }}" class="input" aria-label="To">
+                    </div>
                 </div>
                 <div class="sm:col-span-2 lg:col-span-3 flex gap-2">
                     <x-btn type="submit">Filter</x-btn>
@@ -67,6 +67,7 @@
                             <th class="table-th">Title</th>
                             <th class="table-th">Priority</th>
                             <th class="table-th">Status</th>
+                            <th class="table-th">Origin (from)</th>
                             <th class="table-th">Current Holder</th>
                             <th class="table-th">Updated</th>
                             <th class="table-th text-right">Action</th>
@@ -82,7 +83,20 @@
                                 </td>
                                 <td class="table-td" data-label="Priority"><x-priority-badge :priority="$doc->priority" /></td>
                                 <td class="table-td" data-label="Status"><x-status-badge :status="$doc->status" /></td>
-                                <td class="table-td" data-label="Current Holder">{{ $doc->currentHolder?->name ?? '—' }}</td>
+                                <td class="table-td" data-label="Origin (from)">
+                                    <div>{{ $doc->creator?->name ?? '—' }}</div>
+                                    <div class="text-xs text-gray-400">{{ $doc->creator?->orgShort() }}</div>
+                                </td>
+                                <td class="table-td" data-label="Current Holder">
+                                    @if($doc->currentHolder)
+                                        <div class="font-medium">{{ $doc->currentHolder->name }}</div>
+                                        <div class="text-xs text-gray-400">{{ $doc->currentHolder->orgShort() }}</div>
+                                    @elseif($doc->is_broadcast)
+                                        <span class="text-gray-400">📣 Broadcast</span>
+                                    @else
+                                        <span class="text-gray-400">Unassigned</span>
+                                    @endif
+                                </td>
                                 <td class="table-td" data-label="Updated">
                                     <div class="flex items-center gap-2">
                                         <span class="w-2 h-2 rounded-full shrink-0
@@ -108,7 +122,7 @@
                                 </td>
                             </tr>
                         @empty
-                            <tr><td colspan="7" class="px-4 py-10 text-center text-sm text-gray-400">No documents found.</td></tr>
+                            <tr><td colspan="8" class="px-4 py-10 text-center text-sm text-gray-400">No documents found.</td></tr>
                         @endforelse
                     </tbody>
                 </table>

@@ -21,7 +21,11 @@ class DocumentController extends Controller
     {
         $user = $request->user();
 
-        $query = Document::with(['creator', 'currentHolder', 'division'])->visibleTo($user)->latest();
+        $query = Document::with([
+            'creator.department', 'creator.division',
+            'currentHolder.department', 'currentHolder.division',
+            'division',
+        ])->visibleTo($user)->latest();
 
         if ($search = $request->input('search')) {
             $query->where(function ($q) use ($search) {
@@ -136,7 +140,15 @@ class DocumentController extends Controller
     {
         $this->authorize('view', $document);
 
-        $document->load(['creator', 'currentHolder', 'division', 'assignees', 'logs.actor', 'logs.toUser', 'logs.fromUser']);
+        $document->load([
+            'creator.department', 'creator.division',
+            'currentHolder.department', 'currentHolder.division',
+            'division', 'department',
+            'assignees.department', 'assignees.division',
+            'logs.actor.department', 'logs.actor.division',
+            'logs.toUser.department', 'logs.toUser.division',
+            'logs.fromUser',
+        ]);
 
         return view('documents.show', [
             'document' => $document,

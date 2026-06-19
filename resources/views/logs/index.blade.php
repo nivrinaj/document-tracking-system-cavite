@@ -55,7 +55,10 @@
                                     <div class="text-[11px]">{{ $log->created_at->diffForHumans() }}</div>
                                 </td>
                                 @if($canViewAll)
-                                    <td class="table-td" data-label="User">{{ $log->user?->name ?? 'Guest' }}</td>
+                                    <td class="table-td" data-label="User">
+                                        <div>{{ $log->user?->name ?? 'Guest' }}</div>
+                                        @if($log->user)<div class="text-xs text-gray-400">{{ $log->user->orgShort() }}</div>@endif
+                                    </td>
                                 @endif
                                 <td class="table-td" data-label="Action"><x-badge :color="$log->actionColor()">{{ $log->actionLabel() }}</x-badge></td>
                                 <td class="table-td" data-label="Details">{{ $log->description }}</td>
