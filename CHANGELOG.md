@@ -6,6 +6,16 @@ reviewed or rolled back. Format based on [Keep a Changelog](https://keepachangel
 
 ---
 
+## v2.1.0 — 2026-06-19
+**Structure & document types**
+- **Divisions are now managed inside their Department** (the standalone Divisions menu was removed; edit a department to add/edit/remove its divisions).
+- **Users table** now shows Department + Division, with a department filter.
+- **Document Types module** (Super Admin) — CRUD your own types, mark which show a voucher-number field, and scope a type to a specific department or all.
+- **Reopen** — Super Admin can bring an accidentally completed/archived document back to active.
+- Department form clarified (Abbreviation/Code + Full Name).
+- Cleaner, consistently top-aligned table columns.
+- _Deferred to next: per-department SLA / overdue (e.g. 7-day voucher) report._
+
 ## v2.0.0 — 2026-06-19
 **Multi-department architecture** 🏢
 - **Departments** module (CRUD). Each department contains its own divisions and staff.

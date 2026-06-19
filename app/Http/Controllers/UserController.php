@@ -14,10 +14,13 @@ class UserController extends Controller
 {
     public function index(Request $request)
     {
-        $query = User::with(['division', 'roles'])->orderBy('name');
+        $query = User::with(['division', 'department', 'roles'])->orderBy('name');
 
         if ($search = $request->input('search')) {
             $query->where(fn ($q) => $q->where('name', 'like', "%{$search}%")->orWhere('username', 'like', "%{$search}%")->orWhere('email', 'like', "%{$search}%"));
+        }
+        if ($department = $request->input('department_id')) {
+            $query->where('department_id', $department);
         }
         if ($division = $request->input('division_id')) {
             $query->where('division_id', $division);
@@ -31,6 +34,7 @@ class UserController extends Controller
 
         return view('users.index', [
             'users' => $query->paginate((int) \App\Models\Setting::get('records_per_page', 12))->withQueryString(),
+            'departments' => \App\Models\Department::orderBy('name')->get(),
             'divisions' => Division::orderBy('name')->get(),
             'roles' => \Spatie\Permission\Models\Role::orderBy('name')->get(),
         ]);

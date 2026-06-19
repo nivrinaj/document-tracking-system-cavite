@@ -51,6 +51,20 @@ class DocumentService
         });
     }
 
+    /** Bring a finished document back to active (Super Admin only). */
+    public function reopen(Document $document, User $actor, ?string $remarks = null): Document
+    {
+        return DB::transaction(function () use ($document, $actor, $remarks) {
+            $document->update([
+                'status' => $document->current_holder_id ? 'received' : 'draft',
+                'completed_at' => null,
+            ]);
+            $this->log($document, 'reopened', $actor, remarks: $remarks ?? 'Document reopened to active.');
+
+            return $document->refresh();
+        });
+    }
+
     /** A recipient acknowledges receipt of a broadcast memo. */
     public function acknowledge(Document $document, User $user): void
     {

@@ -23,9 +23,9 @@ class DivisionController extends Controller
     public function store(Request $request)
     {
         $data = $this->validateData($request);
-        Division::create($data);
+        $division = Division::create($data);
 
-        return redirect()->route('divisions.index')->with('success', 'Division created.');
+        return $this->redirectAfter($division)->with('success', 'Division created.');
     }
 
     public function edit(Division $division)
@@ -41,7 +41,7 @@ class DivisionController extends Controller
         $data = $this->validateData($request, $division);
         $division->update($data);
 
-        return redirect()->route('divisions.index')->with('success', 'Division updated.');
+        return $this->redirectAfter($division)->with('success', 'Division updated.');
     }
 
     public function destroy(Division $division)
@@ -58,6 +58,14 @@ class DivisionController extends Controller
     public function show(Division $division)
     {
         return redirect()->route('divisions.edit', $division);
+    }
+
+    /** Return to the parent department page when the division belongs to one. */
+    private function redirectAfter(Division $division)
+    {
+        return $division->department_id
+            ? redirect()->route('departments.edit', $division->department_id)
+            : redirect()->route('departments.index');
     }
 
     private function validateData(Request $request, ?Division $division = null): array

@@ -114,7 +114,7 @@
                     $u = auth()->user();
                     $canAct = $u->can('assign', $document) || $u->can('release', $document) || $u->can('receive', $document)
                         || $u->can('forward', $document) || $u->can('archive', $document) || $u->can('delete', $document)
-                        || $u->can('acknowledge', $document);
+                        || $u->can('acknowledge', $document) || $u->can('reopen', $document);
                 @endphp
                 @if($canAct || $document->isClosed())
                 <x-card title="Actions">
@@ -211,6 +211,14 @@
 
                         @if($document->isClosed())
                             <div class="text-center text-sm text-green-600 dark:text-green-400 py-2">✔ This document is {{ $document->status }}.</div>
+                            @can('reopen', $document)
+                                <form method="POST" action="{{ route('documents.reopen', $document) }}" class="p-3 rounded-lg bg-gray-50 dark:bg-gray-700/40"
+                                      data-confirm="Reopen this document and set it back to active?">
+                                    @csrf
+                                    <p class="text-xs text-gray-500 dark:text-gray-400 mb-2">Super Admin: reopen if this was completed by mistake.</p>
+                                    <x-btn type="submit" variant="secondary" class="w-full">↩ Reopen document</x-btn>
+                                </form>
+                            @endcan
                         @endif
 
                         @can('delete', $document)

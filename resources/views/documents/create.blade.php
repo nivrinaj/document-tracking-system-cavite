@@ -4,7 +4,7 @@
     <div class="max-w-3xl mx-auto">
         <x-card>
             <form method="POST" action="{{ route('documents.store') }}" class="space-y-5"
-                  x-data="{ docType: '{{ old('document_type', 'Memorandum') }}', voucherNo: '{{ old('voucher_number') }}' }">
+                  x-data="{ docType: '{{ old('document_type', $documentTypes->first()->name ?? 'Memorandum') }}', voucherNo: '{{ old('voucher_number') }}', voucherTypes: @js($voucherTypeNames) }">
                 @csrf
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -16,14 +16,16 @@
                     <div>
                         <label class="label">Document Type <span class="text-red-500">*</span></label>
                         <select name="document_type" x-model="docType" class="input" required>
-                            @foreach(['Memorandum','Letter','Report','Voucher','Invoice','Purchase Request','Endorsement','Attendance','Other'] as $t)
-                                <option value="{{ $t }}" @selected(old('document_type','Memorandum')===$t)>{{ $t }}</option>
-                            @endforeach
+                            @forelse($documentTypes as $t)
+                                <option value="{{ $t->name }}" @selected(old('document_type')===$t->name)>{{ $t->name }}</option>
+                            @empty
+                                <option value="Other">Other</option>
+                            @endforelse
                         </select>
                     </div>
 
-                    {{-- Voucher number: only for vouchers; becomes the tail of the tracking code --}}
-                    <div x-show="docType === 'Voucher'" x-cloak>
+                    {{-- Voucher number: only for voucher-type docs; becomes the tail of the tracking code --}}
+                    <div x-show="voucherTypes.includes(docType)" x-cloak>
                         <label class="label">Voucher Number <span class="text-red-500">*</span></label>
                         <input type="text" name="voucher_number" x-model="voucherNo" class="input" placeholder="e.g. DV-00123"
                                x-bind:required="docType === 'Voucher'">

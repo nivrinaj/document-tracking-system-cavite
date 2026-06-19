@@ -10,6 +10,10 @@
         <x-card padding="p-4">
             <form method="GET" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                 <input type="text" name="search" value="{{ request('search') }}" placeholder="Search name, username or email…" class="input">
+                <select name="department_id" class="input">
+                    <option value="">All departments</option>
+                    @foreach($departments as $dept)<option value="{{ $dept->id }}" @selected(request('department_id')==$dept->id)>{{ $dept->code }}</option>@endforeach
+                </select>
                 <select name="division_id" class="input">
                     <option value="">All divisions</option>
                     @foreach($divisions as $d)<option value="{{ $d->id }}" @selected(request('division_id')==$d->id)>{{ $d->name }}</option>@endforeach
@@ -31,7 +35,7 @@
             <div class="overflow-x-auto">
                 <table class="r-table min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                     <thead class="bg-gray-50 dark:bg-gray-700/40">
-                        <tr><th class="table-th">Name</th><th class="table-th">Division</th><th class="table-th">Role</th><th class="table-th">Status</th><th class="table-th text-right">Action</th></tr>
+                        <tr><th class="table-th">Name</th><th class="table-th">Department</th><th class="table-th">Division</th><th class="table-th">Role</th><th class="table-th">Status</th><th class="table-th text-right">Action</th></tr>
                     </thead>
                     <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
                         @forelse($users as $user)
@@ -45,6 +49,7 @@
                                         </div>
                                     </div>
                                 </td>
+                                <td class="table-td" data-label="Department">{{ $user->department?->code ?? '—' }}</td>
                                 <td class="table-td" data-label="Division">{{ $user->division?->code ?? '—' }}</td>
                                 <td class="table-td" data-label="Role">
                                     @foreach($user->roles as $r)<x-badge color="indigo">{{ $r->name }}</x-badge>@endforeach
@@ -69,7 +74,7 @@
                                 </td>
                             </tr>
                         @empty
-                            <tr><td colspan="5" class="px-4 py-10 text-center text-sm text-gray-400">No users found.</td></tr>
+                            <tr><td colspan="6" class="px-4 py-10 text-center text-sm text-gray-400">No users found.</td></tr>
                         @endforelse
                     </tbody>
                 </table>

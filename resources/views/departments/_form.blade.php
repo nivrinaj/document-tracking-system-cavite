@@ -1,11 +1,11 @@
 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
     <div>
-        <label class="label">Code <span class="text-red-500">*</span></label>
-        <input type="text" name="code" value="{{ old('code', $department?->code) }}" class="input" placeholder="e.g. OPG" required>
+        <label class="label">Abbreviation / Code <span class="text-red-500">*</span></label>
+        <input type="text" name="code" value="{{ old('code', $department?->code) }}" class="input" placeholder="e.g. PICTO" required>
     </div>
     <div>
-        <label class="label">Name <span class="text-red-500">*</span></label>
-        <input type="text" name="name" value="{{ old('name', $department?->name) }}" class="input" placeholder="e.g. Office of the Provincial Governor" required>
+        <label class="label">Full Name <span class="text-red-500">*</span></label>
+        <input type="text" name="name" value="{{ old('name', $department?->name) }}" class="input" placeholder="e.g. Provincial Information and Communications Technology Office" required>
     </div>
 </div>
 <div>

@@ -41,6 +41,7 @@ Route::middleware(['auth', 'active'])->group(function () {
     Route::post('/documents/{document}/forward', [DocumentController::class, 'forward'])->name('documents.forward');
     Route::post('/documents/{document}/archive', [DocumentController::class, 'archive'])->name('documents.archive');
     Route::post('/documents/{document}/acknowledge', [DocumentController::class, 'acknowledge'])->name('documents.acknowledge');
+    Route::post('/documents/{document}/reopen', [DocumentController::class, 'reopen'])->name('documents.reopen');
 
     // QR image + printable slip
     Route::get('/documents/{document}/qrcode', [DocumentController::class, 'qrcode'])->name('documents.qrcode');
@@ -73,6 +74,7 @@ Route::middleware(['auth', 'active'])->group(function () {
 
     /* -------------------- Documentation & Changelog (Super Admin only) -------------------- */
     Route::middleware('role:Super Admin')->group(function () {
+        Route::resource('document-types', \App\Http\Controllers\DocumentTypeController::class)->except('show');
         Route::get('/changelog', [\App\Http\Controllers\ChangelogController::class, 'index'])->name('changelog.index');
         Route::get('/documentation', [DocumentationController::class, 'index'])->name('documentation.index');
         Route::get('/documentation/create', [DocumentationController::class, 'create'])->name('documentation.create');

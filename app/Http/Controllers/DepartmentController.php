@@ -29,6 +29,8 @@ class DepartmentController extends Controller
 
     public function edit(Department $department)
     {
+        $department->load(['divisions' => fn ($q) => $q->withCount('users')->orderBy('name')]);
+
         return view('departments.edit', compact('department'));
     }
 

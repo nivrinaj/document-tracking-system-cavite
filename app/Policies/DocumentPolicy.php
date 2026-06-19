@@ -45,6 +45,12 @@ class DocumentPolicy
         return $this->concerns($user, $document); // cross-department: only if forwarded/released to them
     }
 
+    /** Only Super Admin can bring a finished document back to active (e.g. accidental completion). */
+    public function reopen(User $user, Document $document): bool
+    {
+        return $user->hasRole('Super Admin') && $document->isClosed();
+    }
+
     /** A recipient of a broadcast memo can acknowledge receipt once. */
     public function acknowledge(User $user, Document $document): bool
     {

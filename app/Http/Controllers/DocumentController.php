@@ -74,9 +74,13 @@ class DocumentController extends Controller
     {
         $this->authorizeAction('documents.create');
 
+        $types = \App\Models\DocumentType::availableFor(Auth::user()->department_id);
+
         return view('documents.create', [
             'divisions' => Division::where('is_active', true)->orderBy('name')->get(),
             'users' => $this->assignableUsers(),
+            'documentTypes' => $types,
+            'voucherTypeNames' => $types->where('requires_voucher', true)->pluck('name')->values(),
         ]);
     }
 
@@ -223,6 +227,14 @@ class DocumentController extends Controller
         $service->forward($document, (int) $data['to_user_id'], $request->user(), $data['remarks']);
 
         return back()->with('success', 'Document forwarded.');
+    }
+
+    public function reopen(Request $request, Document $document, DocumentService $service)
+    {
+        $this->authorize('reopen', $document);
+        $service->reopen($document, $request->user(), $request->input('remarks'));
+
+        return back()->with('success', 'Document reopened and set back to active.');
     }
 
     public function acknowledge(Request $request, Document $document, DocumentService $service)
