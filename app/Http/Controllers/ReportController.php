@@ -21,6 +21,7 @@ class ReportController extends Controller
         'staff_workload' => 'Staff Workload (documents currently held)',
         'pending'        => 'Pending / Outstanding Documents',
         'completed'      => 'Completed & Archived Documents',
+        'sla_compliance' => 'SLA / Turnaround Compliance (on-time vs overdue)',
     ];
 
     public function index()
@@ -119,7 +120,54 @@ class ReportController extends Controller
                     ->select('current_holder_id', DB::raw('count(*) as total'))
                     ->groupBy('current_holder_id')->get(),
             ],
+            'sla_compliance' => $this->buildSla($from, $to, $divisionId),
             default => ['documents' => collect()],
         };
+    }
+
+    /** Evaluate documents against each department's configured turnaround SLA. */
+    private function buildSla(?Carbon $from, ?Carbon $to, $divisionId): array
+    {
+        $departments = \App\Models\Department::where('sla_enabled', true)->whereNotNull('sla_days')->get()->keyBy('id');
+
+        $rows = collect();
+        $summary = ['on_time' => 0, 'overdue' => 0, 'on_track' => 0, 'overdue_open' => 0];
+
+        if ($departments->isNotEmpty()) {
+            $docs = Document::with(['department', 'currentHolder'])
+                ->whereIn('department_id', $departments->keys())
+                ->when($from, fn ($q) => $q->where('created_at', '>=', $from))
+                ->when($to, fn ($q) => $q->where('created_at', '<=', $to))
+                ->when($divisionId, fn ($q) => $q->where('division_id', $divisionId))
+                ->latest()->get();
+
+            foreach ($docs as $d) {
+                $dept = $departments[$d->department_id];
+                $slaTypes = array_map('strtolower', (array) ($dept->sla_document_type ?? []));
+                if (! empty($slaTypes) && ! in_array(strtolower($d->document_type), $slaTypes, true)) {
+                    continue;
+                }
+                $start = $d->received_at ?? $d->created_at;
+                $sla = (int) $dept->sla_days;
+
+                if ($d->isClosed() && $d->completed_at) {
+                    $days = (int) $start->diffInDays($d->completed_at);
+                    $status = $days <= $sla ? 'on_time' : 'overdue';
+                } else {
+                    $days = (int) $start->diffInDays(now());
+                    $status = $days > $sla ? 'overdue_open' : 'on_track';
+                }
+                $summary[$status]++;
+                $rows->push([
+                    'doc' => $d,
+                    'dept' => $dept->code,
+                    'sla' => $sla,
+                    'days' => $days,
+                    'status' => $status,
+                ]);
+            }
+        }
+
+        return ['slaRows' => $rows, 'slaSummary' => $summary, 'slaDepartments' => $departments->values()];
     }
 }

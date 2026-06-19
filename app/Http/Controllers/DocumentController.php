@@ -50,6 +50,10 @@ class DocumentController extends Controller
             $query->where('priority', $priority);
         }
 
+        if ($departmentId = $request->input('department_id')) {
+            $query->where('department_id', $departmentId);
+        }
+
         if ($division = $request->input('division_id')) {
             $query->where('division_id', $division);
         }
@@ -66,7 +70,8 @@ class DocumentController extends Controller
 
         return view('documents.index', [
             'documents' => $documents,
-            'divisions' => Division::orderBy('name')->get(),
+            'departments' => \App\Models\Department::orderBy('name')->get(),
+            'divisions' => Division::orderBy('name')->get(['id', 'code', 'name', 'department_id']),
         ]);
     }
 

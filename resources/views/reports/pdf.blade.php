@@ -39,6 +39,24 @@
             <td><div class="box"><h3>By Priority</h3>@foreach($byPriority as $k => $v)<div class="row"><span>{{ ucfirst($k) }}</span><strong>{{ $v }}</strong></div>@endforeach</div></td>
             <td><div class="box"><h3>By Division</h3>@foreach($byDivision as $k => $v)<div class="row"><span>{{ $k }}</span><strong>{{ $v }}</strong></div>@endforeach</div></td>
         </tr></table>
+    @elseif($type === 'sla_compliance')
+        @php $labels=['on_time'=>'On time','overdue'=>'Overdue','on_track'=>'On track','overdue_open'=>'Overdue (open)']; @endphp
+        <p style="margin:0 0 8px;font-size:11px;">
+            On time: <strong>{{ $slaSummary['on_time'] }}</strong> &nbsp;|&nbsp;
+            Completed overdue: <strong>{{ $slaSummary['overdue'] }}</strong> &nbsp;|&nbsp;
+            Open within SLA: <strong>{{ $slaSummary['on_track'] }}</strong> &nbsp;|&nbsp;
+            Open &amp; overdue: <strong>{{ $slaSummary['overdue_open'] }}</strong>
+        </p>
+        <table>
+            <thead><tr><th>Code</th><th>Title</th><th>Dept</th><th>Days</th><th>SLA</th><th>Result</th></tr></thead>
+            <tbody>
+                @forelse($slaRows as $row)
+                    <tr><td>{{ $row['doc']->tracking_code }}</td><td>{{ $row['doc']->title }}</td><td>{{ $row['dept'] }}</td><td>{{ $row['days'] }}</td><td>{{ $row['sla'] }}</td><td>{{ $labels[$row['status']] }}</td></tr>
+                @empty
+                    <tr><td colspan="6">No documents match the SLA criteria.</td></tr>
+                @endforelse
+            </tbody>
+        </table>
     @elseif($type === 'staff_workload')
         <table>
             <thead><tr><th>Staff</th><th>Division</th><th>Open Documents</th></tr></thead>

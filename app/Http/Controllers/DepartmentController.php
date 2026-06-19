@@ -17,7 +17,7 @@ class DepartmentController extends Controller
 
     public function create()
     {
-        return view('departments.create');
+        return view('departments.create', ['documentTypes' => $this->typeNames()]);
     }
 
     public function store(Request $request)
@@ -31,7 +31,7 @@ class DepartmentController extends Controller
     {
         $department->load(['divisions' => fn ($q) => $q->withCount('users')->orderBy('name')]);
 
-        return view('departments.edit', compact('department'));
+        return view('departments.edit', ['department' => $department, 'documentTypes' => $this->typeNames()]);
     }
 
     public function update(Request $request, Department $department)
@@ -64,6 +64,20 @@ class DepartmentController extends Controller
             'code' => ['required', 'string', 'max:50', Rule::unique('departments', 'code')->ignore($department?->id)],
             'description' => ['nullable', 'string'],
             'is_active' => ['nullable', 'boolean'],
-        ]) + ['is_active' => $request->boolean('is_active')];
+            'sla_enabled' => ['nullable', 'boolean'],
+            'sla_days' => ['nullable', 'integer', 'min:1', 'max:365'],
+            'sla_document_type' => ['nullable', 'array'],
+            'sla_document_type.*' => ['string', 'max:100'],
+        ]) + [
+            'is_active' => $request->boolean('is_active'),
+            'sla_enabled' => $request->boolean('sla_enabled'),
+        ];
+    }
+
+    /** Active document type names for the SLA multi-select. */
+    private function typeNames()
+    {
+        return \App\Models\DocumentType::where('is_active', true)
+            ->orderBy('name')->pluck('name')->unique()->values();
     }
 }

@@ -43,12 +43,9 @@
                             @if($current->excerpt)<p class="text-sm text-gray-500 dark:text-gray-400 mt-1">{{ $current->excerpt }}</p>@endif
                         </div>
                         @can('documentation.manage')
-                            <div class="flex gap-2 shrink-0">
+                            <div class="flex gap-2 shrink-0 items-center">
                                 <x-btn :href="route('documentation.edit', $current)" variant="secondary">Edit</x-btn>
-                                <form method="POST" action="{{ route('documentation.destroy', $current) }}" data-confirm="Delete this documentation page?">
-                                    @csrf @method('DELETE')
-                                    <button class="px-3 py-2 text-sm text-red-600 hover:underline">Delete</button>
-                                </form>
+                                <x-delete-button :action="route('documentation.destroy', $current)" confirm="Delete this documentation page?" />
                             </div>
                         @endcan
                     </div>

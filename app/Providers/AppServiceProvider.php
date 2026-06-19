@@ -33,9 +33,17 @@ class AppServiceProvider extends ServiceProvider
         // Register policies.
         Gate::policy(Document::class, DocumentPolicy::class);
 
-        // Super Admin can do everything.
+        // Super Admin can do everything EXCEPT bypass the document workflow rules.
+        // Document abilities run through DocumentPolicy (which already grants Super
+        // Admin the right overrides) so a completed/closed document doesn't show
+        // nonsensical actions.
         Gate::before(function ($user, $ability) {
-            return $user->hasRole('Super Admin') ? true : null;
+            if (! $user->hasRole('Super Admin')) {
+                return null;
+            }
+            $documentAbilities = ['view', 'receive', 'forward', 'archive', 'release', 'assign', 'update', 'delete', 'reopen', 'acknowledge'];
+
+            return in_array($ability, $documentAbilities, true) ? null : true;
         });
 
         // Audit authentication events.

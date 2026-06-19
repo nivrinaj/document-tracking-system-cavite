@@ -40,6 +40,39 @@
                     @endforeach
                 </x-card>
             </div>
+        @elseif($type === 'sla_compliance')
+            @if($slaDepartments->isEmpty())
+                <x-card><p class="text-sm text-gray-500 dark:text-gray-400">No department has an SLA configured yet. Enable it in <strong>Departments → Edit → Track a turnaround SLA</strong>.</p></x-card>
+            @else
+                <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                    <x-stat-card label="Completed on time" :value="$slaSummary['on_time']" color="green"><x-slot:icon><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></x-slot:icon></x-stat-card>
+                    <x-stat-card label="Completed overdue" :value="$slaSummary['overdue']" color="red"><x-slot:icon><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></x-slot:icon></x-stat-card>
+                    <x-stat-card label="Open, within SLA" :value="$slaSummary['on_track']" color="blue"><x-slot:icon><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3"/></x-slot:icon></x-stat-card>
+                    <x-stat-card label="Open & overdue" :value="$slaSummary['overdue_open']" color="amber"><x-slot:icon><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3"/></x-slot:icon></x-stat-card>
+                </div>
+                <x-card padding="p-0" class="mt-4">
+                    <table class="r-table min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                        <thead class="bg-gray-50 dark:bg-gray-700/40"><tr>
+                            <th class="table-th">Code</th><th class="table-th">Title</th><th class="table-th">Dept</th><th class="table-th">Days</th><th class="table-th">SLA</th><th class="table-th">Result</th>
+                        </tr></thead>
+                        <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
+                            @php $labels=['on_time'=>['On time','green'],'overdue'=>['Overdue','red'],'on_track'=>['On track','blue'],'overdue_open'=>['Overdue (open)','amber']]; @endphp
+                            @forelse($slaRows as $row)
+                                <tr>
+                                    <td class="table-td font-mono text-xs" data-label="Code">{{ $row['doc']->tracking_code }}</td>
+                                    <td class="table-td" data-label="Title">{{ $row['doc']->title }}</td>
+                                    <td class="table-td" data-label="Dept">{{ $row['dept'] }}</td>
+                                    <td class="table-td" data-label="Days">{{ $row['days'] }}</td>
+                                    <td class="table-td" data-label="SLA">{{ $row['sla'] }}</td>
+                                    <td class="table-td" data-label="Result"><x-badge :color="$labels[$row['status']][1]">{{ $labels[$row['status']][0] }}</x-badge></td>
+                                </tr>
+                            @empty
+                                <tr><td colspan="6" class="px-4 py-8 text-center text-sm text-gray-400">No documents match the SLA criteria.</td></tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </x-card>
+            @endif
         @elseif($type === 'staff_workload')
             <x-card padding="p-0">
                 <table class="r-table min-w-full divide-y divide-gray-200 dark:divide-gray-700">

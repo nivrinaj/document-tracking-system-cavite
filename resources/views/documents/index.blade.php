@@ -17,7 +17,8 @@
 
         {{-- Filters --}}
         <x-card padding="p-4">
-            <form method="GET" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            <form method="GET" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3"
+                  x-data="{ dept: '{{ request('department_id') }}', divId: '{{ request('division_id') }}', divisions: @js($divisions) }">
                 <input type="text" name="search" value="{{ request('search') }}" placeholder="Search title / code / ref no…" class="input">
                 <select name="status" class="input">
                     <option value="">All statuses</option>
@@ -31,9 +32,15 @@
                         <option value="{{ $p }}" @selected(request('priority')===$p)>{{ ucfirst($p) }}</option>
                     @endforeach
                 </select>
-                <select name="division_id" class="input">
+                <select name="department_id" x-model="dept" @change="divId=''" class="input">
+                    <option value="">All departments</option>
+                    @foreach($departments as $dept)<option value="{{ $dept->id }}">{{ $dept->code }} — {{ $dept->name }}</option>@endforeach
+                </select>
+                <select name="division_id" x-model="divId" class="input">
                     <option value="">All divisions</option>
-                    @foreach($divisions as $d)<option value="{{ $d->id }}" @selected(request('division_id')==$d->id)>{{ $d->code }} — {{ $d->name }}</option>@endforeach
+                    <template x-for="d in divisions.filter(x => !dept || String(x.department_id) === String(dept))" :key="d.id">
+                        <option :value="d.id" x-text="d.code + ' — ' + d.name"></option>
+                    </template>
                 </select>
                 <div>
                     <label class="block text-[11px] text-gray-400 mb-0.5">From</label>
@@ -76,18 +83,20 @@
                                 <td class="table-td" data-label="Priority"><x-priority-badge :priority="$doc->priority" /></td>
                                 <td class="table-td" data-label="Status"><x-status-badge :status="$doc->status" /></td>
                                 <td class="table-td" data-label="Current Holder">{{ $doc->currentHolder?->name ?? '—' }}</td>
-                                <td class="table-td text-xs" data-label="Updated">
-                                    <span class="inline-flex items-center gap-1.5 text-gray-400">
-                                        @unless($doc->isClosed())
-                                            <span class="w-2 h-2 rounded-full
-                                                @class([
-                                                    'bg-green-500' => $doc->agingColor()==='green',
-                                                    'bg-amber-500' => $doc->agingColor()==='amber',
-                                                    'bg-red-500' => $doc->agingColor()==='red',
-                                                ])" title="Idle time"></span>
-                                        @endunless
-                                        {{ $doc->updated_at->diffForHumans() }}
-                                    </span>
+                                <td class="table-td" data-label="Updated">
+                                    <div class="flex items-center gap-2">
+                                        <span class="w-2 h-2 rounded-full shrink-0
+                                            @class([
+                                                'bg-green-500' => !$doc->isClosed() && $doc->agingColor()==='green',
+                                                'bg-amber-500' => !$doc->isClosed() && $doc->agingColor()==='amber',
+                                                'bg-red-500' => !$doc->isClosed() && $doc->agingColor()==='red',
+                                                'bg-gray-300 dark:bg-gray-600' => $doc->isClosed(),
+                                            ])" title="{{ $doc->isClosed() ? 'Closed' : 'Idle time' }}"></span>
+                                        <span class="leading-tight">
+                                            <span class="block text-xs text-gray-600 dark:text-gray-300">{{ $doc->updated_at->diffForHumans() }}</span>
+                                            <span class="block text-[11px] text-gray-400">{{ $doc->updated_at->format('M d, g:i A') }}</span>
+                                        </span>
+                                    </div>
                                 </td>
                                 <td class="table-td text-right" data-label="">
                                     <a href="{{ route('documents.show', $doc) }}"

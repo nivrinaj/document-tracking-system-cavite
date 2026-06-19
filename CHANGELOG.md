@@ -6,6 +6,20 @@ reviewed or rolled back. Format based on [Keep a Changelog](https://keepachangel
 
 ---
 
+## v2.2.0 — 2026-06-19
+**SLA report, fixes & UI polish**
+- **SLA / Turnaround report** — set a per-department SLA (e.g. vouchers must finish in 7 days) under Departments → Edit; the report shows on-time vs overdue (completed and still-open), with PDF export.
+- **Fixed**: Super Admin no longer sees nonsensical actions on a completed document (the policy is now respected for document actions).
+- Division edit shows its department as fixed (no dropdown), and Cancel returns to the department page; the standalone `/divisions` page is gone.
+- **Edit/Delete are now proper icon buttons** everywhere (no more plain text links).
+- Division staff counts and department user counts are clickable → filter the Users table.
+- Cleaner "Updated" column (relative + exact time).
+- Reset demo data to a realistic multi-department set (PICTO, PACCO, OPG, OPVG, PHRMO, SP) each with their own divisions.
+- Plainer wording for the completion-deadline (SLA) setting + a modern **chip multi-select** for the document types it applies to.
+- **Dependent dropdowns**: pick a department first and the division list updates (Documents filter, Users filter, and the user form).
+- Consistent alignment in the documents "Updated" column.
+- **System Settings → Danger Zone**: Super Admin can delete all documents & activity to start fresh (keeps users/departments/settings).
+
 ## v2.1.0 — 2026-06-19
 **Structure & document types**
 - **Divisions are now managed inside their Department** (the standalone Divisions menu was removed; edit a department to add/edit/remove its divisions).

@@ -24,13 +24,18 @@
                             <tr>
                                 <td class="table-td font-medium" data-label="Code">{{ $div->code }}</td>
                                 <td class="table-td" data-label="Name">{{ $div->name }}</td>
-                                <td class="table-td" data-label="Staff">{{ $div->users_count }}</td>
+                                <td class="table-td" data-label="Staff">
+                                    @if($div->users_count > 0)
+                                        <a href="{{ route('users.index', ['division_id' => $div->id]) }}" class="link">{{ $div->users_count }} staff</a>
+                                    @else
+                                        <span class="text-gray-400">0</span>
+                                    @endif
+                                </td>
                                 <td class="table-td text-right whitespace-nowrap" data-label="">
-                                    <a href="{{ route('divisions.edit', $div) }}" class="link text-sm">Edit</a>
-                                    <form method="POST" action="{{ route('divisions.destroy', $div) }}" class="inline ml-2" data-confirm="Delete division {{ $div->code }}?">
-                                        @csrf @method('DELETE')
-                                        <button class="text-red-600 hover:underline text-sm">Delete</button>
-                                    </form>
+                                    <div class="inline-flex gap-2">
+                                        <x-edit-button :href="route('divisions.edit', $div)" />
+                                        <x-delete-button :action="route('divisions.destroy', $div)" confirm="Delete division {{ $div->code }}?" />
+                                    </div>
                                 </td>
                             </tr>
                         @empty

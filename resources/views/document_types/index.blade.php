@@ -20,11 +20,10 @@
                             <td class="table-td" data-label="Voucher field">@if($type->requires_voucher)<x-badge color="indigo">Yes</x-badge>@else<span class="text-gray-400">—</span>@endif</td>
                             <td class="table-td" data-label="Status">@if($type->is_active)<x-badge color="green">Active</x-badge>@else<x-badge color="gray">Inactive</x-badge>@endif</td>
                             <td class="table-td text-right whitespace-nowrap" data-label="">
-                                <a href="{{ route('document-types.edit', $type) }}" class="link text-sm">Edit</a>
-                                <form method="POST" action="{{ route('document-types.destroy', $type) }}" class="inline ml-2" data-confirm="Delete this document type?">
-                                    @csrf @method('DELETE')
-                                    <button class="text-red-600 hover:underline text-sm">Delete</button>
-                                </form>
+                                <div class="inline-flex gap-2">
+                                    <x-edit-button :href="route('document-types.edit', $type)" />
+                                    <x-delete-button :action="route('document-types.destroy', $type)" confirm="Delete this document type?" />
+                                </div>
                             </td>
                         </tr>
                     @empty

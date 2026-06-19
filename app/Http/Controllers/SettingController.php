@@ -76,6 +76,25 @@ class SettingController extends Controller
         }
     }
 
+    /**
+     * Danger zone: wipe all documents, their history, notifications and the
+     * activity log — keeping users, departments, divisions, types and settings.
+     * Lets the admin clear test data before going live. Super Admin only.
+     */
+    public function resetData(Request $request)
+    {
+        abort_unless($request->user()->hasRole('Super Admin'), 403);
+
+        \Illuminate\Support\Facades\DB::table('document_assignees')->delete();
+        \Illuminate\Support\Facades\DB::table('document_logs')->delete();
+        \App\Models\Document::query()->delete();
+        \Illuminate\Support\Facades\DB::table('notifications')->delete();
+        \App\Models\ActivityLog::query()->delete();
+        \App\Models\ActivityLog::record('data.reset', 'Cleared all documents, history and notifications');
+
+        return back()->with('success', 'All documents, history and notifications have been deleted. You can now start fresh.');
+    }
+
     private function deleteIfExists(?string $path): void
     {
         if ($path && Storage::disk('public')->exists($path)) {

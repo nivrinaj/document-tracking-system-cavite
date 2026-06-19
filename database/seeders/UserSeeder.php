@@ -17,23 +17,31 @@ class UserSeeder extends Seeder
 
         // [name, username, email, role, department_code, division_code|null, position]
         $users = [
-            ['Super Administrator', 'superadmin', 'superadmin@pgc.test', 'Super Admin', 'PAO', 'ISDA', 'System Administrator'],
-            ['Department Head', 'head', 'head@pgc.test', 'Department Head', 'PAO', null, 'Department Head'],
-            ['Assistant Department Head', 'asst.head', 'asst.head@pgc.test', 'Assistant Department Head', 'PAO', null, 'Assistant Department Head'],
-            ['Receiving Staff', 'receiving', 'receiving@pgc.test', 'Receiving Staff', 'PAO', 'ADMIN', 'Records / Receiving Officer'],
-            ['ISDA Division Head', 'isda.head', 'isda.head@pgc.test', 'Division Head', 'PAO', 'ISDA', 'Division Head'],
-            ['ISDA Staff', 'isda.staff', 'isda.staff@pgc.test', 'Staff', 'PAO', 'ISDA', 'Database Administrator'],
-            ['ICT Staff', 'ict.staff', 'ict.staff@pgc.test', 'Staff', 'PAO', 'ICT', 'Technical Support'],
-            ['ETD Staff', 'etd.staff', 'etd.staff@pgc.test', 'Staff', 'PAO', 'ETD', 'Training Officer'],
-            ['Admin Staff', 'admin.staff', 'admin.staff@pgc.test', 'Staff', 'PAO', 'ADMIN', 'Administrative Assistant'],
+            ['Super Administrator', 'superadmin', 'superadmin@pgc.test', 'Super Admin', 'PICTO', 'DBA', 'System Administrator'],
+            ['PICTO Department Head', 'head', 'head@pgc.test', 'Department Head', 'PICTO', null, 'Department Head'],
+            ['PICTO Assistant Head', 'asst.head', 'asst.head@pgc.test', 'Assistant Department Head', 'PICTO', null, 'Assistant Department Head'],
+            ['PICTO Receiving Staff', 'receiving', 'receiving@pgc.test', 'Receiving Staff', 'PICTO', 'TECHSUP', 'Records / Receiving Officer'],
+            ['SoftDev Division Head', 'softdev.head', 'softdev.head@pgc.test', 'Division Head', 'PICTO', 'SOFTDEV', 'Division Head'],
+            ['Database Staff', 'dba.staff', 'dba.staff@pgc.test', 'Staff', 'PICTO', 'DBA', 'Database Administrator'],
+            ['Network Staff', 'net.staff', 'net.staff@pgc.test', 'Staff', 'PICTO', 'NETINFRA', 'Network Engineer'],
+            ['Tech Support Staff', 'tech.staff', 'tech.staff@pgc.test', 'Staff', 'PICTO', 'TECHSUP', 'Technical Support'],
+
+            // Accounting office (for SLA / voucher testing)
+            ['Accounting Head', 'acctg.head', 'acctg.head@pgc.test', 'Department Head', 'PACCO', null, 'Provincial Accountant'],
+            ['Disbursement Receiving', 'acctg.receiving', 'acctg.receiving@pgc.test', 'Receiving Staff', 'PACCO', 'DISB', 'Disbursement Officer'],
+            ['Disbursement Staff', 'disb.staff', 'disb.staff@pgc.test', 'Staff', 'PACCO', 'DISB', 'Voucher Processor'],
+
+            // HR office
+            ['HR Head', 'hr.head', 'hr.head@pgc.test', 'Department Head', 'PHRMO', null, 'HR Officer'],
+            ['HR Staff', 'hr.staff', 'hr.staff@pgc.test', 'Staff', 'PHRMO', 'RECRUIT', 'HR Assistant'],
 
             // Executive / political offices
             ['Provincial Governor', 'governor', 'governor@pgc.test', 'Provincial Governor', 'OPG', null, 'Provincial Governor'],
             ['Provincial Vice Governor', 'vicegovernor', 'vicegovernor@pgc.test', 'Provincial Vice Governor', 'OPVG', null, 'Provincial Vice Governor'],
-            ['Chief of Staff - OPG', 'cos.opg', 'cos.opg@pgc.test', 'Chief of Staff (OPG)', 'OPG', null, 'Chief of Staff'],
-            ['Chief of Staff - OPVG', 'cos.opvg', 'cos.opvg@pgc.test', 'Chief of Staff (OPVG)', 'OPVG', null, 'Chief of Staff'],
-            ['Provincial Administrator', 'administrator', 'administrator@pgc.test', 'Provincial Administrator for Internal Affairs', 'PAO', null, 'Provincial Administrator'],
-            ['SP Member', 'sp.member', 'sp.member@pgc.test', 'Sangguniang Panlalawigan Member', 'SP', null, 'Board Member'],
+            ['Chief of Staff - OPG', 'cos.opg', 'cos.opg@pgc.test', 'Chief of Staff (OPG)', 'OPG', 'OPG-ADM', 'Chief of Staff'],
+            ['Chief of Staff - OPVG', 'cos.opvg', 'cos.opvg@pgc.test', 'Chief of Staff (OPVG)', 'OPVG', 'OPVG-ADM', 'Chief of Staff'],
+            ['Provincial Administrator', 'administrator', 'administrator@pgc.test', 'Provincial Administrator for Internal Affairs', 'OPG', null, 'Provincial Administrator'],
+            ['SP Member', 'sp.member', 'sp.member@pgc.test', 'Sangguniang Panlalawigan Member', 'SP', 'SP-SEC', 'Board Member'],
         ];
 
         foreach ($users as [$name, $username, $email, $role, $deptCode, $divCode, $position]) {

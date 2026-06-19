@@ -17,16 +17,13 @@
                     <h3 class="font-semibold mt-2">{{ $dept->name }}</h3>
                     @if($dept->description)<p class="text-xs text-gray-400 mt-1">{{ $dept->description }}</p>@endif
                     <div class="flex items-center gap-4 text-xs text-gray-400 mt-4">
-                        <span>🏢 {{ $dept->divisions_count }} divisions</span>
-                        <span>👤 {{ $dept->users_count }} users</span>
+                        <a href="{{ route('departments.edit', $dept) }}" class="hover:text-[color:var(--color-primary)]">🏢 {{ $dept->divisions_count }} divisions</a>
+                        <a href="{{ route('users.index', ['department_id' => $dept->id]) }}" class="hover:text-[color:var(--color-primary)]">👤 {{ $dept->users_count }} users</a>
                         <span>📄 {{ $dept->documents_count }} docs</span>
                     </div>
-                    <div class="flex gap-3 mt-4 pt-3 border-t border-gray-100 dark:border-gray-700">
-                        <a href="{{ route('departments.edit', $dept) }}" class="link text-sm">Edit</a>
-                        <form method="POST" action="{{ route('departments.destroy', $dept) }}" data-confirm="Delete this department?">
-                            @csrf @method('DELETE')
-                            <button class="text-red-600 hover:underline text-sm">Delete</button>
-                        </form>
+                    <div class="flex gap-2 mt-4 pt-3 border-t border-gray-100 dark:border-gray-700">
+                        <x-edit-button :href="route('departments.edit', $dept)" />
+                        <x-delete-button :action="route('departments.destroy', $dept)" confirm="Delete department {{ $dept->code }}?" />
                     </div>
                 </x-card>
             @empty

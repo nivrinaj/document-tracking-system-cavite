@@ -10,9 +10,8 @@ class DivisionController extends Controller
 {
     public function index()
     {
-        return view('divisions.index', [
-            'divisions' => Division::with('department')->withCount(['users', 'documents'])->orderBy('name')->paginate(15),
-        ]);
+        // Divisions are managed inside their Department now.
+        return redirect()->route('departments.index');
     }
 
     public function create()

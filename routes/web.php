@@ -71,6 +71,7 @@ Route::middleware(['auth', 'active'])->group(function () {
     /* -------------------- System configuration -------------------- */
     Route::get('/settings', [SettingController::class, 'edit'])->name('settings.edit')->middleware('permission:settings.manage');
     Route::put('/settings', [SettingController::class, 'update'])->name('settings.update')->middleware('permission:settings.manage');
+    Route::post('/settings/reset-data', [SettingController::class, 'resetData'])->name('settings.resetData')->middleware('role:Super Admin');
 
     /* -------------------- Documentation & Changelog (Super Admin only) -------------------- */
     Route::middleware('role:Super Admin')->group(function () {

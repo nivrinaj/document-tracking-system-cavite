@@ -10,9 +10,9 @@ class Department extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['name', 'code', 'description', 'is_active'];
+    protected $fillable = ['name', 'code', 'description', 'is_active', 'sla_enabled', 'sla_days', 'sla_document_type'];
 
-    protected $casts = ['is_active' => 'boolean'];
+    protected $casts = ['is_active' => 'boolean', 'sla_enabled' => 'boolean', 'sla_document_type' => 'array'];
 
     public function divisions(): HasMany
     {

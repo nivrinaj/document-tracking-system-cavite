@@ -12,8 +12,8 @@ class DemoDocumentSeeder extends Seeder
     public function run(): void
     {
         $receiving = User::where('email', 'receiving@pgc.test')->first();
-        $isdaStaff = User::where('email', 'isda.staff@pgc.test')->first();
-        $ictStaff  = User::where('email', 'ict.staff@pgc.test')->first();
+        $isdaStaff = User::where('email', 'dba.staff@pgc.test')->first();
+        $ictStaff  = User::where('email', 'net.staff@pgc.test')->first();
 
         if (! $receiving) {
             return;

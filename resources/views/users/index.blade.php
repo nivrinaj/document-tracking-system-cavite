@@ -8,15 +8,18 @@
         </div>
 
         <x-card padding="p-4">
-            <form method="GET" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            <form method="GET" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3"
+                  x-data="{ dept: '{{ request('department_id') }}', divId: '{{ request('division_id') }}', divisions: @js($divisions->map(fn($d)=>['id'=>$d->id,'name'=>$d->code.' — '.$d->name,'department_id'=>$d->department_id])) }">
                 <input type="text" name="search" value="{{ request('search') }}" placeholder="Search name, username or email…" class="input">
-                <select name="department_id" class="input">
+                <select name="department_id" x-model="dept" @change="divId=''" class="input">
                     <option value="">All departments</option>
-                    @foreach($departments as $dept)<option value="{{ $dept->id }}" @selected(request('department_id')==$dept->id)>{{ $dept->code }}</option>@endforeach
+                    @foreach($departments as $dept)<option value="{{ $dept->id }}">{{ $dept->code }}</option>@endforeach
                 </select>
-                <select name="division_id" class="input">
+                <select name="division_id" x-model="divId" class="input">
                     <option value="">All divisions</option>
-                    @foreach($divisions as $d)<option value="{{ $d->id }}" @selected(request('division_id')==$d->id)>{{ $d->name }}</option>@endforeach
+                    <template x-for="d in divisions.filter(x => !dept || String(x.department_id) === String(dept))" :key="d.id">
+                        <option :value="d.id" x-text="d.name"></option>
+                    </template>
                 </select>
                 <select name="role" class="input">
                     <option value="">All roles</option>
