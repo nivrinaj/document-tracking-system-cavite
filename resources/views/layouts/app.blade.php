@@ -108,6 +108,12 @@
                 </x-nav-item>
                 @endcan
 
+                @can('departments.manage')
+                <x-nav-item :active="request()->routeIs('departments.*')" :href="route('departments.index')" label="Departments">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0H5m14 0h2M5 21H3m4-14h2m-2 4h2m6-4h2m-2 4h2M9 21v-4h6v4"/>
+                </x-nav-item>
+                @endcan
+
                 @can('divisions.manage')
                 <x-nav-item :active="request()->routeIs('divisions.*')" :href="route('divisions.index')" label="Divisions">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0H5m14 0h2M5 21H3m4-14h2m-2 4h2m6-4h2m-2 4h2"/>

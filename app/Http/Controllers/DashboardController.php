@@ -12,17 +12,10 @@ class DashboardController extends Controller
     public function index(Request $request)
     {
         $user = $request->user();
-        $isHead = $user->isHead();
+        $isHead = $user->can('documents.viewAll') || $user->isHead();
 
-        // Base query: heads see the whole department, everyone else only what concerns them.
-        $base = Document::query();
-        if (! $isHead) {
-            $base->where(function ($q) use ($user) {
-                $q->where('created_by', $user->id)
-                    ->orWhere('current_holder_id', $user->id)
-                    ->orWhereHas('assignees', fn ($a) => $a->where('users.id', $user->id));
-            });
-        }
+        // Base query scoped to what this user is allowed to see (department / all / concerns).
+        $base = Document::query()->visibleTo($user);
 
         // Cards / counters — split by life-cycle stage so a not-yet-released
         // draft is NOT mistaken for something pending on a recipient.
@@ -57,16 +50,10 @@ class DashboardController extends Controller
                 ->latest('updated_at')->take(8)->get();
         }
 
-        // Recent activity (scoped)
-        $activityQuery = DocumentLog::with(['document', 'actor', 'toUser'])->latest();
-        if (! $isHead) {
-            $activityQuery->whereHas('document', function ($q) use ($user) {
-                $q->where('created_by', $user->id)
-                    ->orWhere('current_holder_id', $user->id)
-                    ->orWhereHas('assignees', fn ($a) => $a->where('users.id', $user->id));
-            });
-        }
-        $activity = $activityQuery->take(10)->get();
+        // Recent activity (scoped to documents the user can see)
+        $activity = DocumentLog::with(['document', 'actor', 'toUser'])->latest()
+            ->whereHas('document', fn ($q) => $q->visibleTo($user))
+            ->take(10)->get();
 
         // Status breakdown for a small chart
         $statusBreakdown = (clone $base)

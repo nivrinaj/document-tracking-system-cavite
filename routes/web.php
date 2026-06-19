@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\DivisionController;
 use App\Http\Controllers\DocumentationController;
 use App\Http\Controllers\DocumentController;
@@ -39,6 +40,7 @@ Route::middleware(['auth', 'active'])->group(function () {
     Route::post('/documents/{document}/receive', [DocumentController::class, 'receive'])->name('documents.receive');
     Route::post('/documents/{document}/forward', [DocumentController::class, 'forward'])->name('documents.forward');
     Route::post('/documents/{document}/archive', [DocumentController::class, 'archive'])->name('documents.archive');
+    Route::post('/documents/{document}/acknowledge', [DocumentController::class, 'acknowledge'])->name('documents.acknowledge');
 
     // QR image + printable slip
     Route::get('/documents/{document}/qrcode', [DocumentController::class, 'qrcode'])->name('documents.qrcode');
@@ -46,6 +48,7 @@ Route::middleware(['auth', 'active'])->group(function () {
 
     /* -------------------- Admin modules -------------------- */
     Route::resource('users', UserController::class)->middleware('permission:users.manage');
+    Route::resource('departments', DepartmentController::class)->middleware('permission:departments.manage');
     Route::resource('divisions', DivisionController::class)->middleware('permission:divisions.manage');
     Route::resource('roles', RoleController::class)->middleware('permission:roles.manage');
 

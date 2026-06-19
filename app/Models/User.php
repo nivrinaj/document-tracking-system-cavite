@@ -26,6 +26,7 @@ class User extends Authenticatable
         'email',
         'password',
         'division_id',
+        'department_id',
         'position',
         'phone',
         'avatar',
@@ -63,6 +64,17 @@ class User extends Authenticatable
     public function division(): BelongsTo
     {
         return $this->belongsTo(Division::class);
+    }
+
+    public function department(): BelongsTo
+    {
+        return $this->belongsTo(Department::class);
+    }
+
+    /** May this user see documents across every department? */
+    public function canViewAllDepartments(): bool
+    {
+        return $this->can('documents.viewAll');
     }
 
     /** Documents this user encoded (as receiving staff). */

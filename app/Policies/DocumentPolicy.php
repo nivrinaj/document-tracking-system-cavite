@@ -35,7 +35,24 @@ class DocumentPolicy
      */
     public function view(User $user, Document $document): bool
     {
-        return $user->isHead() || $this->concerns($user, $document);
+        if ($user->can('documents.viewAll')) {
+            return true; // executives / super admin: every department
+        }
+        if ($user->department_id && $document->department_id === $user->department_id) {
+            return true; // members see everything in their own department
+        }
+
+        return $this->concerns($user, $document); // cross-department: only if forwarded/released to them
+    }
+
+    /** A recipient of a broadcast memo can acknowledge receipt once. */
+    public function acknowledge(User $user, Document $document): bool
+    {
+        return $document->is_broadcast
+            && $document->assignees()
+                ->where('users.id', $user->id)
+                ->wherePivotNull('acknowledged_at')
+                ->exists();
     }
 
     /** Only the current holder, when the document was released/forwarded TO them. */
@@ -82,11 +99,15 @@ class DocumentPolicy
 
     public function assign(User $user, Document $document): bool
     {
+        // Never re-route a finished (archived/completed) document.
+        if (! $user->can('documents.assign') || $document->isClosed()) {
+            return false;
+        }
+
         // The encoder may (re)assign while the document is still a draft OR
         // released-but-not-yet-received (to fix a mis-assignment before pickup).
         // Once received/forwarded, only an override role can re-route it.
-        return $user->can('documents.assign')
-            && (in_array($document->status, ['draft', 'released']) || $this->canOverride($user))
+        return (in_array($document->status, ['draft', 'released']) || $this->canOverride($user))
             && ($document->created_by === $user->id || $this->canOverride($user));
     }
 

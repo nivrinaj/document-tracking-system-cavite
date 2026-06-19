@@ -23,7 +23,9 @@ class Document extends Model
         'source',
         'priority',
         'status',
+        'is_broadcast',
         'division_id',
+        'department_id',
         'created_by',
         'current_holder_id',
         'received_at',
@@ -35,7 +37,29 @@ class Document extends Model
         'received_at' => 'datetime',
         'released_at' => 'datetime',
         'completed_at' => 'datetime',
+        'is_broadcast' => 'boolean',
     ];
+
+    /**
+     * Limit a query to documents the given user may see:
+     *  - viewAll permission  -> every department
+     *  - otherwise           -> their own department + any document concerning them
+     */
+    public function scopeVisibleTo($query, User $user)
+    {
+        if ($user->can('documents.viewAll')) {
+            return $query;
+        }
+
+        return $query->where(function ($q) use ($user) {
+            if ($user->department_id) {
+                $q->where('documents.department_id', $user->department_id);
+            }
+            $q->orWhere('created_by', $user->id)
+                ->orWhere('current_holder_id', $user->id)
+                ->orWhereHas('assignees', fn ($a) => $a->where('users.id', $user->id));
+        });
+    }
 
     /**
      * Auto-generate a unique tracking code when creating a document.
@@ -85,6 +109,11 @@ class Document extends Model
         return $this->belongsTo(Division::class);
     }
 
+    public function department(): BelongsTo
+    {
+        return $this->belongsTo(Department::class);
+    }
+
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
@@ -104,7 +133,7 @@ class Document extends Model
     /** All staff who have ever been assigned/held this document. */
     public function assignees(): BelongsToMany
     {
-        return $this->belongsToMany(User::class, 'document_assignees')->withTimestamps();
+        return $this->belongsToMany(User::class, 'document_assignees')->withPivot('acknowledged_at')->withTimestamps();
     }
 
     /* ----------------------------------------------------------------

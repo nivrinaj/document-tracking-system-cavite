@@ -22,7 +22,7 @@
 
         {{-- Stat cards — one per workflow stage --}}
         <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <x-stat-card label="{{ $isHead ? 'Awaiting Release' : 'My Drafts (to release)' }}" :value="$stats['awaiting_release']" color="amber" :href="route('documents.index', ['stage' => 'awaiting_release'])">
+            <x-stat-card label="Awaiting Release" :value="$stats['awaiting_release']" color="amber" :href="route('documents.index', ['stage' => 'awaiting_release'])">
                 <x-slot:icon><path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></x-slot:icon>
             </x-stat-card>
             <x-stat-card label="In Transit (to receive)" :value="$stats['in_transit']" color="blue" :href="route('documents.index', ['stage' => 'in_transit'])">

@@ -6,6 +6,15 @@ reviewed or rolled back. Format based on [Keep a Changelog](https://keepachangel
 
 ---
 
+## v2.0.0 — 2026-06-19
+**Multi-department architecture** 🏢
+- **Departments** module (CRUD). Each department contains its own divisions and staff.
+- **Department-scoped access** — staff and heads see documents within their own department (plus anything forwarded/released to them from other departments). Executives see across all departments.
+- **New roles**: Provincial Governor, Provincial Vice Governor, Sangguniang Panlalawigan Member, Chief of Staff (OPG), Chief of Staff (OPVG), Provincial Administrator for Internal Affairs, and Division Head.
+- **Memo broadcast** — when encoding, send a document as a **division** or **department** memo to everyone in scope; each recipient is notified and acknowledges receipt individually.
+- Users & divisions now belong to a department; email is now optional.
+- Migration is additive and safe for existing data (a backfill seeder assigns existing records to a default office).
+
 ## v1.7.0 — 2026-06-19
 **Workflow integrity & dashboard finishing touches**
 - **Must receive before acting** — a recipient can no longer Forward or Archive a document until they have **Received** it, keeping the audit trail intact. Out-of-flow override is limited to **Super Admin** and **Department Head** (not Assistant Department Head).

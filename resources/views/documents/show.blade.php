@@ -113,11 +113,21 @@
                 @php
                     $u = auth()->user();
                     $canAct = $u->can('assign', $document) || $u->can('release', $document) || $u->can('receive', $document)
-                        || $u->can('forward', $document) || $u->can('archive', $document) || $u->can('delete', $document);
+                        || $u->can('forward', $document) || $u->can('archive', $document) || $u->can('delete', $document)
+                        || $u->can('acknowledge', $document);
                 @endphp
                 @if($canAct || $document->isClosed())
                 <x-card title="Actions">
                     <div class="space-y-3">
+
+                        @can('acknowledge', $document)
+                            <form method="POST" action="{{ route('documents.acknowledge', $document) }}" class="space-y-2 p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20"
+                                  data-confirm="Acknowledge that you received this memo?">
+                                @csrf
+                                <p class="text-xs text-blue-700 dark:text-blue-300">📣 This is a memo broadcast to your {{ $document->division?->name ? 'division' : 'department' }}. Please acknowledge receipt.</p>
+                                <x-btn type="submit" class="w-full">✅ Acknowledge receipt</x-btn>
+                            </form>
+                        @endcan
 
                         @can('assign', $document)
                             <button @click="panel = panel === 'assign' ? null : 'assign'" class="w-full text-left px-4 py-2 rounded-lg bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 text-sm font-medium hover:opacity-90">Assign / Re-assign</button>

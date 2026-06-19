@@ -19,8 +19,9 @@ class RolePermissionSeeder extends Seeder
             // Dashboard
             'dashboard.view',
             // Document tracking
-            'documents.view',        // view documents that concern me
-            'documents.viewAny',     // view ALL documents in the department (heads)
+            'documents.view',        // view documents that concern me / my department
+            'documents.viewAny',     // (legacy) view all in department
+            'documents.viewAll',     // view documents across ALL departments (executives)
             'documents.create',      // encode a new incoming document
             'documents.assign',      // assign to a staff
             'documents.release',     // release (hand over the QR)
@@ -30,6 +31,7 @@ class RolePermissionSeeder extends Seeder
             'documents.delete',
             // Admin modules
             'users.manage',
+            'departments.manage',
             'divisions.manage',
             'roles.manage',
             'reports.view',
@@ -79,5 +81,46 @@ class RolePermissionSeeder extends Seeder
             'documents.view', 'documents.receive', 'documents.forward',
             'documents.archive', 'documentation.view',
         ]);
+
+        // Division Head: like receiving staff but within their own division.
+        $divisionHead = Role::firstOrCreate(['name' => 'Division Head', 'guard_name' => 'web']);
+        $divisionHead->syncPermissions([
+            'dashboard.view',
+            'documents.view', 'documents.create', 'documents.assign', 'documents.release',
+            'documents.receive', 'documents.forward', 'documents.archive',
+            'reports.view', 'documentation.view',
+        ]);
+
+        // ---- Executive / political roles ----
+        // Org-wide visibility (documents.viewAll) + can act on documents routed to them.
+        $execPerms = [
+            'dashboard.view',
+            'documents.view', 'documents.viewAll',
+            'documents.receive', 'documents.forward', 'documents.archive',
+            'reports.view', 'logs.view',
+        ];
+        foreach ([
+            'Provincial Governor',
+            'Provincial Vice Governor',
+            'Provincial Administrator for Internal Affairs',
+        ] as $execName) {
+            Role::firstOrCreate(['name' => $execName, 'guard_name' => 'web'])->syncPermissions($execPerms);
+        }
+
+        // Chiefs of Staff: run their office workflow + org-wide visibility.
+        $chiefPerms = array_merge($execPerms, ['documents.create', 'documents.assign', 'documents.release']);
+        foreach (['Chief of Staff (OPG)', 'Chief of Staff (OPVG)'] as $chiefName) {
+            Role::firstOrCreate(['name' => $chiefName, 'guard_name' => 'web'])->syncPermissions($chiefPerms);
+        }
+
+        // Sangguniang Panlalawigan Member: department-scoped (their office), can act on routed docs.
+        Role::firstOrCreate(['name' => 'Sangguniang Panlalawigan Member', 'guard_name' => 'web'])->syncPermissions([
+            'dashboard.view', 'documents.view',
+            'documents.receive', 'documents.forward', 'documents.archive',
+            'reports.view', 'documentation.view',
+        ]);
+
+        // Re-sync Super Admin so it picks up any newly created permissions.
+        $superAdmin->syncPermissions(Permission::all());
     }
 }

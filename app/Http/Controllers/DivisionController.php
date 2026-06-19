@@ -11,13 +11,13 @@ class DivisionController extends Controller
     public function index()
     {
         return view('divisions.index', [
-            'divisions' => Division::withCount(['users', 'documents'])->orderBy('name')->paginate(15),
+            'divisions' => Division::with('department')->withCount(['users', 'documents'])->orderBy('name')->paginate(15),
         ]);
     }
 
     public function create()
     {
-        return view('divisions.create');
+        return view('divisions.create', ['departments' => \App\Models\Department::orderBy('name')->get()]);
     }
 
     public function store(Request $request)
@@ -30,7 +30,10 @@ class DivisionController extends Controller
 
     public function edit(Division $division)
     {
-        return view('divisions.edit', compact('division'));
+        return view('divisions.edit', [
+            'division' => $division,
+            'departments' => \App\Models\Department::orderBy('name')->get(),
+        ]);
     }
 
     public function update(Request $request, Division $division)
@@ -60,6 +63,7 @@ class DivisionController extends Controller
     private function validateData(Request $request, ?Division $division = null): array
     {
         return $request->validate([
+            'department_id' => ['nullable', 'exists:departments,id'],
             'name' => ['required', 'string', 'max:255'],
             'code' => ['required', 'string', 'max:50', Rule::unique('divisions', 'code')->ignore($division?->id)],
             'description' => ['nullable', 'string'],

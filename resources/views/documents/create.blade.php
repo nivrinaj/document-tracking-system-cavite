@@ -67,9 +67,21 @@
                     </div>
                 </div>
 
-                {{-- Optional immediate assignment --}}
-                <div class="border-t border-gray-100 dark:border-gray-700 pt-4">
-                    <h3 class="font-medium text-sm mb-3">Assign to staff (optional)</h3>
+                {{-- Distribution: single assignee OR a memo broadcast --}}
+                <div class="border-t border-gray-100 dark:border-gray-700 pt-4" x-data="{ scope: '{{ old('broadcast_scope', 'none') }}' }">
+                    <h3 class="font-medium text-sm mb-3">Distribution</h3>
+
+                    <div class="mb-4">
+                        <label class="label">Send as</label>
+                        <select name="broadcast_scope" x-model="scope" class="input">
+                            <option value="none">Assign to one staff (normal routing)</option>
+                            <option value="division">📣 Division memo — broadcast to everyone in my division</option>
+                            <option value="department">📣 Department memo — broadcast to everyone in my department</option>
+                        </select>
+                        <p class="text-xs text-gray-400 mt-1" x-show="scope !== 'none'" x-cloak>Every recipient is notified and acknowledges receipt individually. No single holder.</p>
+                    </div>
+
+                    <div x-show="scope === 'none'" x-cloak>
                     <p class="text-xs text-gray-400 mb-3">You can assign now, or do it later from the document page. You can assign to anyone, including yourself.</p>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
@@ -90,6 +102,7 @@
                             <input type="text" name="assign_remarks" value="{{ old('assign_remarks') }}" class="input" placeholder="Instructions for the assignee…">
                         </div>
                     </div>
+                    </div>{{-- /x-show none --}}
                 </div>
 
                 <div class="flex items-center justify-end gap-2 pt-2">

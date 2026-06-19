@@ -16,9 +16,12 @@ class DivisionSeeder extends Seeder
             ['code' => 'ETD',   'name' => 'Education & Training Division'],
         ];
 
+        $pao = \App\Models\Department::where('code', 'PAO')->first();
+
         foreach ($divisions as $d) {
             Division::firstOrCreate(['code' => $d['code']], [
                 'name' => $d['name'],
+                'department_id' => $pao?->id,
                 'is_active' => true,
             ]);
         }

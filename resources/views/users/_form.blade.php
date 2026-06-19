@@ -15,7 +15,14 @@
         <input type="email" name="email" value="{{ old('email', $user?->email) }}" class="input" autocomplete="off">
     </div>
     <div>
-        <label class="label">Division</label>
+        <label class="label">Department</label>
+        <select name="department_id" class="input">
+            <option value="">— None —</option>
+            @foreach($departments as $dept)<option value="{{ $dept->id }}" @selected(old('department_id', $user?->department_id)==$dept->id)>{{ $dept->code }} — {{ $dept->name }}</option>@endforeach
+        </select>
+    </div>
+    <div>
+        <label class="label">Division <span class="text-gray-400 text-xs">(heads can leave blank)</span></label>
         <select name="division_id" class="input">
             <option value="">— None —</option>
             @foreach($divisions as $d)<option value="{{ $d->id }}" @selected(old('division_id', $user?->division_id)==$d->id)>{{ $d->code }} — {{ $d->name }}</option>@endforeach

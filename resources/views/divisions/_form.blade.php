@@ -1,3 +1,12 @@
+<div>
+    <label class="label">Department</label>
+    <select name="department_id" class="input">
+        <option value="">— Select department —</option>
+        @foreach($departments as $dept)
+            <option value="{{ $dept->id }}" @selected(old('department_id', $division?->department_id)==$dept->id)>{{ $dept->code }} — {{ $dept->name }}</option>
+        @endforeach
+    </select>
+</div>
 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
     <div>
         <label class="label">Code <span class="text-red-500">*</span></label>

@@ -15,6 +15,49 @@ use Illuminate\Support\Facades\DB;
  */
 class DocumentService
 {
+    /**
+     * Broadcast a memo to every active staff member in a division or department.
+     * No single holder — each recipient is a "concerned" assignee who acknowledges receipt.
+     */
+    public function broadcast(array $data, User $actor, string $scope): Document
+    {
+        return DB::transaction(function () use ($data, $actor, $scope) {
+            $document = Document::create(array_merge($data, [
+                'status' => 'released',
+                'is_broadcast' => true,
+                'created_by' => $actor->id,
+                'current_holder_id' => null,
+                'division_id' => $actor->division_id,
+                'department_id' => $actor->department_id,
+                'received_at' => $data['received_at'] ?? now(),
+                'released_at' => now(),
+            ]));
+            $this->log($document, 'encoded', $actor, remarks: 'Memo encoded for broadcast.');
+
+            $recipients = User::where('is_active', true)
+                ->when($scope === 'division', fn ($q) => $q->where('division_id', $actor->division_id))
+                ->when($scope === 'department', fn ($q) => $q->where('department_id', $actor->department_id))
+                ->where('id', '!=', $actor->id)
+                ->get();
+
+            foreach ($recipients as $r) {
+                $this->addAssignee($document, $r->id);
+                $r->notify(new \App\Notifications\DocumentRouted($document, 'broadcast', $actor->name, $data['assign_remarks'] ?? null));
+            }
+
+            $this->log($document, 'released', $actor, remarks: 'Broadcast to '.$recipients->count().' staff ('.$scope.').');
+
+            return $document->refresh();
+        });
+    }
+
+    /** A recipient acknowledges receipt of a broadcast memo. */
+    public function acknowledge(Document $document, User $user): void
+    {
+        $document->assignees()->updateExistingPivot($user->id, ['acknowledged_at' => now()]);
+        $this->log($document, 'received', $user, remarks: 'Acknowledged receipt of the memo.');
+    }
+
     private function divisionOf(int $userId): ?int
     {
         return User::find($userId)?->division_id;
@@ -69,6 +112,7 @@ class DocumentService
                 'status' => 'draft',
                 'created_by' => $actor->id,
                 'division_id' => $data['division_id'] ?? $actor->division_id,
+                'department_id' => $data['department_id'] ?? $actor->department_id,
                 'received_at' => $data['received_at'] ?? now(),
             ]));
 
@@ -90,9 +134,11 @@ class DocumentService
             // If the document was already released, re-routing it should alert the new holder.
             $wasReleased = $document->status === 'released';
 
+            $holder = User::find($assigneeId);
             $document->update([
                 'current_holder_id' => $assigneeId,
-                'division_id' => $this->divisionOf($assigneeId) ?? $document->division_id,
+                'division_id' => $holder?->division_id ?? $document->division_id,
+                'department_id' => $holder?->department_id ?? $document->department_id,
             ]);
             $this->addAssignee($document, $assigneeId);
             $this->log($document, 'assigned', $actor, toUserId: $assigneeId, remarks: $remarks ?? 'Document assigned.');
@@ -140,10 +186,12 @@ class DocumentService
     {
         return DB::transaction(function () use ($document, $toUserId, $actor, $remarks) {
             $from = $document->current_holder_id;
+            $to = User::find($toUserId);
             $document->update([
                 'status' => 'forwarded',
                 'current_holder_id' => $toUserId,
-                'division_id' => $this->divisionOf($toUserId) ?? $document->division_id,
+                'division_id' => $to?->division_id ?? $document->division_id,
+                'department_id' => $to?->department_id ?? $document->department_id,
             ]);
             $this->addAssignee($document, $toUserId);
             $this->log($document, 'forwarded', $actor, toUserId: $toUserId, fromUserId: $from, remarks: $remarks);

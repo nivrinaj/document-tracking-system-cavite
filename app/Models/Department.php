@@ -6,25 +6,17 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class Division extends Model
+class Department extends Model
 {
     use HasFactory;
 
-    protected $fillable = [
-        'department_id',
-        'name',
-        'code',
-        'description',
-        'is_active',
-    ];
+    protected $fillable = ['name', 'code', 'description', 'is_active'];
 
-    protected $casts = [
-        'is_active' => 'boolean',
-    ];
+    protected $casts = ['is_active' => 'boolean'];
 
-    public function department(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    public function divisions(): HasMany
     {
-        return $this->belongsTo(Department::class);
+        return $this->hasMany(Division::class);
     }
 
     public function users(): HasMany

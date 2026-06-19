@@ -21,15 +21,7 @@ class DocumentController extends Controller
     {
         $user = $request->user();
 
-        $query = Document::with(['creator', 'currentHolder', 'division'])->latest();
-
-        if (! $user->isHead()) {
-            $query->where(function ($q) use ($user) {
-                $q->where('created_by', $user->id)
-                    ->orWhere('current_holder_id', $user->id)
-                    ->orWhereHas('assignees', fn ($a) => $a->where('users.id', $user->id));
-            });
-        }
+        $query = Document::with(['creator', 'currentHolder', 'division'])->visibleTo($user)->latest();
 
         if ($search = $request->input('search')) {
             $query->where(function ($q) use ($search) {
@@ -103,6 +95,7 @@ class DocumentController extends Controller
             'division_id' => ['nullable', 'exists:divisions,id'],
             'assignee_id' => ['nullable', 'exists:users,id'],
             'assign_remarks' => ['nullable', 'string'],
+            'broadcast_scope' => ['nullable', 'in:none,division,department'],
         ]);
 
         // Make sure a voucher number isn't already in use for this year.
@@ -113,6 +106,15 @@ class DocumentController extends Controller
                     'voucher_number' => "A document with voucher number \"{$data['voucher_number']}\" already exists this year ({$code}).",
                 ]);
             }
+        }
+
+        // Memo broadcast — distribute to everyone in the chosen scope.
+        $scope = $data['broadcast_scope'] ?? 'none';
+        if (in_array($scope, ['division', 'department'])) {
+            $document = $service->broadcast($data, $request->user(), $scope);
+
+            return redirect()->route('documents.show', $document)
+                ->with('success', "Memo broadcast to your {$scope}. Tracking code: {$document->tracking_code}");
         }
 
         $document = $service->encode($data, $request->user(), $data['assignee_id'] ?? null);
@@ -223,6 +225,14 @@ class DocumentController extends Controller
         return back()->with('success', 'Document forwarded.');
     }
 
+    public function acknowledge(Request $request, Document $document, DocumentService $service)
+    {
+        $this->authorize('acknowledge', $document);
+        $service->acknowledge($document, $request->user());
+
+        return back()->with('success', 'Receipt acknowledged. Thank you.');
+    }
+
     public function archive(Request $request, Document $document, DocumentService $service)
     {
         $this->authorize('archive', $document);
@@ -265,10 +275,15 @@ class DocumentController extends Controller
 
     /* -------------------- Helpers -------------------- */
 
-    /** Anyone active in the department can be assigned a document. */
+    /** Active staff who can be assigned — limited to the encoder's department. */
     private function assignableUsers()
     {
-        return User::with('division')->where('is_active', true)->orderBy('name')->get();
+        $user = Auth::user();
+
+        return User::with('division')->where('is_active', true)
+            ->when(! $user->can('documents.viewAll') && $user->department_id,
+                fn ($q) => $q->where('department_id', $user->department_id))
+            ->orderBy('name')->get();
     }
 
     private function authorizeAction(string $permission): void

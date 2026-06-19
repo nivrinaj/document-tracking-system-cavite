@@ -40,6 +40,7 @@ class UserController extends Controller
     {
         return view('users.create', [
             'divisions' => Division::orderBy('name')->get(),
+            'departments' => \App\Models\Department::orderBy('name')->get(),
             'roles' => Role::orderBy('name')->get(),
         ]);
     }
@@ -52,6 +53,7 @@ class UserController extends Controller
             'email' => ['nullable', 'email', 'unique:users,email'],
             'password' => ['required', 'confirmed', Password::defaults()],
             'division_id' => ['nullable', 'exists:divisions,id'],
+            'department_id' => ['nullable', 'exists:departments,id'],
             'position' => ['nullable', 'string', 'max:255'],
             'phone' => ['nullable', 'string', 'max:50'],
             'role' => ['required', 'exists:roles,name'],
@@ -64,6 +66,7 @@ class UserController extends Controller
             'email' => $data['email'] ?? null,
             'password' => Hash::make($data['password']),
             'division_id' => $data['division_id'] ?? null,
+            'department_id' => $data['department_id'] ?? null,
             'position' => $data['position'] ?? null,
             'phone' => $data['phone'] ?? null,
             'is_active' => $request->boolean('is_active', true),
@@ -80,6 +83,7 @@ class UserController extends Controller
         return view('users.edit', [
             'user' => $user,
             'divisions' => Division::orderBy('name')->get(),
+            'departments' => \App\Models\Department::orderBy('name')->get(),
             'roles' => Role::orderBy('name')->get(),
         ]);
     }
@@ -92,6 +96,7 @@ class UserController extends Controller
             'email' => ['nullable', 'email', Rule::unique('users', 'email')->ignore($user->id)],
             'password' => ['nullable', 'confirmed', Password::defaults()],
             'division_id' => ['nullable', 'exists:divisions,id'],
+            'department_id' => ['nullable', 'exists:departments,id'],
             'position' => ['nullable', 'string', 'max:255'],
             'phone' => ['nullable', 'string', 'max:50'],
             'role' => ['required', 'exists:roles,name'],
@@ -103,6 +108,7 @@ class UserController extends Controller
             'username' => $data['username'],
             'email' => $data['email'] ?? null,
             'division_id' => $data['division_id'] ?? null,
+            'department_id' => $data['department_id'] ?? null,
             'position' => $data['position'] ?? null,
             'phone' => $data['phone'] ?? null,
             'is_active' => $request->boolean('is_active'),
