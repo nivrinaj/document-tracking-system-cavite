@@ -38,4 +38,21 @@ class NotificationController extends Controller
             'count' => $request->user()->unreadNotifications()->count(),
         ]);
     }
+
+    /** Live feed for the bell dropdown (count + recent unread items). */
+    public function feed(Request $request)
+    {
+        $items = $request->user()->unreadNotifications()->latest()->take(8)->get()->map(fn ($n) => [
+            'id' => $n->id,
+            'message' => $n->data['message'] ?? 'Notification',
+            'code' => $n->data['tracking_code'] ?? '',
+            'ago' => $n->created_at->diffForHumans(),
+            'read_url' => route('notifications.read', $n->id),
+        ]);
+
+        return response()->json([
+            'count' => $request->user()->unreadNotifications()->count(),
+            'items' => $items,
+        ]);
+    }
 }

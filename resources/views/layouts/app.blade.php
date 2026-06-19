@@ -165,36 +165,23 @@
                 </div>
 
                 {{-- Notifications bell --}}
-                @php
-                    $unread = auth()->user()->unreadNotifications()->latest()->take(8)->get();
-                    $unreadCount = $unread->count();
-                @endphp
+                @php $unreadCount = auth()->user()->unreadNotifications()->count(); @endphp
                 <div class="relative" x-data="{ open: false }">
-                    <button @click="open = !open" class="relative p-2 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700" title="Notifications">
+                    <button @click="open = !open; if (open) window.__notifLoad && window.__notifLoad()" class="relative p-2 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700" title="Notifications">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
                         <span id="notifBadge" class="absolute -top-0.5 -right-0.5 bg-red-500 text-white text-[10px] leading-none rounded-full px-1.5 py-0.5 {{ $unreadCount > 0 ? '' : 'hidden' }}">{{ $unreadCount > 9 ? '9+' : $unreadCount }}</span>
                     </button>
                     <div x-show="open" x-cloak @click.outside="open = false"
+                         x-init="window.__notifLoad && window.__notifLoad()"
                          class="absolute right-0 mt-2 w-80 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-lg z-30">
                         <div class="flex items-center justify-between px-4 py-2 border-b border-gray-100 dark:border-gray-700">
                             <span class="font-semibold text-sm">Notifications</span>
-                            @if($unreadCount > 0)
-                                <form method="POST" action="{{ route('notifications.readAll') }}">@csrf
-                                    <button class="text-xs link">Mark all read</button>
-                                </form>
-                            @endif
+                            <form method="POST" action="{{ route('notifications.readAll') }}">@csrf
+                                <button class="text-xs link">Mark all read</button>
+                            </form>
                         </div>
-                        <div class="max-h-80 overflow-y-auto">
-                            @forelse($unread as $n)
-                                <form method="POST" action="{{ route('notifications.read', $n->id) }}">@csrf
-                                    <button type="submit" class="w-full text-left px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 border-b border-gray-50 dark:border-gray-700/50">
-                                        <div class="text-sm">{{ $n->data['message'] ?? 'Notification' }}</div>
-                                        <div class="text-xs text-gray-400 mt-0.5">{{ $n->data['tracking_code'] ?? '' }} · {{ $n->created_at->diffForHumans() }}</div>
-                                    </button>
-                                </form>
-                            @empty
-                                <p class="px-4 py-8 text-center text-sm text-gray-400">You're all caught up 🎉</p>
-                            @endforelse
+                        <div id="notifList" class="max-h-80 overflow-y-auto">
+                            <p class="px-4 py-8 text-center text-sm text-gray-400">Loading…</p>
                         </div>
                         <a href="{{ route('notifications.index') }}" class="block text-center text-xs link py-2 border-t border-gray-100 dark:border-gray-700">View all notifications</a>
                     </div>
@@ -318,21 +305,48 @@
         })();
     </script>
 
-    {{-- Keep the notification badge live without reloading (light: 1 request/min) --}}
+    {{-- Live notification bell: badge polls every 60s; dropdown loads fresh on open --}}
     <script>
         (function () {
             const badge = document.getElementById('notifBadge');
-            if (!badge) return;
-            async function poll() {
+            const list = document.getElementById('notifList');
+            const csrf = document.querySelector('meta[name=csrf-token]')?.content || '';
+            const feedUrl = '{{ route('notifications.feed') }}';
+            const esc = s => (s || '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+            function render(items) {
+                if (!list) return;
+                if (!items.length) {
+                    list.innerHTML = '<p class="px-4 py-8 text-center text-sm text-gray-400">You\'re all caught up 🎉</p>';
+                    return;
+                }
+                list.innerHTML = items.map(it => `
+                    <form method="POST" action="${it.read_url}">
+                        <input type="hidden" name="_token" value="${csrf}">
+                        <button type="submit" class="w-full text-left px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 border-b border-gray-50 dark:border-gray-700/50">
+                            <div class="text-sm">${esc(it.message)}</div>
+                            <div class="text-xs text-gray-400 mt-0.5">${esc(it.code)} · ${esc(it.ago)}</div>
+                        </button>
+                    </form>`).join('');
+            }
+
+            function updateBadge(count) {
+                if (!badge) return;
+                if (count > 0) { badge.textContent = count > 9 ? '9+' : count; badge.classList.remove('hidden'); }
+                else { badge.classList.add('hidden'); }
+            }
+
+            window.__notifLoad = async function () {
                 try {
-                    const r = await fetch('{{ route('notifications.unreadCount') }}', { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+                    const r = await fetch(feedUrl, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
                     if (!r.ok) return;
                     const d = await r.json();
-                    if (d.count > 0) { badge.textContent = d.count > 9 ? '9+' : d.count; badge.classList.remove('hidden'); }
-                    else { badge.classList.add('hidden'); }
-                } catch (e) { /* ignore transient errors */ }
-            }
-            setInterval(poll, 60000); // every 60s
+                    updateBadge(d.count);
+                    render(d.items || []);
+                } catch (e) { /* ignore */ }
+            };
+
+            setInterval(window.__notifLoad, 60000); // refresh badge + list every 60s
         })();
     </script>
 

@@ -43,6 +43,17 @@ class DocumentController extends Controller
             $query->where('status', $status);
         }
 
+        // Stage groups (used by the dashboard cards) map to several statuses.
+        $stages = [
+            'awaiting_release' => ['draft'],
+            'in_transit' => ['released', 'forwarded'],
+            'in_progress' => ['received'],
+            'completed' => ['archived', 'completed'],
+        ];
+        if (($stage = $request->input('stage')) && isset($stages[$stage])) {
+            $query->whereIn('status', $stages[$stage]);
+        }
+
         if ($priority = $request->input('priority')) {
             $query->where('priority', $priority);
         }

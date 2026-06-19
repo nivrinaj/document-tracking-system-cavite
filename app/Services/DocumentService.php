@@ -87,12 +87,19 @@ class DocumentService
     public function assign(Document $document, int $assigneeId, User $actor, ?string $remarks = null): Document
     {
         return DB::transaction(function () use ($document, $assigneeId, $actor, $remarks) {
+            // If the document was already released, re-routing it should alert the new holder.
+            $wasReleased = $document->status === 'released';
+
             $document->update([
                 'current_holder_id' => $assigneeId,
                 'division_id' => $this->divisionOf($assigneeId) ?? $document->division_id,
             ]);
             $this->addAssignee($document, $assigneeId);
             $this->log($document, 'assigned', $actor, toUserId: $assigneeId, remarks: $remarks ?? 'Document assigned.');
+
+            if ($wasReleased) {
+                $this->notify($assigneeId, $actor, $document, 'assigned', $remarks);
+            }
 
             return $document->refresh();
         });

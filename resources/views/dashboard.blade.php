@@ -22,16 +22,16 @@
 
         {{-- Stat cards — one per workflow stage --}}
         <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <x-stat-card label="{{ $isHead ? 'Awaiting Release' : 'My Drafts (to release)' }}" :value="$stats['awaiting_release']" color="amber">
+            <x-stat-card label="{{ $isHead ? 'Awaiting Release' : 'My Drafts (to release)' }}" :value="$stats['awaiting_release']" color="amber" :href="route('documents.index', ['stage' => 'awaiting_release'])">
                 <x-slot:icon><path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></x-slot:icon>
             </x-stat-card>
-            <x-stat-card label="In Transit (to receive)" :value="$stats['in_transit']" color="blue">
+            <x-stat-card label="In Transit (to receive)" :value="$stats['in_transit']" color="blue" :href="route('documents.index', ['stage' => 'in_transit'])">
                 <x-slot:icon><path stroke-linecap="round" stroke-linejoin="round" d="M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1"/></x-slot:icon>
             </x-stat-card>
-            <x-stat-card label="In Progress (received)" :value="$stats['active']" color="primary">
+            <x-stat-card label="In Progress (received)" :value="$stats['active']" color="primary" :href="route('documents.index', ['stage' => 'in_progress'])">
                 <x-slot:icon><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></x-slot:icon>
             </x-stat-card>
-            <x-stat-card label="Completed / Archived" :value="$stats['completed']" color="green">
+            <x-stat-card label="Completed / Archived" :value="$stats['completed']" color="green" :href="route('documents.index', ['stage' => 'completed'])">
                 <x-slot:icon><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></x-slot:icon>
             </x-stat-card>
         </div>
@@ -153,26 +153,34 @@
             </div>
         </div>
 
-        {{-- Recent activity (full width, capped height so it never stretches the page) --}}
-        <x-card>
-            <h2 class="font-semibold mb-3">Recent activity</h2>
-            <ol class="space-y-3 max-h-96 overflow-y-auto pr-1">
+        {{-- Recent activity (full-width rows, capped height) --}}
+        <x-card padding="p-0">
+            <div class="flex items-center justify-between px-5 py-3 border-b border-gray-100 dark:border-gray-700">
+                <h2 class="font-semibold">Recent activity</h2>
+                @can('logs.view')
+                    <a href="{{ route('logs.index') }}" class="text-xs link">View all logs →</a>
+                @endcan
+            </div>
+            <ol class="divide-y divide-gray-100 dark:divide-gray-700 max-h-96 overflow-y-auto">
                 @forelse($activity as $log)
-                    <li class="flex gap-3">
-                        <div class="mt-1.5 w-2 h-2 rounded-full shrink-0" style="background: var(--color-primary)"></div>
-                        <div class="min-w-0">
-                            <p class="text-sm">
-                                <span class="font-medium">{{ $log->actor?->name ?? 'System' }}</span>
-                                {{ strtolower($log->actionLabel()) }}
-                                @if($log->toUser) → {{ $log->toUser->name }} @endif
-                            </p>
-                            <p class="text-xs text-gray-400 truncate">
-                                {{ $log->document?->title }} · {{ $log->created_at->diffForHumans() }}
-                            </p>
+                    <li class="flex items-center justify-between gap-4 px-5 py-3 hover:bg-gray-50 dark:hover:bg-gray-700/40">
+                        <div class="flex items-start gap-3 min-w-0">
+                            <span class="mt-1.5 w-2 h-2 rounded-full shrink-0" style="background: var(--color-primary)"></span>
+                            <div class="min-w-0">
+                                <p class="text-sm">
+                                    <span class="font-medium">{{ $log->actor?->name ?? 'System' }}</span>
+                                    {{ strtolower($log->actionLabel()) }}
+                                    @if($log->toUser) <span class="text-gray-400">→</span> {{ $log->toUser->name }} @endif
+                                </p>
+                                @if($log->document)
+                                    <p class="text-xs text-gray-400 truncate">{{ $log->document->title }} · <span class="font-mono">{{ $log->document->tracking_code }}</span></p>
+                                @endif
+                            </div>
                         </div>
+                        <span class="text-xs text-gray-400 whitespace-nowrap shrink-0">{{ $log->created_at->diffForHumans() }}</span>
                     </li>
                 @empty
-                    <p class="text-sm text-gray-400">No activity yet.</p>
+                    <li class="px-5 py-8 text-center text-sm text-gray-400">No activity yet.</li>
                 @endforelse
             </ol>
         </x-card>

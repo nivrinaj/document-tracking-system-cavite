@@ -19,10 +19,19 @@ class DocumentPolicy
     }
 
     /**
+     * Override authority — may act on a document even when not the current holder
+     * or out of the normal flow. Limited to Super Admin and Department Head.
+     * (Assistant Department Head can VIEW everything but cannot override actions.)
+     */
+    protected function canOverride(User $user): bool
+    {
+        return $user->hasAnyRole(['Super Admin', 'Department Head']);
+    }
+
+    /**
      * Can the user SEE the document details / history?
-     * Heads (and Super Admin) can see every document in the department.
-     * Everyone else only sees documents that concern them.
-     * This is what powers the "QR not found" rule for the wrong user.
+     * Heads (Dept Head, Asst Head, Super Admin) see every document; everyone
+     * else only sees documents that concern them. Powers the "QR not found" rule.
      */
     public function view(User $user, Document $document): bool
     {
@@ -37,47 +46,59 @@ class DocumentPolicy
             && in_array($document->status, ['released', 'forwarded']);
     }
 
-    /** The current holder can forward, but only once they have received it. */
+    /**
+     * Forward requires the holder to have RECEIVED it first (status = received),
+     * which keeps the audit trail intact. Override roles may force it.
+     */
     public function forward(User $user, Document $document): bool
     {
-        return $user->can('documents.forward')
-            && $document->current_holder_id === $user->id
-            && in_array($document->status, ['received', 'forwarded']);
+        if (! $user->can('documents.forward') || $document->isClosed()) {
+            return false;
+        }
+
+        return ($document->current_holder_id === $user->id && $document->status === 'received')
+            || $this->canOverride($user);
     }
 
-    /** The current holder can archive/complete once received. */
+    /** Archive/complete also requires having received it first (or override). */
     public function archive(User $user, Document $document): bool
     {
-        return $user->can('documents.archive')
-            && $document->current_holder_id === $user->id
-            && in_array($document->status, ['received', 'forwarded']);
+        if (! $user->can('documents.archive') || $document->isClosed()) {
+            return false;
+        }
+
+        return ($document->current_holder_id === $user->id && $document->status === 'received')
+            || $this->canOverride($user);
     }
 
-    /** Release is done by receiving staff while still a draft with an assignee. */
+    /** Release is done by the encoder while still a draft with an assignee. */
     public function release(User $user, Document $document): bool
     {
         return $user->can('documents.release')
             && $document->status === 'draft'
             && $document->current_holder_id !== null
-            && ($document->created_by === $user->id || $user->isHead());
+            && ($document->created_by === $user->id || $this->canOverride($user));
     }
 
     public function assign(User $user, Document $document): bool
     {
+        // The encoder may (re)assign while the document is still a draft OR
+        // released-but-not-yet-received (to fix a mis-assignment before pickup).
+        // Once received/forwarded, only an override role can re-route it.
         return $user->can('documents.assign')
-            && in_array($document->status, ['draft'])
-            && ($document->created_by === $user->id || $user->isHead());
+            && (in_array($document->status, ['draft', 'released']) || $this->canOverride($user))
+            && ($document->created_by === $user->id || $this->canOverride($user));
     }
 
     public function update(User $user, Document $document): bool
     {
-        return ($document->created_by === $user->id || $user->isHead())
+        return ($document->created_by === $user->id || $this->canOverride($user))
             && $document->status === 'draft';
     }
 
     public function delete(User $user, Document $document): bool
     {
         return $user->can('documents.delete')
-            && ($document->created_by === $user->id || $user->isHead());
+            && ($document->created_by === $user->id || $this->canOverride($user));
     }
 }

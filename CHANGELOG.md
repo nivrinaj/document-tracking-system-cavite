@@ -6,10 +6,19 @@ reviewed or rolled back. Format based on [Keep a Changelog](https://keepachangel
 
 ---
 
+## v1.7.0 — 2026-06-19
+**Workflow integrity & dashboard finishing touches**
+- **Must receive before acting** — a recipient can no longer Forward or Archive a document until they have **Received** it, keeping the audit trail intact. Out-of-flow override is limited to **Super Admin** and **Department Head** (not Assistant Department Head).
+- **Clickable dashboard counters** — each stat card opens Document Tracking filtered to that stage.
+- **Recent Activity** redesigned into clean full-width rows.
+- **Notification dropdown** now loads live content (fixes empty dropdown when the badge updated).
+- The encoder can **re-assign a released document** while it has not yet been received (fixes mis-assignments before pickup); the new recipient is notified.
+
 ## v1.6.0 — 2026-06-19
 **Dashboard polish & more settings**
 - Dashboard no longer shows long empty panels — empty queues collapse into a single "You're all caught up" card, and **Recent Activity** is now a full-width, height-capped scrolling panel.
-- **Clickable charts** — clicking a slice on the *By priority* / *By status* charts opens Document Tracking pre-filtered.
+- **Clickable charts & stat cards** — clicking a chart slice or a dashboard counter opens Document Tracking pre-filtered (by priority, status, or stage).
+- Recent Activity redesigned into clean full-width rows.
 - New **System Settings**: tracking-code **prefix**, **records per page**, **support contact** (footer), and a **dashboard announcement** banner.
 
 ## v1.5.0 — 2026-06-19
