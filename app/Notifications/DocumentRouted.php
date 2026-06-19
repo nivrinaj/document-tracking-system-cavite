@@ -27,13 +27,22 @@ class DocumentRouted extends Notification
     public function toArray(object $notifiable): array
     {
         $by = $this->byName ? " by {$this->byName}" : '';
+        $title = $this->document->title;
+
+        $message = match ($this->verb) {
+            'broadcast' => "📣 New memo{$by}: {$title}",
+            'forwarded' => "A document was forwarded to you{$by}: {$title}",
+            'assigned' => "A document was assigned to you{$by}: {$title}",
+            'released' => "A document was released to you{$by}: {$title}",
+            default => "A document was sent to you{$by}: {$title}",
+        };
 
         return [
             'document_id' => $this->document->id,
             'tracking_code' => $this->document->tracking_code,
-            'title' => $this->document->title,
+            'title' => $title,
             'verb' => $this->verb,
-            'message' => "A document was {$this->verb} to you{$by}: {$this->document->title}",
+            'message' => $message,
             'remarks' => $this->remarks,
             'url' => route('documents.show', $this->document),
         ];

@@ -24,14 +24,14 @@
                     </select>
                 @endif
                 <div>
-                    <label class="block text-[11px] text-gray-400 mb-0.5">From</label>
-                    <input type="date" name="date_from" value="{{ request('date_from') }}" class="input">
+                    <label class="block text-[11px] text-gray-400 mb-0.5">Date range</label>
+                    <div class="flex items-center gap-2">
+                        <input type="date" name="date_from" value="{{ request('date_from') }}" class="input" aria-label="From">
+                        <span class="text-gray-400 text-sm">to</span>
+                        <input type="date" name="date_to" value="{{ request('date_to') }}" class="input" aria-label="To">
+                    </div>
                 </div>
-                <div>
-                    <label class="block text-[11px] text-gray-400 mb-0.5">To</label>
-                    <input type="date" name="date_to" value="{{ request('date_to') }}" class="input">
-                </div>
-                <div class="sm:col-span-2 lg:col-span-4 flex gap-2"><x-btn type="submit">Filter</x-btn><x-btn :href="route('logs.index')" variant="secondary">Reset</x-btn></div>
+                <div class="sm:col-span-2 lg:col-span-{{ $canViewAll ? '4' : '3' }} flex gap-2"><x-btn type="submit">Filter</x-btn><x-btn :href="route('logs.index')" variant="secondary">Reset</x-btn></div>
             </form>
         </x-card>
 

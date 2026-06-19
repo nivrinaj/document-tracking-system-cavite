@@ -85,14 +85,56 @@ class SettingController extends Controller
     {
         abort_unless($request->user()->hasRole('Super Admin'), 403);
 
-        \Illuminate\Support\Facades\DB::table('document_assignees')->delete();
-        \Illuminate\Support\Facades\DB::table('document_logs')->delete();
-        \App\Models\Document::query()->delete();
-        \Illuminate\Support\Facades\DB::table('notifications')->delete();
-        \App\Models\ActivityLog::query()->delete();
-        \App\Models\ActivityLog::record('data.reset', 'Cleared all documents, history and notifications');
+        $target = $request->input('target', 'documents');
 
-        return back()->with('success', 'All documents, history and notifications have been deleted. You can now start fresh.');
+        $clearDocuments = function () {
+            \Illuminate\Support\Facades\DB::table('document_assignees')->delete();
+            \Illuminate\Support\Facades\DB::table('document_logs')->delete();
+            \App\Models\Document::query()->delete();
+            \Illuminate\Support\Facades\DB::table('notifications')->delete();
+            \App\Models\ActivityLog::query()->delete();
+        };
+
+        switch ($target) {
+            case 'documents':
+                $clearDocuments();
+                $msg = 'All documents, history and notifications have been deleted.';
+                break;
+
+            case 'users':
+                // Keep Super Admins so you don't lock yourself out.
+                $deleted = \App\Models\User::whereDoesntHave('roles', fn ($q) => $q->where('name', 'Super Admin'))->get();
+                $deleted->each->delete();
+                $msg = "Deleted {$deleted->count()} user(s). Super Admin accounts were kept.";
+                break;
+
+            case 'divisions':
+                $msg = \App\Models\Division::count().' division(s) deleted.';
+                \App\Models\Division::query()->delete();
+                break;
+
+            case 'departments':
+                // Divisions belong to departments — clear them too.
+                \App\Models\Division::query()->delete();
+                $msg = \App\Models\Department::count().' department(s) and their divisions deleted.';
+                \App\Models\Department::query()->delete();
+                break;
+
+            case 'all':
+                $clearDocuments();
+                \App\Models\User::whereDoesntHave('roles', fn ($q) => $q->where('name', 'Super Admin'))->get()->each->delete();
+                \App\Models\Division::query()->delete();
+                \App\Models\Department::query()->delete();
+                $msg = 'Everything cleared (documents, non–Super-Admin users, divisions, departments). Ready for real data.';
+                break;
+
+            default:
+                return back()->with('error', 'Unknown reset target.');
+        }
+
+        \App\Models\ActivityLog::record('data.reset', "Danger Zone: cleared {$target}");
+
+        return back()->with('success', $msg);
     }
 
     private function deleteIfExists(?string $path): void

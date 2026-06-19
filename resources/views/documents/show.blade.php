@@ -24,31 +24,42 @@
             {{-- Left: details + timeline --}}
             <div class="lg:col-span-2 space-y-6">
                 <x-card title="Information">
-                    <dl class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4 text-sm">
-                        <div><dt class="text-gray-400 text-xs uppercase">Type</dt><dd>{{ $document->document_type }}</dd></div>
+                    {{-- Routing highlight: where it came from → where it is now --}}
+                    <div class="grid sm:grid-cols-[1fr_auto_1fr] items-stretch gap-3 mb-6">
+                        <div class="rounded-xl border border-gray-200 dark:border-gray-700 p-4">
+                            <div class="text-[11px] uppercase tracking-wider text-gray-400 mb-1">From · origin</div>
+                            <div class="font-semibold">{{ $document->creator?->name ?? '—' }}</div>
+                            <div class="text-xs text-gray-500 dark:text-gray-400">{{ $document->creator?->orgUnit() }}</div>
+                        </div>
+                        <div class="hidden sm:flex items-center justify-center text-gray-300 dark:text-gray-600">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+                        </div>
+                        <div class="rounded-xl border-2 p-4" style="border-color: var(--color-primary)">
+                            <div class="text-[11px] uppercase tracking-wider text-gray-400 mb-1">Currently with</div>
+                            <div class="font-semibold">{{ $document->currentHolder?->name ?? ($document->is_broadcast ? '📣 Broadcast memo' : 'Unassigned') }}</div>
+                            <div class="text-xs text-gray-500 dark:text-gray-400">{{ $document->currentHolder?->orgUnit() ?? ($document->department?->code . ($document->division ? ' · '.$document->division->name : '')) }}</div>
+                        </div>
+                    </div>
+
+                    {{-- Document facts --}}
+                    <dl class="grid grid-cols-2 sm:grid-cols-4 gap-x-6 gap-y-4 text-sm">
+                        <div><dt class="text-[11px] uppercase tracking-wider text-gray-400">Type</dt><dd class="mt-0.5">{{ $document->document_type }}</dd></div>
                         @if($document->voucher_number)
-                            <div><dt class="text-gray-400 text-xs uppercase">Voucher No.</dt><dd class="font-mono">{{ $document->voucher_number }}</dd></div>
+                            <div><dt class="text-[11px] uppercase tracking-wider text-gray-400">Voucher No.</dt><dd class="mt-0.5 font-mono">{{ $document->voucher_number }}</dd></div>
                         @endif
-                        <div><dt class="text-gray-400 text-xs uppercase">Reference No.</dt><dd>{{ $document->reference_no ?? '—' }}</dd></div>
-                        <div><dt class="text-gray-400 text-xs uppercase">Source / Origin</dt><dd>{{ $document->source ?? '—' }}</dd></div>
-                        <div><dt class="text-gray-400 text-xs uppercase">Current location</dt><dd>{{ $document->department?->code ?? '—' }}@if($document->division) · {{ $document->division->name }}@endif</dd></div>
+                        <div><dt class="text-[11px] uppercase tracking-wider text-gray-400">Reference No.</dt><dd class="mt-0.5">{{ $document->reference_no ?? '—' }}</dd></div>
+                        <div><dt class="text-[11px] uppercase tracking-wider text-gray-400">Source / Origin</dt><dd class="mt-0.5">{{ $document->source ?? '—' }}</dd></div>
+                        <div><dt class="text-[11px] uppercase tracking-wider text-gray-400">Current location</dt><dd class="mt-0.5">{{ $document->department?->code ?? '—' }}@if($document->division) · {{ $document->division->name }}@endif</dd></div>
+                    </dl>
+
+                    {{-- Timeline facts --}}
+                    <dl class="grid grid-cols-2 sm:grid-cols-4 gap-x-6 gap-y-4 text-sm mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
+                        <div><dt class="text-[11px] uppercase tracking-wider text-gray-400">Received</dt><dd class="mt-0.5">{{ $document->received_at?->format('M d, Y g:i A') ?? '—' }}</dd></div>
+                        <div><dt class="text-[11px] uppercase tracking-wider text-gray-400">Released</dt><dd class="mt-0.5">{{ $document->released_at?->format('M d, Y g:i A') ?? '—' }}</dd></div>
+                        <div><dt class="text-[11px] uppercase tracking-wider text-gray-400">Age</dt><dd class="mt-0.5">{{ $document->age() }}</dd></div>
                         <div>
-                            <dt class="text-gray-400 text-xs uppercase">Encoded by (origin)</dt>
-                            <dd>{{ $document->creator?->name ?? '—' }}<span class="block text-xs text-gray-400">{{ $document->creator?->orgUnit() }}</span></dd>
-                        </div>
-                        <div>
-                            <dt class="text-gray-400 text-xs uppercase">Current Holder</dt>
-                            <dd class="font-medium">{{ $document->currentHolder?->name ?? ($document->is_broadcast ? 'Broadcast memo' : 'Unassigned') }}<span class="block text-xs text-gray-400 font-normal">{{ $document->currentHolder?->orgUnit() }}</span></dd>
-                        </div>
-                        <div><dt class="text-gray-400 text-xs uppercase">Received at dept</dt><dd>{{ $document->received_at?->format('M d, Y g:i A') ?? '—' }}</dd></div>
-                        <div><dt class="text-gray-400 text-xs uppercase">Released</dt><dd>{{ $document->released_at?->format('M d, Y g:i A') ?? '—' }}</dd></div>
-                        <div>
-                            <dt class="text-gray-400 text-xs uppercase">Age</dt>
-                            <dd>{{ $document->age() }}</dd>
-                        </div>
-                        <div>
-                            <dt class="text-gray-400 text-xs uppercase">{{ $document->isClosed() ? 'Turnaround' : 'Idle / since last action' }}</dt>
-                            <dd>
+                            <dt class="text-[11px] uppercase tracking-wider text-gray-400">{{ $document->isClosed() ? 'Turnaround' : 'Idle time' }}</dt>
+                            <dd class="mt-0.5">
                                 @if($document->isClosed())
                                     {{ $document->turnaround() ?? '—' }}
                                 @else
@@ -56,10 +67,14 @@
                                 @endif
                             </dd>
                         </div>
-                        @if($document->description)
-                            <div class="sm:col-span-2"><dt class="text-gray-400 text-xs uppercase">Description</dt><dd>{{ $document->description }}</dd></div>
-                        @endif
                     </dl>
+
+                    @if($document->description)
+                        <div class="mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
+                            <div class="text-[11px] uppercase tracking-wider text-gray-400 mb-1">Description</div>
+                            <p class="text-sm text-gray-700 dark:text-gray-200">{{ $document->description }}</p>
+                        </div>
+                    @endif
                 </x-card>
 
                 {{-- Concerned staff --}}

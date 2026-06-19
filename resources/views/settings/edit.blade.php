@@ -150,20 +150,47 @@
         @role('Super Admin')
         <div class="bg-white dark:bg-gray-800 border border-red-200 dark:border-red-900/50 rounded-xl shadow-sm">
             <div class="px-5 py-3 border-b border-red-100 dark:border-red-900/40 font-semibold text-sm text-red-600">⚠ Danger Zone</div>
-            <div class="p-5">
-                <p class="text-sm font-medium">Delete all documents &amp; activity</p>
-                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1 mb-3 max-w-xl">
-                    Permanently removes <strong>all documents, their tracking history, notifications and the activity log</strong>.
-                    Your users, departments, divisions, document types and settings are kept. Use this to clear test data before you go live. <strong>This cannot be undone.</strong>
+            <div class="p-5 space-y-3">
+                <p class="text-xs text-gray-500 dark:text-gray-400 max-w-2xl">
+                    Use these to wipe <strong>test data</strong> before entering real records. Every action is <strong>permanent and cannot be undone</strong>.
+                    Deleting users keeps Super Admin accounts so you don't get locked out. Your settings &amp; document types are always kept.
                 </p>
-                <form method="POST" action="{{ route('settings.resetData') }}"
-                      data-confirm="Permanently DELETE all documents, history and notifications? This cannot be undone.">
-                    @csrf
-                    <button type="submit" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-red-600 text-white text-sm font-medium hover:bg-red-700">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-                        Delete all documents &amp; activity
-                    </button>
-                </form>
+
+                @php
+                    $dangerItems = [
+                        ['documents', 'Delete all documents', 'Removes every document, its history, attachments-of-record, notifications and the activity log.'],
+                        ['users', 'Delete all users', 'Removes all users except Super Admins.'],
+                        ['divisions', 'Delete all divisions', 'Removes every division (users keep their department).'],
+                        ['departments', 'Delete all departments', 'Removes every department and its divisions.'],
+                    ];
+                @endphp
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    @foreach($dangerItems as [$target, $label, $desc])
+                        <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-3 flex flex-col">
+                            <div class="text-sm font-medium">{{ $label }}</div>
+                            <div class="text-xs text-gray-400 mt-0.5 mb-3 flex-1">{{ $desc }}</div>
+                            <form method="POST" action="{{ route('settings.resetData') }}"
+                                  data-confirm="{{ $label }}? This is permanent and cannot be undone.">
+                                @csrf
+                                <input type="hidden" name="target" value="{{ $target }}">
+                                <button type="submit" class="act-del border border-red-200 dark:border-red-900/50">🗑 {{ $label }}</button>
+                            </form>
+                        </div>
+                    @endforeach
+                </div>
+
+                <div class="border-t border-red-100 dark:border-red-900/40 pt-3">
+                    <form method="POST" action="{{ route('settings.resetData') }}"
+                          data-confirm="DELETE EVERYTHING — all documents, users (except Super Admins), divisions and departments? This is permanent.">
+                        @csrf
+                        <input type="hidden" name="target" value="all">
+                        <button type="submit" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-red-600 text-white text-sm font-medium hover:bg-red-700">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                            Reset everything (start fresh)
+                        </button>
+                    </form>
+                </div>
             </div>
         </div>
         @endrole

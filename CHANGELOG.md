@@ -6,6 +6,13 @@ reviewed or rolled back. Format based on [Keep a Changelog](https://keepachangel
 
 ---
 
+## v2.2.2 — 2026-06-20
+**Polish & admin tools**
+- Redesigned the document **Information** panel — a clear "From → Currently with" routing highlight, grouped facts, and a tidy timeline section.
+- **Logs filter** rebalanced (combined date range).
+- Clearer **notification wording** (e.g. memos show "📣 New memo by …").
+- **Danger Zone** expanded: Super Admin can delete all documents, users (keeps Super Admins), divisions, departments — or reset everything — to prep for real data.
+
 ## v2.2.1 — 2026-06-20
 **Department/division visibility for inter-department tracking**
 - Documents table now has an **Origin (from)** column and shows each person's **department · division** under the origin and current holder.
