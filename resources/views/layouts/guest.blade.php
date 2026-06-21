@@ -2,7 +2,7 @@
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
     <head>
         <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
         <meta name="csrf-token" content="{{ csrf_token() }}">
 
         <title>{{ $settings['app_name'] ?? config('app.name', 'Laravel') }}</title>
@@ -18,8 +18,8 @@
 
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
-    <body class="font-sans text-gray-900 antialiased">
-        <div class="flex h-screen h-[100dvh] overflow-hidden">
+    <body class="font-sans text-gray-900 antialiased bg-white dark:bg-gray-900">
+        <div class="lg:flex lg:h-[100dvh]">
 
             {{-- ───────── Left: brand panel (desktop only) ───────── --}}
             <div class="relative hidden lg:flex lg:w-1/2 flex-col justify-between p-12 overflow-hidden">
@@ -71,40 +71,29 @@
                 <p class="relative z-10 text-white/60 text-xs">{{ $settings['footer_text'] ?? '© '.date('Y').' '.($settings['organization'] ?? '') }}</p>
             </div>
 
-            {{-- ───────── Right: sign-in form ───────── --}}
-            <div class="relative flex-1 flex items-center justify-center">
+            {{-- ───────── Right / mobile: clean white centered form ─────────
+                 Mobile: plain white page, vertically centered, NO background image,
+                 height is exactly the dynamic viewport (100dvh) so it never scrolls.
+                 Desktop: right half, the brand panel handles the visuals. --}}
+            <div class="min-h-[100dvh] lg:min-h-0 lg:h-[100dvh] lg:w-1/2 flex items-center justify-center bg-white dark:bg-gray-900 px-6 py-8">
+                <div class="w-full max-w-sm">
 
-                {{-- Mobile background --}}
-                <div class="fixed inset-0 lg:hidden">
-                    @if(!empty($settings['login_bg_path']))
-                        <div class="absolute inset-0 bg-cover bg-center" style="background-image: url('{{ asset('storage/'.$settings['login_bg_path']) }}');"></div>
-                    @endif
-                    <div class="absolute inset-0" style="background: linear-gradient(150deg, var(--color-primary) 0%, #1e293b 70%, #0f172a 100%); opacity: {{ !empty($settings['login_bg_path']) ? '0.9' : '1' }};"></div>
-                </div>
-
-                {{-- Card --}}
-                <div class="relative z-10 w-full max-w-sm mx-6
-                            rounded-2xl p-6 bg-white/85 backdrop-blur-xl border border-white/40 shadow-2xl
-                            lg:bg-white lg:dark:bg-gray-800 lg:border-gray-200 lg:dark:border-gray-700 lg:backdrop-blur-none lg:shadow-lg lg:rounded-xl lg:p-8">
-
-                    {{-- Logo + name (mobile only, compact) --}}
-                    <div class="lg:hidden flex items-center gap-3 mb-5">
+                    {{-- Brand (mobile only) --}}
+                    <div class="lg:hidden flex flex-col items-center text-center mb-8">
                         @if(!empty($settings['logo_path']))
-                            <img src="{{ asset('storage/'.$settings['logo_path']) }}" class="w-10 h-10 rounded-lg object-contain bg-white p-1 shadow ring-1 ring-black/5">
+                            <img src="{{ asset('storage/'.$settings['logo_path']) }}" class="w-16 h-16 rounded-2xl object-contain bg-white p-1.5 shadow ring-1 ring-gray-100">
                         @else
-                            <div class="w-10 h-10 rounded-lg flex items-center justify-center text-white text-lg font-bold shadow" style="background-image: linear-gradient(135deg, var(--color-primary), #1e293b);">
+                            <div class="w-16 h-16 rounded-2xl flex items-center justify-center text-white text-2xl font-bold shadow" style="background-image: linear-gradient(135deg, var(--color-primary), #1e293b);">
                                 {{ substr($settings['app_short_name'] ?? 'P', 0, 1) }}
                             </div>
                         @endif
-                        <div>
-                            <h1 class="font-semibold text-sm text-gray-800 dark:text-white leading-tight">{{ $settings['app_short_name'] ?? 'PGC DTS' }}</h1>
-                            @if(!empty($settings['organization']))
-                                <p class="text-[11px] text-gray-500 dark:text-gray-400 leading-tight">{{ $settings['organization'] }}</p>
-                            @endif
-                        </div>
+                        <h1 class="mt-3 font-semibold text-gray-900 dark:text-white">{{ $settings['app_name'] ?? config('app.name') }}</h1>
+                        @if(!empty($settings['organization']))
+                            <p class="text-xs text-gray-500 dark:text-gray-400">{{ $settings['organization'] }}</p>
+                        @endif
                     </div>
 
-                    <div class="mb-5">
+                    <div class="mb-6">
                         <h2 class="text-xl font-bold tracking-tight text-gray-900 dark:text-white">Welcome back</h2>
                         <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5">Sign in to continue</p>
                     </div>
