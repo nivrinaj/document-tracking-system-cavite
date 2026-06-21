@@ -6,6 +6,11 @@ reviewed or rolled back. Format based on [Keep a Changelog](https://keepachangel
 
 ---
 
+## v2.6.8 — 2026-06-21
+**Login centering + mobile notification dropdown**
+- Fixed the modern glass card not centering on mobile. The taller card could overflow the viewport, which broke flex centering. It now sits in a centering wrapper that **centers the card when it fits and lets the page scroll when it doesn't** — correct on any phone height. The branded background is fixed so it stays put while scrolling.
+- Fixed the **notifications dropdown overflowing the screen on mobile** — its width is now capped to the viewport so it no longer gets clipped on the left edge.
+
 ## v2.6.7 — 2026-06-21
 **Modern login design**
 - Refreshed the sign-in UI: a **glassmorphism card** (frosted blur, subtle border, soft shadow), a gradient **logo badge**, **inputs with leading icons** and soft focus rings, a show/hide password toggle, and a **gradient "Sign in" button** with a hover lift. Mobile keeps the vertically-centered card over the branded background; desktop keeps the split-screen.

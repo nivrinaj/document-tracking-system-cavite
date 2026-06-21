@@ -78,20 +78,24 @@
             </div>
 
             {{-- ───────── Right: sign-in form ───────── --}}
-            {{-- Mobile: floating card over the branded background, biased toward the lower half.
+            {{-- Mobile: glass card over the branded background. The card is centered when it
+                 fits and the page scrolls when it doesn't, so it's correct on every height.
                  Desktop: clean centered card (left panel handles branding). --}}
-            <div class="relative flex-1 flex flex-col items-center justify-center lg:justify-center min-h-screen min-h-[100dvh] p-6 sm:p-12 bg-gray-50 dark:bg-gray-900">
+            <div class="relative flex-1 flex flex-col bg-gray-50 dark:bg-gray-900">
 
-                {{-- Mobile-only branded background (image + gradient overlay) --}}
-                <div class="absolute inset-0 lg:hidden overflow-hidden">
+                {{-- Mobile-only branded background (image + gradient overlay); fixed so it covers while scrolling --}}
+                <div class="fixed inset-0 lg:hidden overflow-hidden">
                     @if(!empty($settings['login_bg_path']))
                         <div class="absolute inset-0 bg-cover bg-center" style="background-image: url('{{ asset('storage/'.$settings['login_bg_path']) }}');"></div>
                     @endif
                     <div class="absolute inset-0" style="background: linear-gradient(150deg, var(--color-primary) 0%, #1e293b 70%, #0f172a 100%); opacity: {{ !empty($settings['login_bg_path']) ? '0.9' : '1' }};"></div>
                 </div>
 
+                {{-- Centering wrapper: at least full height, centers the card; grows (page scrolls) if the card is taller --}}
+                <div class="relative z-10 flex-1 flex items-center justify-center min-h-screen min-h-[100dvh] p-6 sm:p-12">
+
                 {{-- Card: modern glass card on mobile, vertically centered; transparent & flat on desktop --}}
-                <div class="relative z-10 w-full max-w-sm rounded-3xl p-7 sm:p-8 bg-white/80 dark:bg-gray-900/70 backdrop-blur-xl border border-white/60 dark:border-white/10 shadow-2xl ring-1 ring-black/5
+                <div class="w-full max-w-sm rounded-3xl p-7 sm:p-8 bg-white/80 dark:bg-gray-900/70 backdrop-blur-xl border border-white/60 dark:border-white/10 shadow-2xl ring-1 ring-black/5
                             lg:bg-transparent lg:dark:bg-transparent lg:border-0 lg:ring-0 lg:shadow-none lg:backdrop-blur-none lg:p-0">
                     {{-- compact brand for mobile (inside the card) --}}
                     <div class="lg:hidden flex flex-col items-center mb-6">
@@ -114,6 +118,7 @@
                     </div>
 
                     {{ $slot }}
+                </div>
                 </div>
             </div>
         </div>

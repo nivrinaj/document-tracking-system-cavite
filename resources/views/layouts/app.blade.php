@@ -179,7 +179,7 @@
                     </button>
                     <div x-show="open" x-cloak @click.outside="open = false"
                          x-init="window.__notifLoad && window.__notifLoad()"
-                         class="absolute right-0 mt-2 w-80 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-lg z-30">
+                         class="absolute right-0 mt-2 w-80 max-w-[calc(100vw-1.5rem)] rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-lg z-30">
                         <div class="flex items-center justify-between px-4 py-2 border-b border-gray-100 dark:border-gray-700">
                             <span class="font-semibold text-sm">Notifications</span>
                             <form method="POST" action="{{ route('notifications.readAll') }}">@csrf
