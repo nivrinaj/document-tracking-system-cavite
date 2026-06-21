@@ -374,6 +374,7 @@ class DocumentController extends Controller
         $user = Auth::user();
 
         return User::with('division', 'department')->where('is_active', true)
+            ->where('id', '!=', $user->id)
             ->when($user->department_id, fn ($q) => $q->where('department_id', $user->department_id))
             ->orderBy('name')->get();
     }

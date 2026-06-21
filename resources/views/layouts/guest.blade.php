@@ -19,7 +19,7 @@
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
     <body class="font-sans text-gray-900 antialiased">
-        <div class="flex h-screen h-[100dvh]">
+        <div class="flex h-screen h-[100dvh] overflow-hidden">
 
             {{-- ───────── Left: brand panel (desktop only) ───────── --}}
             <div class="relative hidden lg:flex lg:w-1/2 flex-col justify-between p-12 overflow-hidden">

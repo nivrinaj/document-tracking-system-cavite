@@ -26,7 +26,8 @@
       "Bash(ls public/storage/branding/)",
       "Bash(rm -f public/_logintest.html)",
       "Bash(git -C D:/PGC log --oneline -1)",
-      "Bash(npm run *)"
+      "Bash(npm run *)",
+      "Bash(php artisan *)"
     ]
   }
 }
