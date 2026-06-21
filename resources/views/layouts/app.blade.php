@@ -61,7 +61,7 @@
     <div class="min-h-screen lg:flex">
 
         {{-- ===================== Sidebar ===================== --}}
-        <aside class="fixed inset-y-0 left-0 z-40 w-64 transform bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 transition-transform duration-200 lg:translate-x-0 lg:static lg:inset-0"
+        <aside class="fixed inset-y-0 left-0 z-40 w-64 transform bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 transition-transform duration-200 lg:translate-x-0 lg:sticky lg:top-0 lg:h-screen lg:self-start"
                :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'">
             <div class="flex items-center gap-3 h-16 px-5 border-b border-gray-200 dark:border-gray-700">
                 @if(!empty($settings['logo_path']))

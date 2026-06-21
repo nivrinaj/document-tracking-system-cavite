@@ -13,7 +13,16 @@
       "Bash(git -C D:/PGC log --oneline -4)",
       "Bash(cd /d \"D:/PGC\")",
       "Bash(php -r \"var_dump\\(function_exists\\('imagefilledarc'\\), function_exists\\('imagecreatetruecolor'\\), extension_loaded\\('gd'\\)\\);\")",
-      "Bash(php -r ' *)"
+      "Bash(php -r ' *)",
+      "Bash(grep -rln 'ucfirst\\($doc->status\\)\\\\|ucfirst\\($document->status\\)\\\\|=== '\\\\''draft'\\\\''\\\\|'\\\\''draft'\\\\''' D:/PGC/resources/views)",
+      "Bash(php -r 'require '\\\\''vendor/autoload.php'\\\\''; $a=require '\\\\''bootstrap/app.php'\\\\''; $a->make\\(Illuminate\\\\Contracts\\\\Console\\\\Kernel::class\\)->bootstrap\\(\\); echo '\\\\''login_bg_path: '\\\\''.var_export\\(App\\\\Models\\\\Setting::get\\('\\\\''login_bg_path'\\\\''\\),true\\).PHP_EOL;')",
+      "Bash(curl -s -o /dev/null -w \"login HTTP %{http_code}\\\\n\" http://localhost:8000/login)",
+      "Bash(netstat -ano)",
+      "Bash(php -l app/Models/Document.php)",
+      "Bash(php -l app/Http/Controllers/SettingController.php)",
+      "Bash(php -l app/Support/ChartImage.php)",
+      "Bash(php -l app/Http/Controllers/ReportController.php)",
+      "Bash(git -C D:/PGC log --oneline -2)"
     ]
   }
 }

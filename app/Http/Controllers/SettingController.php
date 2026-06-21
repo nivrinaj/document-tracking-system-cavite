@@ -104,10 +104,13 @@ class SettingController extends Controller
                 break;
 
             case 'users':
-                // Keep Super Admins so you don't lock yourself out.
+                // Documents reference users (creator/holder/assignees), so clear them
+                // first — otherwise deletion fails or leaves orphans. Keep Super Admins
+                // so you don't lock yourself out: everything goes except Super Admin.
+                $clearDocuments();
                 $deleted = \App\Models\User::whereDoesntHave('roles', fn ($q) => $q->where('name', 'Super Admin'))->get();
                 $deleted->each->delete();
-                $msg = "Deleted {$deleted->count()} user(s). Super Admin accounts were kept.";
+                $msg = "Deleted {$deleted->count()} user(s) and all documents/history. Only Super Admin account(s) remain.";
                 break;
 
             case 'divisions':

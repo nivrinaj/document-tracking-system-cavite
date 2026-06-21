@@ -173,7 +173,7 @@
                 @php
                     $dangerItems = [
                         ['documents', 'Delete all documents', 'Removes every document, its history, attachments-of-record, notifications and the activity log.'],
-                        ['users', 'Delete all users', 'Removes all users except Super Admins.'],
+                        ['users', 'Delete all users', 'Removes all users AND all documents/history, leaving only Super Admin accounts.'],
                         ['divisions', 'Delete all divisions', 'Removes every division (users keep their department).'],
                         ['departments', 'Delete all departments', 'Removes every department and its divisions.'],
                     ];

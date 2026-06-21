@@ -40,6 +40,31 @@ class Document extends Model
         'is_broadcast' => 'boolean',
     ];
 
+    /** Human-friendly label for a status value (the DB value stays 'draft'). */
+    public static function statusLabel(?string $status): string
+    {
+        return [
+            'draft' => 'Pending Release',
+        ][$status] ?? ucfirst((string) $status);
+    }
+
+    /** Label for this document's own status. */
+    public function statusName(): string
+    {
+        return static::statusLabel($this->status);
+    }
+
+    /** Re-key a [status => count] array using friendly labels (for charts/legends). */
+    public static function relabelStatuses(array $counts): array
+    {
+        $out = [];
+        foreach ($counts as $k => $v) {
+            $out[static::statusLabel($k)] = $v;
+        }
+
+        return $out;
+    }
+
     /**
      * Limit a query to documents the given user may see:
      *  - viewAll permission  -> every department

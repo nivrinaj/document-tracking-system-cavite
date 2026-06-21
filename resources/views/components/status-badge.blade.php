@@ -8,4 +8,4 @@
     $color = $colors[$status] ?? 'gray';
 @endphp
 
-<x-badge :color="$color">{{ ucfirst($status) }}</x-badge>
+<x-badge :color="$color">{{ \App\Models\Document::statusLabel($status) }}</x-badge>

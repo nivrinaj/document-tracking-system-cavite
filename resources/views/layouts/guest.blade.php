@@ -78,10 +78,21 @@
             </div>
 
             {{-- ───────── Right: sign-in form ───────── --}}
-            <div class="flex-1 flex flex-col justify-center items-center p-6 sm:p-12 bg-gray-50 dark:bg-gray-900">
-                <div class="w-full max-w-sm">
+            <div class="relative flex-1 flex flex-col justify-center items-center min-h-screen p-6 sm:p-12 bg-gray-50 dark:bg-gray-900">
+
+                {{-- Mobile-only branded background (image + gradient overlay); hidden on desktop where the left panel handles branding --}}
+                <div class="absolute inset-0 lg:hidden overflow-hidden">
+                    @if(!empty($settings['login_bg_path']))
+                        <div class="absolute inset-0 bg-cover bg-center" style="background-image: url('{{ asset('storage/'.$settings['login_bg_path']) }}');"></div>
+                    @endif
+                    <div class="absolute inset-0" style="background: linear-gradient(150deg, var(--color-primary) 0%, #1e293b 70%, #0f172a 100%); opacity: {{ !empty($settings['login_bg_path']) ? '0.9' : '1' }};"></div>
+                </div>
+
+                {{-- Card: elevated white card on mobile (over the gradient); transparent & flat on desktop --}}
+                <div class="relative z-10 w-full max-w-sm rounded-2xl shadow-2xl backdrop-blur p-6 sm:p-8 bg-white/95 dark:bg-gray-800/95
+                            lg:bg-transparent lg:dark:bg-transparent lg:shadow-none lg:backdrop-blur-none lg:p-0">
                     {{-- compact brand for mobile --}}
-                    <div class="lg:hidden flex flex-col items-center mb-8">
+                    <div class="lg:hidden flex flex-col items-center mb-6">
                         @if(!empty($settings['logo_path']))
                             <img src="{{ asset('storage/'.$settings['logo_path']) }}" class="w-14 h-14 rounded-xl object-contain bg-white p-1 shadow">
                         @else
@@ -89,7 +100,7 @@
                                 {{ substr($settings['app_short_name'] ?? 'P', 0, 1) }}
                             </div>
                         @endif
-                        <h1 class="mt-3 font-semibold text-center">{{ $settings['app_name'] ?? config('app.name') }}</h1>
+                        <h1 class="mt-3 font-semibold text-center text-gray-900 dark:text-white">{{ $settings['app_name'] ?? config('app.name') }}</h1>
                     </div>
 
                     <div class="mb-6">

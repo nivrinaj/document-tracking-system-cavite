@@ -156,7 +156,7 @@
                                     <td class="table-td" data-label="Title">{{ $doc->title }}</td>
                                     <td class="table-td" data-label="Type">{{ $doc->document_type }}</td>
                                     <td class="table-td" data-label="Priority">{{ ucfirst($doc->priority) }}</td>
-                                    <td class="table-td" data-label="Status">{{ ucfirst($doc->status) }}</td>
+                                    <td class="table-td" data-label="Status">{{ \App\Models\Document::statusLabel($doc->status) }}</td>
                                     <td class="table-td" data-label="Holder">{{ $doc->currentHolder?->name ?? '—' }}</td>
                                     <td class="table-td text-xs text-gray-400" data-label="Created">{{ $doc->created_at->format('M d, Y') }}</td>
                                 </tr>
@@ -194,7 +194,7 @@
             };
 
             @if($type === 'summary')
-                mk('rStatus', @json($byStatus));
+                mk('rStatus', @json(\App\Models\Document::relabelStatuses($byStatus)));
                 mk('rPriority', @json($byPriority), 'doughnut', ['#ef4444','#f59e0b','#0ea5e9','#94a3b8','#6366f1']);
                 mk('rDivision', @json($byDivision), 'bar', '#6366f1');
             @elseif($type === 'sla_compliance' && !$slaDepartments->isEmpty())
@@ -202,7 +202,7 @@
             @elseif($type === 'staff_workload')
                 mk('rWorkload', {{ \Illuminate\Support\Js::from($workload->mapWithKeys(fn($r) => [($r->currentHolder?->name ?? '—') => $r->total])) }}, 'bar', '#6366f1');
             @elseif($isList)
-                mk('lStatus', @json($statusCounts ?? []));
+                mk('lStatus', @json(\App\Models\Document::relabelStatuses($statusCounts ?? [])));
                 mk('lPriority', @json($prioCounts ?? []), 'doughnut', ['#ef4444','#f59e0b','#0ea5e9','#94a3b8','#6366f1','#22c55e']);
                 mk('lType', @json($typeCounts ?? []), 'bar', '#14b8a6');
             @endif

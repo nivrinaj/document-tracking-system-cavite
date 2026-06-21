@@ -103,8 +103,8 @@
         <table class="chart-wrap"><tr>
             <td style="width:50%;"><div class="panel"><h3>By Status</h3>
                 <table style="width:100%"><tr>
-                    <td style="width:140px;">{!! $svgPie($byStatus, $palette) !!}</td>
-                    <td>{!! $legend($byStatus, $palette) !!}</td>
+                    <td style="width:140px;">{!! $svgPie(\App\Models\Document::relabelStatuses($byStatus), $palette) !!}</td>
+                    <td>{!! $legend(\App\Models\Document::relabelStatuses($byStatus), $palette) !!}</td>
                 </tr></table>
             </div></td>
             <td style="width:50%;"><div class="panel"><h3>By Priority</h3>
@@ -203,7 +203,7 @@
         @if($listTotal)
             <table class="chart-wrap"><tr>
                 <td style="width:50%;"><div class="panel"><h3>By Status</h3>
-                    <table style="width:100%"><tr><td style="width:140px;">{!! $svgPie($statusCounts, $palette) !!}</td><td>{!! $legend($statusCounts, $palette) !!}</td></tr></table>
+                    <table style="width:100%"><tr><td style="width:140px;">{!! $svgPie(\App\Models\Document::relabelStatuses($statusCounts), $palette) !!}</td><td>{!! $legend(\App\Models\Document::relabelStatuses($statusCounts), $palette) !!}</td></tr></table>
                 </div></td>
                 <td style="width:50%;"><div class="panel"><h3>By Priority</h3>
                     @php $prioColors=['#ef4444','#f59e0b','#0ea5e9','#94a3b8','#6366f1','#22c55e']; @endphp
@@ -218,7 +218,7 @@
                 @forelse($documents as $doc)
                     <tr>
                         <td>{{ $doc->tracking_code }}</td><td>{{ $doc->title }}</td><td>{{ $doc->document_type }}</td>
-                        <td>{{ ucfirst($doc->priority) }}</td><td>{{ ucfirst($doc->status) }}</td>
+                        <td>{{ ucfirst($doc->priority) }}</td><td>{{ \App\Models\Document::statusLabel($doc->status) }}</td>
                         <td>{{ $doc->currentHolder?->name ?? '—' }}</td><td>{{ $doc->created_at->format('M d, Y') }}</td>
                     </tr>
                 @empty

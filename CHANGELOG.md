@@ -6,6 +6,13 @@ reviewed or rolled back. Format based on [Keep a Changelog](https://keepachangel
 
 ---
 
+## v2.6.3 — 2026-06-21
+**QOL: wording, sticky sidebar, safer reset, mobile login**
+- **"Draft" is now shown as "Pending Release"** everywhere (badges, filters, reports, charts). The stored value is unchanged — only the label.
+- **Sidebar is now sticky** on desktop — it stays put while the page content scrolls.
+- **Danger Zone → "Delete all users"** now also clears all documents/history, leaving **only the Super Admin** (previously it could orphan documents or fail on foreign keys).
+- **Mobile login redesigned** — the uploaded background image with the gradient theme overlay now shows on phones, with the sign-in form in a centered, elevated card (was a plain off-white, poorly centered screen).
+
 ## v2.6.2 — 2026-06-21
 **PDF charts fixed + completion-time statistics**
 - **Fixed: pie charts were missing in report PDFs.** DomPDF can't render inline SVG reliably, so pies are now drawn as PNG images via PHP GD — they always print, in colour.

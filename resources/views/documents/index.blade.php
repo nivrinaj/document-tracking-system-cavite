@@ -23,7 +23,7 @@
                 <select name="status" class="input">
                     <option value="">All statuses</option>
                     @foreach(['draft','released','received','forwarded','archived','completed'] as $s)
-                        <option value="{{ $s }}" @selected(request('status')===$s)>{{ ucfirst($s) }}</option>
+                        <option value="{{ $s }}" @selected(request('status')===$s)>{{ \App\Models\Document::statusLabel($s) }}</option>
                     @endforeach
                 </select>
                 <select name="priority" class="input">
