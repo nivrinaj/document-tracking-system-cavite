@@ -46,8 +46,8 @@
                             @csrf
                             <select name="to_user_id" class="input" required>
                                 <option value="">— Forward to —</option>
-                                @foreach($users->groupBy(fn($u) => $u->division?->code ?? 'No division') as $group => $gu)
-                                    <optgroup label="{{ $group }}">@foreach($gu as $u)<option value="{{ $u->id }}">{{ $u->name }}</option>@endforeach</optgroup>
+                                @foreach($users->groupBy(fn($u) => $u->department?->code ?? 'No office') as $group => $gu)
+                                    <optgroup label="{{ $group }}">@foreach($gu as $u)<option value="{{ $u->id }}">{{ $u->name }} — {{ $u->division?->code ?? 'Head' }}</option>@endforeach</optgroup>
                                 @endforeach
                             </select>
                             <textarea name="remarks" rows="2" class="input" placeholder="Details (required)" required></textarea>

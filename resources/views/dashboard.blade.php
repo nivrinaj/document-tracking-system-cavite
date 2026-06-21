@@ -51,7 +51,7 @@
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
             {{-- Action queues (left) --}}
             <div class="lg:col-span-2 space-y-6">
-                @php $nothingPending = $toReceive->isEmpty() && $toAction->isEmpty() && $toRelease->isEmpty(); @endphp
+                @php $nothingPending = $toReceive->isEmpty() && $toAction->isEmpty() && $toRelease->isEmpty() && $toClaim->isEmpty(); @endphp
 
                 @if($nothingPending)
                     <x-card padding="p-10">
@@ -67,6 +67,24 @@
                         </div>
                     </x-card>
                 @else
+                    @if($toClaim->isNotEmpty())
+                    <x-card>
+                        <div class="flex items-center justify-between mb-3">
+                            <h2 class="font-semibold">📥 Transferred to your office — to claim</h2>
+                            <span class="text-xs text-gray-400">{{ $toClaim->count() }} item(s)</span>
+                        </div>
+                        @foreach($toClaim as $doc)
+                            <a href="{{ route('documents.show', $doc) }}" class="flex items-center justify-between gap-3 p-3 -mx-1 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                                <div class="min-w-0">
+                                    <div class="font-medium text-sm truncate">{{ $doc->title }}</div>
+                                    <div class="text-xs text-gray-400">{{ $doc->tracking_code }} · from {{ $doc->creator?->name }} · ⏱ {{ $doc->updated_at->diffForHumans(null, true) }} waiting</div>
+                                </div>
+                                <x-badge color="amber">Claim</x-badge>
+                            </a>
+                        @endforeach
+                    </x-card>
+                    @endif
+
                     @if($toReceive->isNotEmpty())
                     <x-card>
                         <div class="flex items-center justify-between mb-3">

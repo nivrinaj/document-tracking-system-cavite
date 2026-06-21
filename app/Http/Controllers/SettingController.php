@@ -29,6 +29,7 @@ class SettingController extends Controller
             'remove_favicon' => ['nullable', 'boolean'],
             'remove_login_bg' => ['nullable', 'boolean'],
             'allow_desktop_receive' => ['nullable', 'boolean'],
+            'allow_cross_department' => ['nullable', 'boolean'],
             'tracking_prefix' => ['required', 'string', 'max:10', 'alpha_dash'],
             'records_per_page' => ['required', 'integer', 'min:5', 'max:100'],
             'support_contact' => ['nullable', 'string', 'max:255'],
@@ -41,6 +42,7 @@ class SettingController extends Controller
 
         Setting::put('tracking_prefix', strtoupper($data['tracking_prefix']));
         Setting::put('allow_desktop_receive', $request->boolean('allow_desktop_receive') ? '1' : '0');
+        Setting::put('allow_cross_department', $request->boolean('allow_cross_department') ? '1' : '0');
 
         // Image fields: [setting key => [form field, remove field]]
         $images = [

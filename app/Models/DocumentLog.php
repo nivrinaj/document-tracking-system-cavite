@@ -47,6 +47,8 @@ class DocumentLog extends Model
             'released' => 'Released',
             'received' => 'Received',
             'forwarded' => 'Forwarded',
+            'transferred' => 'Transferred to office',
+            'reopened' => 'Reopened',
             'archived' => 'Archived',
             'completed' => 'Completed',
             default => ucfirst($this->action),
@@ -60,7 +62,7 @@ class DocumentLog extends Model
             'assigned' => 'purple',
             'released' => 'amber',
             'received' => 'blue',
-            'forwarded' => 'indigo',
+            'forwarded', 'transferred' => 'indigo',
             'archived', 'completed' => 'green',
             default => 'gray',
         };

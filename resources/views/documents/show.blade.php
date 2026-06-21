@@ -36,8 +36,16 @@
                         </div>
                         <div class="rounded-xl border-2 p-4" style="border-color: var(--color-primary)">
                             <div class="text-[11px] uppercase tracking-wider text-gray-400 mb-1">Currently with</div>
-                            <div class="font-semibold">{{ $document->currentHolder?->name ?? ($document->is_broadcast ? '📣 Broadcast memo' : 'Unassigned') }}</div>
-                            <div class="text-xs text-gray-500 dark:text-gray-400">{{ $document->currentHolder?->orgUnit() ?? ($document->department?->code . ($document->division ? ' · '.$document->division->name : '')) }}</div>
+                            @if($document->currentHolder)
+                                <div class="font-semibold">{{ $document->currentHolder->name }}</div>
+                                <div class="text-xs text-gray-500 dark:text-gray-400">{{ $document->currentHolder->orgUnit() }}</div>
+                            @elseif($document->is_broadcast)
+                                <div class="font-semibold">📣 Broadcast memo</div>
+                                <div class="text-xs text-gray-500 dark:text-gray-400">Sent to multiple recipients</div>
+                            @else
+                                <div class="font-semibold text-gray-500 dark:text-gray-400">Not yet assigned</div>
+                                <div class="text-xs text-gray-400">⏳ In transit — awaiting routing</div>
+                            @endif
                         </div>
                     </div>
 
@@ -78,26 +86,50 @@
                 </x-card>
 
                 {{-- Concerned staff --}}
-                <x-card title="Concerned staff (can track this document)">
-                    <div class="flex flex-wrap gap-2">
-                        @foreach($document->assignees as $person)
-                            <span class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gray-100 dark:bg-gray-700">
-                                <img src="{{ $person->avatar_url }}" class="w-7 h-7 rounded-full shrink-0">
-                                <span class="leading-tight">
-                                    <span class="flex items-center gap-1 text-xs font-medium">
-                                        {{ $person->name }}
-                                        @if($document->is_broadcast)
-                                            @if($person->pivot->acknowledged_at)
-                                                <span class="text-green-500" title="Acknowledged">✓</span>
-                                            @else
-                                                <span class="text-amber-500 text-[10px]" title="Not yet acknowledged">●</span>
+                @php
+                    $concernedCount = $document->assignees->count();
+                    $ackedCount = $document->is_broadcast ? $document->assignees->filter(fn ($p) => $p->pivot->acknowledged_at)->count() : null;
+                @endphp
+                <x-card>
+                    <div class="flex items-center justify-between mb-3">
+                        <h2 class="font-semibold">Concerned staff <span class="text-gray-400 font-normal text-sm">(can track this document)</span></h2>
+                        <span class="text-xs text-gray-400 shrink-0">
+                            {{ $concernedCount }} {{ \Illuminate\Support\Str::plural('person', $concernedCount) }}@if($ackedCount !== null) · {{ $ackedCount }}/{{ $concernedCount }} acknowledged @endif
+                        </span>
+                    </div>
+
+                    @if($ackedCount !== null && $concernedCount)
+                        <div class="h-1.5 rounded-full bg-gray-100 dark:bg-gray-700 overflow-hidden mb-3">
+                            <div class="h-full rounded-full bg-green-500" style="width: {{ round($ackedCount / $concernedCount * 100) }}%"></div>
+                        </div>
+                    @endif
+
+                    <div x-data="{ showAll: false }">
+                        <div class="flex flex-wrap gap-2">
+                            @foreach($document->assignees as $i => $person)
+                                <span x-show="showAll || {{ $i }} < 12" @if($i >= 12) x-cloak @endif
+                                      class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gray-100 dark:bg-gray-700">
+                                    <img src="{{ $person->avatar_url }}" class="w-7 h-7 rounded-full shrink-0">
+                                    <span class="leading-tight">
+                                        <span class="flex items-center gap-1 text-xs font-medium">
+                                            {{ $person->name }}
+                                            @if($document->is_broadcast)
+                                                @if($person->pivot->acknowledged_at)
+                                                    <span class="text-green-500" title="Acknowledged">✓</span>
+                                                @else
+                                                    <span class="text-amber-500 text-[10px]" title="Not yet acknowledged">●</span>
+                                                @endif
                                             @endif
-                                        @endif
+                                        </span>
+                                        <span class="block text-[11px] text-gray-400">{{ $person->orgUnit() }}</span>
                                     </span>
-                                    <span class="block text-[11px] text-gray-400">{{ $person->orgUnit() }}</span>
                                 </span>
-                            </span>
-                        @endforeach
+                            @endforeach
+                        </div>
+                        @if($concernedCount > 12)
+                            <button type="button" @click="showAll = !showAll" class="text-xs link mt-3"
+                                    x-text="showAll ? 'Show fewer' : 'Show all {{ $concernedCount }} →'"></button>
+                        @endif
                     </div>
                 </x-card>
 
@@ -173,9 +205,9 @@
                                     @csrf
                                     <select name="assignee_id" class="input" required>
                                         <option value="">— Select staff —</option>
-                                        @foreach($users->groupBy(fn($u) => $u->division?->code ?? 'No division') as $group => $gu)
+                                        @foreach($users->groupBy(fn($u) => $u->department?->code ?? 'No office') as $group => $gu)
                                             <optgroup label="{{ $group }}">
-                                                @foreach($gu as $u)<option value="{{ $u->id }}" @selected($document->current_holder_id==$u->id)>{{ $u->name }}</option>@endforeach
+                                                @foreach($gu as $u)<option value="{{ $u->id }}" @selected($document->current_holder_id==$u->id)>{{ $u->name }} — {{ $u->division?->code ?? 'Head' }}</option>@endforeach
                                             </optgroup>
                                         @endforeach
                                     </select>
@@ -196,7 +228,16 @@
                         @endcan
 
                         @can('receive', $document)
-                            @if(($settings['allow_desktop_receive'] ?? '0') === '1')
+                            @if($document->current_holder_id === null)
+                                {{-- Unclaimed transfer sitting in this office --}}
+                                <form method="POST" action="{{ route('documents.receive', $document) }}" class="space-y-2 p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20"
+                                      data-confirm="Claim this document for your office? You will become its holder.">
+                                    @csrf
+                                    <p class="text-xs text-blue-700 dark:text-blue-300">📥 This document was <strong>transferred to your office</strong>. Claim it to take responsibility — other receivers will then stop seeing it as unclaimed.</p>
+                                    <input type="text" name="remarks" class="input" placeholder="Remarks (optional)">
+                                    <x-btn type="submit" variant="primary" class="w-full">📥 Claim &amp; Receive</x-btn>
+                                </form>
+                            @elseif(($settings['allow_desktop_receive'] ?? '0') === '1')
                                 <form method="POST" action="{{ route('documents.receive', $document) }}" class="space-y-2 p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20">
                                     @csrf
                                     <p class="text-xs text-blue-700 dark:text-blue-300">Confirm you physically received this document.</p>
@@ -218,9 +259,9 @@
                                     @csrf
                                     <select name="to_user_id" class="input" required>
                                         <option value="">— Forward to —</option>
-                                        @foreach($users->groupBy(fn($u) => $u->division?->code ?? 'No division') as $group => $gu)
+                                        @foreach($users->groupBy(fn($u) => $u->department?->code ?? 'No office') as $group => $gu)
                                             <optgroup label="{{ $group }}">
-                                                @foreach($gu as $u)<option value="{{ $u->id }}">{{ $u->name }}</option>@endforeach
+                                                @foreach($gu as $u)<option value="{{ $u->id }}">{{ $u->name }} — {{ $u->division?->code ?? 'Head' }}</option>@endforeach
                                             </optgroup>
                                         @endforeach
                                     </select>
@@ -228,6 +269,25 @@
                                     <x-btn type="submit" class="w-full">Forward</x-btn>
                                 </form>
                             </div>
+
+                            @if($crossDept)
+                                <button @click="panel = panel === 'transfer' ? null : 'transfer'" class="w-full text-left px-4 py-2 rounded-lg bg-teal-50 dark:bg-teal-900/30 text-teal-700 dark:text-teal-300 text-sm font-medium hover:opacity-90">Transfer to another office</button>
+                                <div x-show="panel === 'transfer'" x-cloak class="p-3 rounded-lg bg-gray-50 dark:bg-gray-700/40">
+                                    <form method="POST" action="{{ route('documents.transfer', $document) }}" class="space-y-2"
+                                          data-confirm="Transfer this document to the selected office? Their receiving staff will be able to claim it.">
+                                        @csrf
+                                        <p class="text-xs text-gray-500 dark:text-gray-400">Sends to the office's receiving pool — no specific person. Any receiver there can claim it.</p>
+                                        <select name="to_department_id" class="input" required>
+                                            <option value="">— Select office —</option>
+                                            @foreach($departments as $dept)
+                                                <option value="{{ $dept->id }}">{{ $dept->code }} — {{ $dept->name }}</option>
+                                            @endforeach
+                                        </select>
+                                        <textarea name="remarks" rows="2" class="input" placeholder="Details about this transfer (required)" required></textarea>
+                                        <x-btn type="submit" class="w-full">📤 Transfer to office</x-btn>
+                                    </form>
+                                </div>
+                            @endif
                         @endcan
 
                         @can('archive', $document)

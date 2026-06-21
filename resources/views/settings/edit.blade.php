@@ -127,19 +127,33 @@
 
             {{-- Workflow --}}
             <x-card title="Workflow">
-                <label class="flex items-start gap-3 cursor-pointer">
-                    <input type="hidden" name="allow_desktop_receive" value="0">
-                    <input type="checkbox" name="allow_desktop_receive" value="1" class="mt-1 rounded text-[color:var(--color-primary)]"
-                           @checked(($settings['allow_desktop_receive'] ?? '0') === '1')>
-                    <span>
-                        <span class="font-medium text-sm">Allow receiving from the desktop document page</span>
-                        <span class="block text-xs text-gray-400 mt-0.5">
-                            When <strong>off</strong> (default), staff can only tap <em>Receive</em> after scanning the QR code with their phone —
-                            this keeps the physical document and the scan together. When <strong>on</strong>, the intended recipient can also
-                            receive directly from the document page on a desktop. (Forwarding and archiving are unaffected.)
+                <div class="space-y-4">
+                    <label class="flex items-start gap-3 cursor-pointer">
+                        <input type="hidden" name="allow_desktop_receive" value="0">
+                        <input type="checkbox" name="allow_desktop_receive" value="1" class="mt-1 rounded text-[color:var(--color-primary)]"
+                               @checked(($settings['allow_desktop_receive'] ?? '0') === '1')>
+                        <span>
+                            <span class="font-medium text-sm">Allow receiving from the desktop document page</span>
+                            <span class="block text-xs text-gray-400 mt-0.5">
+                                When <strong>off</strong> (default), staff can only tap <em>Receive</em> after scanning the QR with their phone.
+                                When <strong>on</strong>, the intended recipient can also receive from the desktop document page.
+                            </span>
                         </span>
-                    </span>
-                </label>
+                    </label>
+
+                    <label class="flex items-start gap-3 cursor-pointer border-t border-gray-100 dark:border-gray-700 pt-4">
+                        <input type="hidden" name="allow_cross_department" value="0">
+                        <input type="checkbox" name="allow_cross_department" value="1" class="mt-1 rounded text-[color:var(--color-primary)]"
+                               @checked(($settings['allow_cross_department'] ?? '0') === '1')>
+                        <span>
+                            <span class="font-medium text-sm">Allow sending documents to other departments</span>
+                            <span class="block text-xs text-gray-400 mt-0.5">
+                                When <strong>off</strong> (default), staff can only assign/forward to people in <em>their own department</em>.
+                                When <strong>on</strong>, they can pick another <strong>office → division → staff</strong> to route documents between departments.
+                            </span>
+                        </span>
+                    </label>
+                </div>
             </x-card>
 
             <div class="flex justify-end">

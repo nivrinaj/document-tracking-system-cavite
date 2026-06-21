@@ -25,6 +25,7 @@ class LogActivity
         'documents.release' => 'Released a document',
         'documents.receive' => 'Received a document',
         'documents.forward' => 'Forwarded a document',
+        'documents.transfer' => 'Transferred a document to another office',
         'documents.archive' => 'Archived a document',
         'users.store' => 'Created a user',
         'users.update' => 'Updated a user',

@@ -36,6 +36,17 @@ class DashboardController extends Controller
             ->whereIn('status', ['released', 'forwarded'])
             ->latest('updated_at')->take(8)->get();
 
+        // Unclaimed transfers sitting in the user's office (any receiver can claim).
+        $toClaim = collect();
+        if ($user->can('documents.receive') && $user->department_id) {
+            $toClaim = Document::with('creator')
+                ->whereNull('current_holder_id')
+                ->where('status', 'released')
+                ->where('is_broadcast', false)
+                ->where('department_id', $user->department_id)
+                ->latest('updated_at')->take(8)->get();
+        }
+
         $toAction = Document::with(['creator', 'division'])
             ->where('current_holder_id', $user->id)
             ->where('status', 'received')
@@ -76,7 +87,7 @@ class DashboardController extends Controller
         }
 
         return view('dashboard', compact(
-            'stats', 'toReceive', 'toAction', 'toRelease', 'activity',
+            'stats', 'toReceive', 'toClaim', 'toAction', 'toRelease', 'activity',
             'statusBreakdown', 'priorityBreakdown', 'trend', 'isHead'
         ));
     }

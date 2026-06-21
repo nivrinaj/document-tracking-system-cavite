@@ -24,7 +24,7 @@ class DocumentController extends Controller
         $query = Document::with([
             'creator.department', 'creator.division',
             'currentHolder.department', 'currentHolder.division',
-            'division',
+            'division', 'department',
         ])->visibleTo($user)->latest();
 
         if ($search = $request->input('search')) {
@@ -83,13 +83,21 @@ class DocumentController extends Controller
     {
         $this->authorizeAction('documents.create');
 
-        $types = \App\Models\DocumentType::availableFor(Auth::user()->department_id);
+        $user = Auth::user();
+        $types = \App\Models\DocumentType::availableFor($user->department_id);
+
+        // Offices with the user's own department listed first (QoL).
+        $departments = \App\Models\Department::orderByRaw('id = ? desc', [$user->department_id ?? 0])
+            ->orderBy('name')->get();
 
         return view('documents.create', [
-            'divisions' => Division::where('is_active', true)->orderBy('name')->get(),
+            'divisions' => Division::where('is_active', true)->orderBy('name')->get(['id', 'code', 'name', 'department_id']),
+            'departments' => $departments,
             'users' => $this->assignableUsers(),
             'documentTypes' => $types,
             'voucherTypeNames' => $types->where('requires_voucher', true)->pluck('name')->values(),
+            'crossDept' => \App\Models\Setting::get('allow_cross_department', '0') === '1',
+            'ownDeptId' => $user->department_id,
         ]);
     }
 
@@ -103,7 +111,9 @@ class DocumentController extends Controller
             'document_type' => ['required', 'string', 'max:100'],
             'voucher_number' => ['nullable', 'required_if:document_type,Voucher', 'string', 'max:100'],
             'description' => ['nullable', 'string'],
-            'source' => ['nullable', 'string', 'max:255'],
+            'source_department_id' => ['nullable', 'string', 'max:50'],
+            'source_division_id' => ['nullable', 'exists:divisions,id'],
+            'source_other' => ['nullable', 'string', 'max:255'],
             'priority' => ['required', 'in:low,normal,high,urgent'],
             'division_id' => ['nullable', 'exists:divisions,id'],
             'assignee_id' => ['nullable', 'exists:users,id'],
@@ -119,6 +129,18 @@ class DocumentController extends Controller
                     'voucher_number' => "A document with voucher number \"{$data['voucher_number']}\" already exists this year ({$code}).",
                 ]);
             }
+        }
+
+        // Compose the human-readable source/origin from the picker.
+        $sdept = $request->input('source_department_id');
+        if ($sdept === 'external') {
+            $data['source'] = $request->input('source_other') ?: 'External';
+        } elseif ($sdept) {
+            $dept = \App\Models\Department::find($sdept);
+            $div = $request->input('source_division_id') ? \App\Models\Division::find($request->input('source_division_id')) : null;
+            $data['source'] = trim(($dept?->code ?? '').($div ? ' · '.$div->name : '')) ?: null;
+        } else {
+            $data['source'] = $request->input('source_other') ?: null;
         }
 
         // Memo broadcast — distribute to everyone in the chosen scope.
@@ -150,10 +172,14 @@ class DocumentController extends Controller
             'logs.fromUser',
         ]);
 
+        $user = Auth::user();
+
         return view('documents.show', [
             'document' => $document,
             'users' => $this->assignableUsers(),
             'trackUrl' => route('track.show', $document->tracking_code),
+            'crossDept' => \App\Models\Setting::get('allow_cross_department', '0') === '1',
+            'departments' => \App\Models\Department::orderByRaw('id = ? desc', [$user->department_id ?? 0])->orderBy('name')->get(),
         ]);
     }
 
@@ -254,6 +280,20 @@ class DocumentController extends Controller
         return back()->with('success', 'Document reopened and set back to active.');
     }
 
+    public function transfer(Request $request, Document $document, DocumentService $service)
+    {
+        $this->authorize('forward', $document);
+
+        $data = $request->validate([
+            'to_department_id' => ['required', 'exists:departments,id'],
+            'remarks' => ['required', 'string', 'min:3'],
+        ]);
+
+        $service->transferToOffice($document, (int) $data['to_department_id'], $request->user(), $data['remarks']);
+
+        return back()->with('success', 'Document transferred. The receiving staff of that office can now claim it.');
+    }
+
     public function acknowledge(Request $request, Document $document, DocumentService $service)
     {
         $this->authorize('acknowledge', $document);
@@ -304,14 +344,17 @@ class DocumentController extends Controller
 
     /* -------------------- Helpers -------------------- */
 
-    /** Active staff who can be assigned — limited to the encoder's department. */
+    /**
+     * Active staff who can be assigned. When cross-department routing is OFF,
+     * limited to the actor's own department; when ON, spans every office.
+     */
     private function assignableUsers()
     {
         $user = Auth::user();
+        $crossDept = \App\Models\Setting::get('allow_cross_department', '0') === '1';
 
-        return User::with('division')->where('is_active', true)
-            ->when(! $user->can('documents.viewAll') && $user->department_id,
-                fn ($q) => $q->where('department_id', $user->department_id))
+        return User::with('division', 'department')->where('is_active', true)
+            ->when(! $crossDept && $user->department_id, fn ($q) => $q->where('department_id', $user->department_id))
             ->orderBy('name')->get();
     }
 

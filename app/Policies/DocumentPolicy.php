@@ -61,12 +61,35 @@ class DocumentPolicy
                 ->exists();
     }
 
-    /** Only the current holder, when the document was released/forwarded TO them. */
+    /**
+     * Receive applies in two cases:
+     *  1. Direct — the document was released/forwarded TO me, and
+     *  2. Pool claim — an unclaimed transfer sitting in my office (no holder yet),
+     *     which any receiver in that department may claim.
+     */
     public function receive(User $user, Document $document): bool
     {
-        return $user->can('documents.receive')
-            && $document->current_holder_id === $user->id
-            && in_array($document->status, ['released', 'forwarded']);
+        if (! $user->can('documents.receive') || $document->is_broadcast || $document->isClosed()) {
+            return false;
+        }
+
+        // 1. Directly assigned to me
+        if ($document->current_holder_id === $user->id && in_array($document->status, ['released', 'forwarded'])) {
+            return true;
+        }
+
+        // 2. Unclaimed transfer in my department
+        return $this->isClaimable($document)
+            && $user->department_id
+            && $document->department_id === $user->department_id;
+    }
+
+    /** An unclaimed office transfer awaiting a receiver. */
+    public function isClaimable(Document $document): bool
+    {
+        return $document->current_holder_id === null
+            && $document->status === 'released'
+            && ! $document->is_broadcast;
     }
 
     /**

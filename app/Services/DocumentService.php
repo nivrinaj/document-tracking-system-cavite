@@ -16,6 +16,38 @@ use Illuminate\Support\Facades\DB;
 class DocumentService
 {
     /**
+     * Transfer a document to another OFFICE (no specific person). It becomes an
+     * unclaimed item that any receiver in that office can claim. Notifies them.
+     */
+    public function transferToOffice(Document $document, int $departmentId, User $actor, string $remarks): Document
+    {
+        return DB::transaction(function () use ($document, $departmentId, $actor, $remarks) {
+            $dept = \App\Models\Department::find($departmentId);
+
+            $document->update([
+                'status' => 'released',
+                'current_holder_id' => null,
+                'department_id' => $departmentId,
+                'division_id' => null,
+                'released_at' => $document->released_at ?? now(),
+            ]);
+            $this->log($document, 'transferred', $actor, remarks: $remarks.' → '.($dept?->code ?? 'office').' (awaiting claim)');
+
+            // Alert the receivers of the destination office.
+            $receivers = User::where('is_active', true)
+                ->where('department_id', $departmentId)
+                ->where('id', '!=', $actor->id)
+                ->permission('documents.receive')
+                ->get();
+            foreach ($receivers as $r) {
+                $r->notify(new \App\Notifications\DocumentRouted($document, 'transfer', $actor->name, $remarks));
+            }
+
+            return $document->refresh();
+        });
+    }
+
+    /**
      * Broadcast a memo to every active staff member in a division or department.
      * No single holder — each recipient is a "concerned" assignee who acknowledges receipt.
      */

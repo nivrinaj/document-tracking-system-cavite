@@ -93,6 +93,9 @@
                                         <div class="text-xs text-gray-400">{{ $doc->currentHolder->orgShort() }}</div>
                                     @elseif($doc->is_broadcast)
                                         <span class="text-gray-400">📣 Broadcast</span>
+                                    @elseif($doc->status === 'released')
+                                        <span class="text-amber-600 dark:text-amber-400">📥 To claim</span>
+                                        <div class="text-xs text-gray-400">{{ $doc->department?->code }}</div>
                                     @else
                                         <span class="text-gray-400">Unassigned</span>
                                     @endif

@@ -31,6 +31,7 @@ class DocumentRouted extends Notification
 
         $message = match ($this->verb) {
             'broadcast' => "📣 New memo{$by}: {$title}",
+            'transfer' => "📥 A document was transferred to your office to claim{$by}: {$title}",
             'forwarded' => "A document was forwarded to you{$by}: {$title}",
             'assigned' => "A document was assigned to you{$by}: {$title}",
             'released' => "A document was released to you{$by}: {$title}",
