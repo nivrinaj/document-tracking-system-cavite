@@ -49,6 +49,17 @@
                         </div>
                     </div>
 
+                    {{-- Last status action (most recent movement) --}}
+                    @php $last = $document->logs->first(); @endphp
+                    @if($last)
+                        <div class="flex items-center gap-x-2 gap-y-1 flex-wrap mb-6 -mt-2 text-sm">
+                            <span class="text-[11px] uppercase tracking-wider text-gray-400">Last action</span>
+                            <x-badge :color="$last->actionColor()">{{ $last->actionLabel() }}</x-badge>
+                            <span class="text-gray-600 dark:text-gray-300">by {{ $last->actor?->name ?? 'System' }}</span>
+                            <span class="text-gray-400">· {{ $last->created_at->format('M d, Y g:i A') }} ({{ $last->created_at->diffForHumans() }})</span>
+                        </div>
+                    @endif
+
                     {{-- Document facts --}}
                     <dl class="grid grid-cols-2 sm:grid-cols-4 gap-x-6 gap-y-4 text-sm">
                         <div><dt class="text-[11px] uppercase tracking-wider text-gray-400">Type</dt><dd class="mt-0.5">{{ $document->document_type }}</dd></div>
@@ -228,25 +239,33 @@
                         @endcan
 
                         @can('receive', $document)
-                            @if($document->current_holder_id === null)
-                                {{-- Unclaimed transfer sitting in this office --}}
+                            @php $desktopReceive = ($settings['allow_desktop_receive'] ?? '0') === '1'; $isClaim = $document->current_holder_id === null; @endphp
+                            @if($desktopReceive)
+                                {{-- Desktop receive/claim explicitly enabled in settings --}}
                                 <form method="POST" action="{{ route('documents.receive', $document) }}" class="space-y-2 p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20"
-                                      data-confirm="Claim this document for your office? You will become its holder.">
+                                      data-confirm="{{ $isClaim ? 'Claim this document for your office? You will become its holder.' : 'Confirm you physically received this document?' }}">
                                     @csrf
-                                    <p class="text-xs text-blue-700 dark:text-blue-300">📥 This document was <strong>transferred to your office</strong>. Claim it to take responsibility — other receivers will then stop seeing it as unclaimed.</p>
+                                    <p class="text-xs text-blue-700 dark:text-blue-300">
+                                        @if($isClaim)
+                                            📥 This document was <strong>transferred to your office</strong>. Claim it to take responsibility — other receivers will then stop seeing it as unclaimed.
+                                        @else
+                                            Confirm you physically received this document.
+                                        @endif
+                                    </p>
                                     <input type="text" name="remarks" class="input" placeholder="Remarks (optional)">
-                                    <x-btn type="submit" variant="primary" class="w-full">📥 Claim &amp; Receive</x-btn>
-                                </form>
-                            @elseif(($settings['allow_desktop_receive'] ?? '0') === '1')
-                                <form method="POST" action="{{ route('documents.receive', $document) }}" class="space-y-2 p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20">
-                                    @csrf
-                                    <p class="text-xs text-blue-700 dark:text-blue-300">Confirm you physically received this document.</p>
-                                    <input type="text" name="remarks" class="input" placeholder="Remarks (optional)">
-                                    <x-btn type="submit" variant="primary" class="w-full">✅ Receive Document</x-btn>
+                                    <x-btn type="submit" variant="primary" class="w-full">{{ $isClaim ? '📥 Claim & Receive' : '✅ Receive Document' }}</x-btn>
                                 </form>
                             @else
-                                <div class="p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20 text-center">
-                                    <p class="text-xs text-blue-700 dark:text-blue-300">This document is assigned to you. 📱 <strong>Scan the QR code with your phone</strong> to receive it.</p>
+                                {{-- Default: physical possession is proven by scanning the QR on the document itself --}}
+                                <div class="p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20 text-center space-y-1">
+                                    <p class="text-xs text-blue-700 dark:text-blue-300">
+                                        @if($isClaim)
+                                            📥 This document was <strong>transferred to your office</strong> and is waiting to be claimed.
+                                        @else
+                                            This document is assigned to you.
+                                        @endif
+                                    </p>
+                                    <p class="text-xs font-medium text-blue-800 dark:text-blue-200">📱 Scan the QR code on the physical document to {{ $isClaim ? 'claim' : 'receive' }} it.</p>
                                 </div>
                             @endif
                         @endcan
@@ -280,7 +299,9 @@
                                         <select name="to_department_id" class="input" required>
                                             <option value="">— Select office —</option>
                                             @foreach($departments as $dept)
-                                                <option value="{{ $dept->id }}">{{ $dept->code }} — {{ $dept->name }}</option>
+                                                @if($dept->id != $document->department_id)
+                                                    <option value="{{ $dept->id }}">{{ $dept->code }} — {{ $dept->name }}</option>
+                                                @endif
                                             @endforeach
                                         </select>
                                         <textarea name="remarks" rows="2" class="input" placeholder="Details about this transfer (required)" required></textarea>

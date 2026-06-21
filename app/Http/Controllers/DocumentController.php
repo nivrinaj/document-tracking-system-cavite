@@ -304,6 +304,11 @@ class DocumentController extends Controller
             'remarks' => ['required', 'string', 'min:3'],
         ]);
 
+        // Can't transfer to the office that already holds it — use Forward/Assign within the office instead.
+        if ((int) $data['to_department_id'] === (int) $document->department_id) {
+            return back()->with('error', 'This document is already in that office. Use Forward or Assign to route it within the office.');
+        }
+
         $service->transferToOffice($document, (int) $data['to_department_id'], $request->user(), $data['remarks']);
 
         return back()->with('success', 'Document transferred. The receiving staff of that office can now claim it.');

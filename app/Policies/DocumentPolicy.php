@@ -133,11 +133,18 @@ class DocumentPolicy
             return false;
         }
 
-        // The encoder may (re)assign while the document is still a draft OR
-        // released-but-not-yet-received (to fix a mis-assignment before pickup).
-        // Once received/forwarded, only an override role can re-route it.
-        return (in_array($document->status, ['draft', 'released']) || $this->canOverride($user))
-            && ($document->created_by === $user->id || $this->canOverride($user));
+        // Override roles (Super Admin / Department Head) may re-route any active document.
+        if ($this->canOverride($user)) {
+            return true;
+        }
+
+        // The encoder may (re)assign only while the document is still a draft OR
+        // released-but-not-yet-received — to fix a mis-assignment before pickup —
+        // AND only while it is still inside their own office. Once it has been
+        // transferred to another office, that office owns routing (via claim → forward).
+        return $document->created_by === $user->id
+            && in_array($document->status, ['draft', 'released'])
+            && $document->department_id === $user->department_id;
     }
 
     public function update(User $user, Document $document): bool

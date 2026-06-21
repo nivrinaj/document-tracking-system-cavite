@@ -6,6 +6,18 @@ reviewed or rolled back. Format based on [Keep a Changelog](https://keepachangel
 
 ---
 
+## v2.5.1 — 2026-06-21
+**Detail-page clarity, routing guardrails & slip redesign**
+- Document details now show a clear **"Last action"** line (e.g. *Received by HR Staff · 54 seconds ago*) so the most recent movement is unambiguous — the static *Received*/*Released* fields are first-touch timestamps and could look out of order.
+- **Transfer to another office** no longer lists the office that already holds the document (you can't transfer a document to its own office); blocked server-side too. Use **Forward/Assign** to route within an office.
+- **Fixed**: after transferring a document to another office, the original encoder could still see an **Assign / Re-assign** panel listing their own office's staff. Assignment is now allowed only while the document is still **inside your own office** (override roles excepted).
+- **Receiving/claiming now requires scanning the QR** on the physical document (proving it's physically present), unless *Allow desktop receive* is explicitly enabled in Settings. This applies to cross-office **claims** too.
+- **Redesigned the QR Tracking Slip** — clean header, prominent tracking code + priority chip, an **Origin → Current office** routing strip, and relevant facts (type, voucher/reference, source, encoded date). Removed the meaningless *"Assigned to: Unassigned"* line.
+  - **Colors now print** (added `print-color-adjust: exact`) — the header/chip no longer drop to white on paper.
+  - **Origin is permanent; Current office is a snapshot** stamped *"as of <print time>"*. The QR itself never changes and always resolves to the **live location & history**, so it stays correct no matter how many times the document is transferred (e.g. PICTO → OPG → Accounting → OPG …).
+  - Source / Origin shows the **department only** (no division).
+- Encode page: a concise **note in Source/Origin** explaining you can skip it when transferring to another office, plus a modern numbered-step layout.
+
 ## v2.5.0 — 2026-06-21
 **Office transfer & claim (receiving pool)**
 - New **"Transfer to another office"** action — sends a document to an office's **receiving pool** (no specific person needed). Requires the cross-department setting.

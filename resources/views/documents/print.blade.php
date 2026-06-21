@@ -3,38 +3,109 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>QR Slip — {{ $document->tracking_code }}</title>
+    <title>Tracking Slip — {{ $document->tracking_code }}</title>
+    @php
+        $primary = $settings['primary_color'] ?? '#4f46e5';
+        $prio = strtolower($document->priority);
+        $prioColors = [
+            'urgent' => '#dc2626', 'high' => '#ea580c', 'normal' => '#2563eb', 'low' => '#6b7280',
+        ];
+        $prioColor = $prioColors[$prio] ?? '#2563eb';
+        // Origin = where it was first encoded (permanent). Department only — no division.
+        $originDept = $document->creator?->department?->code ?? '—';
+        $originName = $document->creator?->department?->name
+            ?? trim(explode('·', (string) $document->source)[0]) ?: '—';
+        $currentDept = $document->department?->code ?? '—';
+    @endphp
     <style>
-        * { box-sizing: border-box; }
-        body { font-family: 'Segoe UI', Arial, sans-serif; margin: 0; padding: 24px; color: #111; }
-        .slip { width: 360px; margin: 0 auto; border: 2px dashed #999; border-radius: 12px; padding: 20px; text-align: center; }
-        .org { font-size: 12px; color: #555; text-transform: uppercase; letter-spacing: .05em; }
-        .title { font-size: 16px; font-weight: 700; margin: 6px 0 2px; }
-        .code { font-family: monospace; font-size: 15px; font-weight: 700; margin: 4px 0 12px; }
-        .qr { display: inline-block; padding: 8px; background: #fff; border: 1px solid #eee; border-radius: 8px; }
-        .qr svg { width: 200px; height: 200px; }
-        .meta { font-size: 12px; text-align: left; margin-top: 14px; border-top: 1px solid #eee; padding-top: 10px; }
-        .meta div { margin: 2px 0; }
-        .hint { font-size: 11px; color: #666; margin-top: 12px; }
-        .btn { margin-top: 18px; text-align: center; }
-        .btn button { padding: 8px 16px; border: none; border-radius: 6px; background: {{ $settings['primary_color'] ?? '#4f46e5' }}; color: #fff; cursor: pointer; font-size: 14px; }
-        @media print { .btn { display: none; } body { padding: 0; } .slip { border-color: #ccc; } }
+        /* Force background colors to print (browsers strip them by default). */
+        * { box-sizing: border-box; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; margin: 0; padding: 24px; color: #111; background: #f3f4f6; }
+        .slip { width: 384px; margin: 0 auto; background: #fff; border-radius: 14px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,.12); border: 1px solid #e5e7eb; }
+        .header { background: {{ $primary }}; color: #fff; padding: 14px 18px; text-align: center; }
+        .header .org { font-size: 10px; text-transform: uppercase; letter-spacing: .12em; opacity: .85; }
+        .header .slip-label { font-size: 15px; font-weight: 700; margin-top: 2px; letter-spacing: .02em; }
+        .body { padding: 18px; }
+        .code-row { text-align: center; margin-bottom: 12px; }
+        .code { font-family: 'Consolas', monospace; font-size: 18px; font-weight: 700; letter-spacing: .03em; color: #111; }
+        .prio { display: inline-block; margin-left: 6px; font-size: 10px; font-weight: 700; text-transform: uppercase; color: #fff; background: {{ $prioColor }}; padding: 2px 8px; border-radius: 999px; vertical-align: middle; }
+        .qr-wrap { text-align: center; margin: 6px 0 14px; }
+        .qr { display: inline-block; padding: 10px; background: #fff; border: 1px solid #e5e7eb; border-radius: 10px; }
+        .qr svg { width: 200px; height: 200px; display: block; }
+        .title { font-size: 15px; font-weight: 700; text-align: center; line-height: 1.3; margin-bottom: 14px; }
+        .meta { font-size: 12px; border-top: 1px dashed #d1d5db; padding-top: 12px; }
+        .meta-row { display: flex; justify-content: space-between; gap: 10px; padding: 3px 0; }
+        .meta-row .k { color: #6b7280; flex-shrink: 0; }
+        .meta-row .v { font-weight: 600; text-align: right; color: #111; }
+        .route { display: flex; align-items: center; justify-content: center; gap: 8px; margin: 12px 0; padding: 10px; background: #f9fafb; border-radius: 10px; font-size: 12px; }
+        .route .box { text-align: center; flex: 1; }
+        .route .box .lbl { font-size: 9px; text-transform: uppercase; letter-spacing: .08em; color: #9ca3af; }
+        .route .box .val { font-weight: 700; margin-top: 1px; }
+        .route .box .asof { font-size: 8px; color: #9ca3af; margin-top: 2px; }
+        .route .arrow { color: {{ $primary }}; font-size: 18px; font-weight: 700; }
+        .hint { font-size: 11px; color: #4b5563; text-align: center; margin-top: 14px; line-height: 1.45; }
+        .hint strong { color: #111; }
+        .url { font-family: monospace; font-size: 9px; color: #9ca3af; word-break: break-all; text-align: center; margin-top: 6px; }
+        .btn { margin: 18px auto 0; text-align: center; }
+        .btn button { padding: 9px 18px; border: none; border-radius: 8px; background: {{ $primary }}; color: #fff; cursor: pointer; font-size: 14px; }
+        @media print {
+            html, body { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+            body { padding: 0; background: #fff; }
+            .slip { box-shadow: none; border-color: #ccc; }
+            .btn { display: none; }
+        }
     </style>
 </head>
 <body>
     <div class="slip">
-        <div class="org">{{ $settings['organization'] ?? $settings['app_name'] ?? 'Document Tracking' }}</div>
-        <div class="title">{{ $document->title }}</div>
-        <div class="code">{{ $document->tracking_code }}</div>
-        <div class="qr">{!! $qrSvg !!}</div>
-        <div class="meta">
-            <div><strong>Type:</strong> {{ $document->document_type }}</div>
-            @if($document->reference_no)<div><strong>Ref No:</strong> {{ $document->reference_no }}</div>@endif
-            <div><strong>Priority:</strong> {{ ucfirst($document->priority) }}</div>
-            <div><strong>Assigned to:</strong> {{ $document->currentHolder?->name ?? 'Unassigned' }}</div>
-            <div><strong>Released:</strong> {{ $document->released_at?->format('M d, Y') ?? '—' }}</div>
+        <div class="header">
+            <div class="org">{{ $settings['organization'] ?? $settings['app_name'] ?? 'Provincial Government of Cavite' }}</div>
+            <div class="slip-label">Document Tracking Slip</div>
         </div>
-        <div class="hint">Scan with your phone camera, log in, then tap <strong>Receive</strong>.</div>
+        <div class="body">
+            <div class="code-row">
+                <span class="code">{{ $document->tracking_code }}</span>
+                <span class="prio">{{ $prio }}</span>
+            </div>
+
+            <div class="qr-wrap">
+                <div class="qr">{!! $qrSvg !!}</div>
+            </div>
+
+            <div class="title">{{ $document->title }}</div>
+
+            {{-- Routing: permanent origin → current office (snapshot at print time) --}}
+            <div class="route">
+                <div class="box">
+                    <div class="lbl">Origin</div>
+                    <div class="val">{{ $originDept }}</div>
+                </div>
+                <div class="arrow">→</div>
+                <div class="box">
+                    <div class="lbl">Current office</div>
+                    <div class="val">{{ $currentDept }}</div>
+                    <div class="asof">as of {{ now()->format('M d, g:i A') }}</div>
+                </div>
+            </div>
+
+            <div class="meta">
+                <div class="meta-row"><span class="k">Type</span><span class="v">{{ $document->document_type }}</span></div>
+                @if($document->voucher_number)
+                    <div class="meta-row"><span class="k">Voucher No.</span><span class="v">{{ $document->voucher_number }}</span></div>
+                @endif
+                @if($document->reference_no)
+                    <div class="meta-row"><span class="k">Reference No.</span><span class="v">{{ $document->reference_no }}</span></div>
+                @endif
+                <div class="meta-row"><span class="k">Source / Origin</span><span class="v">{{ $originName }}</span></div>
+                <div class="meta-row"><span class="k">Encoded</span><span class="v">{{ $document->created_at->format('M d, Y g:i A') }}</span></div>
+            </div>
+
+            <div class="hint">
+                📱 <strong>Scan this QR</strong> with your phone camera, log in, then tap <strong>Receive / Claim</strong>.<br>
+                The QR always shows the <strong>live location &amp; history</strong> — even after the document moves between offices.
+            </div>
+            <div class="url">{{ $trackUrl }}</div>
+        </div>
     </div>
     <div class="btn">
         <button onclick="window.print()">🖨 Print this slip</button>

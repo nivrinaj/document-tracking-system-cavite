@@ -30,11 +30,19 @@
             <h2 class="font-semibold mb-3">What would you like to do?</h2>
             <div class="space-y-3">
                 @can('receive', $document)
-                    <form method="POST" action="{{ route('documents.receive', $document) }}" class="space-y-2 p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20">
+                    @php $isClaim = $document->current_holder_id === null; @endphp
+                    <form method="POST" action="{{ route('documents.receive', $document) }}" class="space-y-2 p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20"
+                          data-confirm="{{ $isClaim ? 'Claim this document for your office? You will become its holder.' : '' }}">
                         @csrf
-                        <p class="text-sm text-blue-700 dark:text-blue-300">This document is assigned to you. Confirm you have it physically.</p>
+                        <p class="text-sm text-blue-700 dark:text-blue-300">
+                            @if($isClaim)
+                                📥 Transferred to <strong>your office</strong>. Claiming makes you its holder — other receivers stop seeing it as unclaimed.
+                            @else
+                                This document is assigned to you. Confirm you have it physically.
+                            @endif
+                        </p>
                         <input type="text" name="remarks" class="input" placeholder="Remarks (optional)">
-                        <x-btn type="submit" class="w-full">✅ Receive Document</x-btn>
+                        <x-btn type="submit" class="w-full">{{ $isClaim ? '📥 Claim & Receive' : '✅ Receive Document' }}</x-btn>
                     </form>
                 @endcan
 

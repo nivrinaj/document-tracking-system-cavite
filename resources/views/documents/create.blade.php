@@ -23,7 +23,14 @@
             @csrf
 
             {{-- ───── Document details ───── --}}
-            <x-card title="Document details">
+            <x-card padding="p-5">
+                <div class="flex items-start gap-3 mb-5">
+                    <span class="shrink-0 w-8 h-8 rounded-full grid place-items-center text-white text-sm font-semibold" style="background: var(--color-primary)">1</span>
+                    <div>
+                        <h2 class="font-semibold text-sm">Document details</h2>
+                        <p class="text-xs text-gray-400">What is this document?</p>
+                    </div>
+                </div>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div class="sm:col-span-2">
                         <label class="label">Document Title <span class="text-red-500">*</span></label>
@@ -70,8 +77,20 @@
 
             {{-- ───── Source / Origin (not needed when transferring out — your office is the origin) ───── --}}
             <div x-show="scope !== 'transfer'" x-cloak>
-            <x-card title="Source / Origin">
-                <p class="text-xs text-gray-400 mb-3">Where did this document come from?</p>
+            <x-card padding="p-5">
+                <div class="flex items-start gap-3 mb-5">
+                    <span class="shrink-0 w-8 h-8 rounded-full grid place-items-center text-white text-sm font-semibold" style="background: var(--color-primary)">2</span>
+                    <div>
+                        <h2 class="font-semibold text-sm">Source / Origin</h2>
+                        <p class="text-xs text-gray-400">Where did it come from?</p>
+                    </div>
+                </div>
+                @if($crossDept)
+                    <div class="flex items-start gap-2 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-900/40 px-3 py-2.5 mb-4 text-xs text-blue-700 dark:text-blue-300">
+                        <svg class="w-4 h-4 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        <span>Fill this in only for documents handled <strong>within your own office</strong>. Sending it to <strong>another office</strong>? Skip this — go to <strong>Distribution</strong> below and choose <strong>“Transfer to another office.”</strong></span>
+                    </div>
+                @endif
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                         <label class="label">Office</label>
@@ -105,7 +124,14 @@
             </div>
 
             {{-- ───── Distribution ───── --}}
-            <x-card title="Distribution">
+            <x-card padding="p-5">
+                <div class="flex items-start gap-3 mb-5">
+                    <span class="shrink-0 w-8 h-8 rounded-full grid place-items-center text-white text-sm font-semibold" style="background: var(--color-primary)">3</span>
+                    <div>
+                        <h2 class="font-semibold text-sm">Distribution</h2>
+                        <p class="text-xs text-gray-400">Where is it going?</p>
+                    </div>
+                </div>
                 <div class="mb-4">
                     <label class="label">Send as</label>
                     <select name="broadcast_scope" x-model="scope" @change="div=''" class="input">
