@@ -36,16 +36,26 @@
                         </div>
                         <div class="rounded-xl border-2 p-4" style="border-color: var(--color-primary)">
                             <div class="text-[11px] uppercase tracking-wider text-gray-400 mb-1">Currently with</div>
-                            @if($document->current_holder_id && $document->status === 'draft')
-                                {{-- Assigned but not released yet — the encoder still physically holds it. --}}
-                                <div class="font-semibold text-amber-600 dark:text-amber-400">Pending release</div>
-                                <div class="text-xs text-gray-500 dark:text-gray-400">Assigned to {{ $document->currentHolder->name }} ({{ $document->currentHolder->orgShort() }}) — not yet handed over</div>
-                            @elseif($document->currentHolder)
-                                <div class="font-semibold">{{ $document->currentHolder->name }}</div>
-                                <div class="text-xs text-gray-500 dark:text-gray-400">{{ $document->currentHolder->orgUnit() }}</div>
-                            @elseif($document->is_broadcast)
+                            @php $h = $document->currentHolder; @endphp
+                            @if($document->is_broadcast)
                                 <div class="font-semibold">📣 Broadcast memo</div>
                                 <div class="text-xs text-gray-500 dark:text-gray-400">Sent to multiple recipients</div>
+                            @elseif($h && $document->status === 'draft')
+                                {{-- Assigned but not released — the encoder still physically holds it. --}}
+                                <div class="font-semibold text-amber-600 dark:text-amber-400">Pending release</div>
+                                <div class="text-xs text-gray-500 dark:text-gray-400">Assigned to {{ $h->name }} ({{ $h->orgShort() }}) — not yet handed over</div>
+                            @elseif($h && in_array($document->status, ['released', 'forwarded']))
+                                {{-- Handed over / sent, but the recipient hasn't confirmed receipt yet. --}}
+                                <div class="font-semibold text-amber-600 dark:text-amber-400">In transit</div>
+                                <div class="text-xs text-gray-500 dark:text-gray-400">{{ $document->status === 'forwarded' ? 'Forwarded' : 'Released' }} to {{ $h->name }} ({{ $h->orgShort() }}) — awaiting receipt</div>
+                            @elseif($h)
+                                {{-- Received (or closed): the holder actually possesses it. --}}
+                                <div class="font-semibold">{{ $h->name }}</div>
+                                <div class="text-xs text-gray-500 dark:text-gray-400">{{ $h->orgUnit() }}</div>
+                            @elseif($document->status === 'released')
+                                {{-- Transferred to an office pool, not yet claimed. --}}
+                                <div class="font-semibold text-amber-600 dark:text-amber-400">Awaiting claim</div>
+                                <div class="text-xs text-gray-500 dark:text-gray-400">Transferred to {{ $document->department?->code }} — not yet claimed</div>
                             @else
                                 <div class="font-semibold text-gray-500 dark:text-gray-400">Not yet assigned</div>
                                 <div class="text-xs text-gray-400">⏳ In transit — awaiting routing</div>

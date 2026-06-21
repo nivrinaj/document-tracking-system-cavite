@@ -6,6 +6,15 @@ reviewed or rolled back. Format based on [Keep a Changelog](https://keepachangel
 
 ---
 
+## v2.6.5 — 2026-06-21
+**Mobile login redesign + accurate routing status**
+- **Mobile login redesigned** into a proper branded layout: the uploaded background image with the gradient overlay fills the screen, branding sits on top, and the form is a clean white bottom-sheet (rounded top) anchored to the bottom — no more floating box on empty space. Desktop split-screen unchanged.
+- **"Currently with" is now accurate through the whole flow.** A document only shows a person as the holder once they've **received** it. Before that it shows the true state:
+  - *Pending Release* (assigned, not handed over)
+  - *In transit* — released/forwarded to X, **awaiting receipt**
+  - *Awaiting claim* — transferred to an office pool, not yet claimed
+  Applied to the document detail page and the documents list.
+
 ## v2.6.4 — 2026-06-21
 **Routing clarity & report fixes**
 - **"Currently with" no longer implies possession before release.** A document that is *Pending Release* but already assigned now shows **"Pending release — Assigned to X, not yet handed over"** (both on the detail page and the documents list), instead of looking like the recipient already has it.

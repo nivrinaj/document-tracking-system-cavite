@@ -88,14 +88,17 @@
                                     <div class="text-xs text-gray-400">{{ $doc->creator?->orgShort() }}</div>
                                 </td>
                                 <td class="table-td" data-label="Current Holder">
-                                    @if($doc->current_holder_id && $doc->status === 'draft')
+                                    @if($doc->is_broadcast)
+                                        <span class="text-gray-400">📣 Broadcast</span>
+                                    @elseif($doc->current_holder_id && $doc->status === 'draft')
                                         <span class="text-amber-600 dark:text-amber-400">Pending release</span>
                                         <div class="text-xs text-gray-400">to {{ $doc->currentHolder->name }}</div>
+                                    @elseif($doc->current_holder_id && in_array($doc->status, ['released','forwarded']))
+                                        <span class="text-amber-600 dark:text-amber-400">In transit</span>
+                                        <div class="text-xs text-gray-400">to {{ $doc->currentHolder->name }} · awaiting receipt</div>
                                     @elseif($doc->currentHolder)
                                         <div class="font-medium">{{ $doc->currentHolder->name }}</div>
                                         <div class="text-xs text-gray-400">{{ $doc->currentHolder->orgShort() }}</div>
-                                    @elseif($doc->is_broadcast)
-                                        <span class="text-gray-400">📣 Broadcast</span>
                                     @elseif($doc->status === 'released')
                                         <span class="text-amber-600 dark:text-amber-400">📥 To claim</span>
                                         <div class="text-xs text-gray-400">{{ $doc->department?->code }}</div>
