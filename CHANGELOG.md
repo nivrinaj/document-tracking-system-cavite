@@ -6,6 +6,15 @@ reviewed or rolled back. Format based on [Keep a Changelog](https://keepachangel
 
 ---
 
+## v2.6.0 — 2026-06-21
+**Reports with charts & statistics, friendlier wording, QOL**
+- **Every report now has charts + statistics**, not just the summary: pie/doughnut breakdowns (status, priority, type), bar charts (division, staff workload), stat cards, and an on-time-rate statistic on the Processing Time report.
+- **PDF exports print in color** — charts are server-rendered as **SVG pies + colored bars** (DomPDF can't run JavaScript), with colored stat cards and table headers. What you see on screen prints correctly.
+- **Renamed "SLA" → "Processing Time & Overdue"** everywhere — plain wording aligned with the Citizen's Charter / ARTA "prescribed processing time" that staff already understand.
+- **Overdue is Accounting-only by design** (only offices with a configured processing time are evaluated; currently PACCO at 7 days). Added richer sample data covering all four states: on-time, completed-late, open-within-time, open-overdue.
+- **Login: show/hide password** toggle so users can check what they typed.
+- **QR slip is now "print once, valid forever"** — it shows only the permanent **Origin office** + identity; the current location is *not* printed (it would go stale on every transfer). The QR always resolves to the live current holder, office & history, so HR/Accounting never need to reprint just because the document moved.
+
 ## v2.5.1 — 2026-06-21
 **Detail-page clarity, routing guardrails & slip redesign**
 - Document details now show a clear **"Last action"** line (e.g. *Received by HR Staff · 54 seconds ago*) so the most recent movement is unambiguous — the static *Received*/*Released* fields are first-touch timestamps and could look out of order.

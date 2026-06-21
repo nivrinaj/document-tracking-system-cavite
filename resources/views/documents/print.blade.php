@@ -74,17 +74,11 @@
 
             <div class="title">{{ $document->title }}</div>
 
-            {{-- Routing: permanent origin → current office (snapshot at print time) --}}
+            {{-- Origin only (permanent). Current location lives on the QR, never on paper. --}}
             <div class="route">
-                <div class="box">
-                    <div class="lbl">Origin</div>
+                <div class="box" style="flex: 1;">
+                    <div class="lbl">Origin Office</div>
                     <div class="val">{{ $originDept }}</div>
-                </div>
-                <div class="arrow">→</div>
-                <div class="box">
-                    <div class="lbl">Current office</div>
-                    <div class="val">{{ $currentDept }}</div>
-                    <div class="asof">as of {{ now()->format('M d, g:i A') }}</div>
                 </div>
             </div>
 
@@ -101,8 +95,8 @@
             </div>
 
             <div class="hint">
-                📱 <strong>Scan this QR</strong> with your phone camera, log in, then tap <strong>Receive / Claim</strong>.<br>
-                The QR always shows the <strong>live location &amp; history</strong> — even after the document moves between offices.
+                📱 <strong>Scan this QR</strong> to see the <strong>live current holder, office &amp; full history</strong>, then tap <strong>Receive / Claim</strong>.<br>
+                <span style="color:#9ca3af;">Print once — this slip stays valid for the document's entire life, no matter how many offices it passes through.</span>
             </div>
             <div class="url">{{ $trackUrl }}</div>
         </div>

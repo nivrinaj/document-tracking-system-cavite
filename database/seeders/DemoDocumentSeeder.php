@@ -173,5 +173,31 @@ class DemoDocumentSeeder extends Seeder
         $v2->assignees()->syncWithoutDetaching(array_filter([$acct->id, $staff?->id]));
         DocumentLog::create(['document_id' => $v2->id, 'action' => 'encoded', 'actor_id' => $acct->id, 'remarks' => 'Voucher received.']);
         DocumentLog::create(['document_id' => $v2->id, 'action' => 'received', 'actor_id' => $staff?->id ?? $acct->id, 'remarks' => 'Under review.']);
+
+        // C) Completed ON TIME — 4-day turnaround vs 7-day limit.
+        $v3 = Document::create([
+            'title' => 'Disbursement Voucher - Utility Bills', 'document_type' => 'Voucher', 'voucher_number' => 'DV-2026-0003',
+            'tracking_code' => Document::trackingCodeForVoucher('DV-2026-0003'),
+            'description' => 'Payment for monthly electricity and water bills.', 'source' => 'PACCO', 'priority' => 'normal', 'status' => 'completed',
+            'division_id' => $acct->division_id, 'department_id' => $acct->department_id, 'created_by' => $acct->id,
+            'current_holder_id' => $staff?->id ?? $acct->id,
+            'received_at' => now()->subDays(9), 'released_at' => now()->subDays(9), 'completed_at' => now()->subDays(5),
+        ]);
+        $v3->assignees()->syncWithoutDetaching(array_filter([$acct->id, $staff?->id]));
+        DocumentLog::create(['document_id' => $v3->id, 'action' => 'encoded', 'actor_id' => $acct->id, 'remarks' => 'Voucher received.']);
+        DocumentLog::create(['document_id' => $v3->id, 'action' => 'completed', 'actor_id' => $staff?->id ?? $acct->id, 'remarks' => 'Processed on time.']);
+
+        // D) Still open but WITHIN time — received 2 days ago (under the 7-day limit).
+        $v4 = Document::create([
+            'title' => 'Disbursement Voucher - Training Honoraria', 'document_type' => 'Voucher', 'voucher_number' => 'DV-2026-0004',
+            'tracking_code' => Document::trackingCodeForVoucher('DV-2026-0004'),
+            'description' => 'Honoraria for resource speakers.', 'source' => 'PACCO', 'priority' => 'high', 'status' => 'received',
+            'division_id' => $acct->division_id, 'department_id' => $acct->department_id, 'created_by' => $acct->id,
+            'current_holder_id' => $staff?->id ?? $acct->id,
+            'received_at' => now()->subDays(2), 'released_at' => now()->subDays(2),
+        ]);
+        $v4->assignees()->syncWithoutDetaching(array_filter([$acct->id, $staff?->id]));
+        DocumentLog::create(['document_id' => $v4->id, 'action' => 'encoded', 'actor_id' => $acct->id, 'remarks' => 'Voucher received.']);
+        DocumentLog::create(['document_id' => $v4->id, 'action' => 'received', 'actor_id' => $staff?->id ?? $acct->id, 'remarks' => 'Under review.']);
     }
 }

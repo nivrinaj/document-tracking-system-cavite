@@ -21,7 +21,7 @@ class ReportController extends Controller
         'staff_workload' => 'Staff Workload (documents currently held)',
         'pending'        => 'Pending / Outstanding Documents',
         'completed'      => 'Completed & Archived Documents',
-        'sla_compliance' => 'SLA / Turnaround Compliance (on-time vs overdue)',
+        'sla_compliance' => 'Processing Time & Overdue (on-time vs late)',
     ];
 
     public function index()

@@ -27,7 +27,7 @@
         <input type="checkbox" name="sla_enabled" value="1" x-model="sla" class="rounded text-[color:var(--color-primary)]">
         Set a completion deadline for this department's documents
     </label>
-    <p class="text-xs text-gray-400 ml-6">When on, documents are flagged <strong>on-time</strong> or <strong>overdue</strong> in the SLA report.</p>
+    <p class="text-xs text-gray-400 ml-6">When on, documents are flagged <strong>on-time</strong> or <strong>overdue</strong> in the Processing Time &amp; Overdue report.</p>
 
     <div x-show="sla" x-cloak class="mt-3 space-y-4">
         <div class="max-w-xs">
