@@ -10,7 +10,10 @@
       "Bash(rm -f \"D:/PGC/storage/app/_sla_preview.pdf\" /tmp/sla.pdf /tmp/sum.pdf /tmp/cj.txt /tmp/cj2.txt; echo done)",
       "Bash(git -C D:/PGC add -A)",
       "Bash(git -C D:/PGC commit -q -m ' *)",
-      "Bash(git -C D:/PGC log --oneline -4)"
+      "Bash(git -C D:/PGC log --oneline -4)",
+      "Bash(cd /d \"D:/PGC\")",
+      "Bash(php -r \"var_dump\\(function_exists\\('imagefilledarc'\\), function_exists\\('imagecreatetruecolor'\\), extension_loaded\\('gd'\\)\\);\")",
+      "Bash(php -r ' *)"
     ]
   }
 }

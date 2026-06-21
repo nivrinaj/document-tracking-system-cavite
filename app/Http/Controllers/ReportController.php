@@ -141,13 +141,13 @@ class ReportController extends Controller
         };
 
         return match ($type) {
-            'summary' => [
+            'summary' => array_merge([
                 'byStatus' => $scope($base())->select('status', DB::raw('count(*) as total'))->groupBy('status')->pluck('total', 'status')->toArray(),
                 'byPriority' => $scope($base())->select('priority', DB::raw('count(*) as total'))->groupBy('priority')->pluck('total', 'priority')->toArray(),
                 'byDivision' => $scope($base())->with('division')->select('division_id', DB::raw('count(*) as total'))->groupBy('division_id')->get()
                     ->mapWithKeys(fn ($r) => [optional($r->division)->code ?? 'Unassigned' => $r->total])->toArray(),
                 'documents' => collect(),
-            ],
+            ], ['stats' => $this->completionStats($scope($base()))]),
             'incoming', 'pending', 'completed', 'by_status', 'by_division' => [
                 'documents' => $scope($base()->with(['creator', 'currentHolder', 'division']))
                     ->when($type === 'pending', fn ($q) => $q->whereIn('status', ['draft', 'released', 'received', 'forwarded']))
@@ -170,6 +170,34 @@ class ReportController extends Controller
         };
     }
 
+    /**
+     * Lifecycle statistics for a set of documents — how long things take to finish.
+     * $q is a query already scoped/filtered for the report.
+     */
+    private function completionStats($q): array
+    {
+        $done = (clone $q)->whereIn('status', ['completed', 'archived'])
+            ->whereNotNull('completed_at')->get(['received_at', 'created_at', 'completed_at']);
+
+        $days = $done->map(function ($d) {
+            $start = $d->received_at ?? $d->created_at;
+            return $start ? $start->floatDiffInDays($d->completed_at) : null;
+        })->filter(fn ($v) => $v !== null);
+
+        // Open items still in progress, and how old they are.
+        $open = (clone $q)->whereIn('status', ['draft', 'released', 'received', 'forwarded'])->get(['received_at', 'created_at']);
+        $openAge = $open->map(fn ($d) => ($d->received_at ?? $d->created_at)?->floatDiffInDays(now()))->filter(fn ($v) => $v !== null);
+
+        return [
+            'completed_count' => $done->count(),
+            'avg_completion'  => $days->count() ? round($days->avg(), 1) : null,
+            'fastest'         => $days->count() ? round($days->min(), 1) : null,
+            'slowest'         => $days->count() ? round($days->max(), 1) : null,
+            'open_count'      => $open->count(),
+            'avg_open_age'    => $openAge->count() ? round($openAge->avg(), 1) : null,
+        ];
+    }
+
     /** Evaluate documents against each department's configured processing time. Scoped to $user. */
     private function buildSla(?Carbon $from, ?Carbon $to, $divisionId, User $user): array
     {
@@ -182,6 +210,8 @@ class ReportController extends Controller
 
         $rows = collect();
         $summary = ['on_time' => 0, 'overdue' => 0, 'on_track' => 0, 'overdue_open' => 0];
+        $completedDays = [];   // turnaround of finished docs
+        $overByDays = [];      // how many days past the limit (late + open-overdue)
 
         if ($departments->isNotEmpty()) {
             $docs = Document::with(['department', 'currentHolder'])
@@ -202,11 +232,20 @@ class ReportController extends Controller
                 $sla = (int) $dept->sla_days;
 
                 if ($d->isClosed() && $d->completed_at) {
-                    $days = (int) $start->diffInDays($d->completed_at);
+                    $exact = $start->floatDiffInDays($d->completed_at);
+                    $days = (int) round($exact);
                     $status = $days <= $sla ? 'on_time' : 'overdue';
+                    $completedDays[] = $exact;
+                    if ($status === 'overdue') {
+                        $overByDays[] = $exact - $sla;
+                    }
                 } else {
-                    $days = (int) $start->diffInDays(now());
+                    $exact = $start->floatDiffInDays(now());
+                    $days = (int) round($exact);
                     $status = $days > $sla ? 'overdue_open' : 'on_track';
+                    if ($status === 'overdue_open') {
+                        $overByDays[] = $exact - $sla;
+                    }
                 }
                 $summary[$status]++;
                 $rows->push([
@@ -219,6 +258,12 @@ class ReportController extends Controller
             }
         }
 
-        return ['slaRows' => $rows, 'slaSummary' => $summary, 'slaDepartments' => $departments->values()];
+        $slaStats = [
+            'avg_completion' => count($completedDays) ? round(array_sum($completedDays) / count($completedDays), 1) : null,
+            'avg_over'       => count($overByDays) ? round(array_sum($overByDays) / count($overByDays), 1) : null,
+            'worst_over'     => count($overByDays) ? round(max($overByDays), 1) : null,
+        ];
+
+        return ['slaRows' => $rows, 'slaSummary' => $summary, 'slaStats' => $slaStats, 'slaDepartments' => $departments->values()];
     }
 }

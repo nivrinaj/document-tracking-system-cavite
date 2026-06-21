@@ -6,27 +6,10 @@
         $primary = $settings['primary_color'] ?? '#4f46e5';
         $palette = ['#6366f1','#0ea5e9','#22c55e','#f59e0b','#ef4444','#a855f7','#14b8a6','#64748b'];
 
-        // Server-rendered SVG pie (DomPDF renders SVG paths + colors reliably).
+        // Pie rendered as a PNG via GD — embeds reliably in DomPDF (inline SVG does not).
         $svgPie = function (array $data, array $colors) {
-            $total = array_sum($data);
-            if ($total <= 0) return '';
-            $cx = 70; $cy = 70; $r = 68; $angle = -90; $paths = ''; $i = 0;
-            foreach ($data as $val) {
-                if ($val <= 0) { $i++; continue; }
-                $sweep = $val / $total * 360;
-                $color = $colors[$i % count($colors)];
-                if (abs($sweep - 360) < 0.001) {
-                    $paths .= '<circle cx="'.$cx.'" cy="'.$cy.'" r="'.$r.'" fill="'.$color.'"/>';
-                } else {
-                    $a1 = deg2rad($angle); $a2 = deg2rad($angle + $sweep);
-                    $x1 = round($cx + $r * cos($a1), 2); $y1 = round($cy + $r * sin($a1), 2);
-                    $x2 = round($cx + $r * cos($a2), 2); $y2 = round($cy + $r * sin($a2), 2);
-                    $large = $sweep > 180 ? 1 : 0;
-                    $paths .= '<path d="M '.$cx.' '.$cy.' L '.$x1.' '.$y1.' A '.$r.' '.$r.' 0 '.$large.' 1 '.$x2.' '.$y2.' Z" fill="'.$color.'"/>';
-                }
-                $angle += $sweep; $i++;
-            }
-            return '<svg width="140" height="140" viewBox="0 0 140 140">'.$paths.'</svg>';
+            if (array_sum(array_filter($data, fn ($v) => $v > 0)) <= 0) return '<div style="font-size:10px;color:#999;">No data.</div>';
+            return '<img src="'.\App\Support\ChartImage::pie($data, array_values($colors)).'" width="132" height="132" style="display:block;">';
         };
         $legend = function (array $data, array $colors) {
             $total = max(1, array_sum($data)); $out = ''; $i = 0;
@@ -134,6 +117,18 @@
         </tr></table>
         <div class="panel"><h3>By Division</h3>{!! $bars($byDivision, $palette) !!}</div>
 
+        <div class="panel" style="margin-top:10px;"><h3>Statistics</h3>
+            <table style="width:100%"><tr style="text-align:center;">
+                <td><div style="font-size:16px;font-weight:bold;">{{ $stats['avg_completion'] !== null ? $stats['avg_completion'].' d' : '—' }}</div><div style="font-size:9px;color:#777;">Avg. completion</div></td>
+                <td><div style="font-size:16px;font-weight:bold;color:#22c55e;">{{ $stats['fastest'] !== null ? $stats['fastest'].' d' : '—' }}</div><div style="font-size:9px;color:#777;">Fastest</div></td>
+                <td><div style="font-size:16px;font-weight:bold;color:#ef4444;">{{ $stats['slowest'] !== null ? $stats['slowest'].' d' : '—' }}</div><div style="font-size:9px;color:#777;">Slowest</div></td>
+                <td><div style="font-size:16px;font-weight:bold;">{{ $stats['completed_count'] }}</div><div style="font-size:9px;color:#777;">Completed</div></td>
+                <td><div style="font-size:16px;font-weight:bold;">{{ $stats['open_count'] }}</div><div style="font-size:9px;color:#777;">Still open</div></td>
+                <td><div style="font-size:16px;font-weight:bold;color:#f59e0b;">{{ $stats['avg_open_age'] !== null ? $stats['avg_open_age'].' d' : '—' }}</div><div style="font-size:9px;color:#777;">Avg. age (open)</div></td>
+            </tr></table>
+            <div style="font-size:8px;color:#999;margin-top:4px;">Completion time = received (or encoded) → completed/archived.</div>
+        </div>
+
     @elseif($type === 'sla_compliance')
         @php
             $labels=['on_time'=>'On time','overdue'=>'Completed late','on_track'=>'Open, within time','overdue_open'=>'Open & overdue'];
@@ -160,9 +155,12 @@
             <td style="width:54%;"><div class="panel"><h3>Statistics</h3>
                 <div class="lg-row">Documents evaluated <span class="lg-val">{{ $slaTotal }}</span></div>
                 <div class="lg-row">On-time rate <span class="lg-val">{{ $onTimeRate }}%</span></div>
+                <div class="lg-row">Avg. completion time <span class="lg-val">{{ $slaStats['avg_completion'] !== null ? $slaStats['avg_completion'].' days' : '—' }}</span></div>
+                <div class="lg-row">Avg. days over limit <span class="lg-val">{{ $slaStats['avg_over'] !== null ? '+'.$slaStats['avg_over'].' days' : '—' }}</span></div>
                 <div class="lg-row">Total overdue <span class="lg-val">{{ $slaSummary['overdue'] + $slaSummary['overdue_open'] }}</span></div>
+                <div class="lg-row">Worst overshoot <span class="lg-val">{{ $slaStats['worst_over'] !== null ? '+'.$slaStats['worst_over'].' days' : '—' }}</span></div>
                 <div class="lg-row" style="border-top:1px solid #eee;margin-top:4px;padding-top:4px;color:#777;">
-                    Offices tracked: {{ $slaDepartments->map(fn($d) => $d->code.' ('.$d->sla_days.'d)')->join(', ') }}
+                    Offices tracked: {{ $slaDepartments->map(fn($d) => $d->code.' ('.$d->sla_days.'d limit)')->join(', ') }}
                 </div>
             </div></td>
         </tr></table>

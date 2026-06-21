@@ -6,6 +6,14 @@ reviewed or rolled back. Format based on [Keep a Changelog](https://keepachangel
 
 ---
 
+## v2.6.2 — 2026-06-21
+**PDF charts fixed + completion-time statistics**
+- **Fixed: pie charts were missing in report PDFs.** DomPDF can't render inline SVG reliably, so pies are now drawn as PNG images via PHP GD — they always print, in colour.
+- **New statistics** on reports:
+  - *Summary*: average completion time, fastest, slowest, completed count, open count, and average age of open documents.
+  - *Processing Time & Overdue* (Accounting): average completion time, average days over the limit, and worst overshoot — alongside the existing on-time rate.
+- Completion time is measured from when a document is received (or encoded) to when it's completed/archived.
+
 ## v2.6.1 — 2026-06-21
 **Report security fix, redesigned login & report polish**
 - **Security fix (important):** reports were not scoped — any user could generate reports (and PDFs) containing **other offices' documents**. Reports now respect document visibility: non-executive users only ever see their **own office's** documents, divisions and statistics.

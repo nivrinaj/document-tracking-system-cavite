@@ -44,6 +44,18 @@
                 <x-card><h3 class="font-semibold text-sm mb-3">By Division</h3><div class="h-56"><canvas id="rDivision"></canvas></div></x-card>
             </div>
 
+            <x-card title="Statistics">
+                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 text-center">
+                    <div><div class="text-2xl font-bold">{{ $stats['avg_completion'] !== null ? $stats['avg_completion'] : '—' }}<span class="text-sm font-normal text-gray-400"> {{ $stats['avg_completion'] !== null ? 'days' : '' }}</span></div><div class="text-xs text-gray-500 mt-1">Avg. completion time</div></div>
+                    <div><div class="text-2xl font-bold text-green-600">{{ $stats['fastest'] !== null ? $stats['fastest'].'d' : '—' }}</div><div class="text-xs text-gray-500 mt-1">Fastest</div></div>
+                    <div><div class="text-2xl font-bold text-red-600">{{ $stats['slowest'] !== null ? $stats['slowest'].'d' : '—' }}</div><div class="text-xs text-gray-500 mt-1">Slowest</div></div>
+                    <div><div class="text-2xl font-bold">{{ $stats['completed_count'] }}</div><div class="text-xs text-gray-500 mt-1">Completed</div></div>
+                    <div><div class="text-2xl font-bold">{{ $stats['open_count'] }}</div><div class="text-xs text-gray-500 mt-1">Still open</div></div>
+                    <div><div class="text-2xl font-bold text-amber-600">{{ $stats['avg_open_age'] !== null ? $stats['avg_open_age'].'d' : '—' }}</div><div class="text-xs text-gray-500 mt-1">Avg. age (open)</div></div>
+                </div>
+                <p class="text-xs text-gray-400 mt-3">Completion time is measured from when a document was received (or encoded) to when it was completed/archived.</p>
+            </x-card>
+
         @elseif($type === 'sla_compliance')
             @if($slaDepartments->isEmpty())
                 <x-card><p class="text-sm text-gray-500 dark:text-gray-400">No department has a processing time configured yet. Enable it in <strong>Departments → Edit → Set a completion deadline</strong>.</p></x-card>
@@ -66,10 +78,12 @@
                         <div class="grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
                             <div class="flex justify-between"><span class="text-gray-500">Documents evaluated</span><span class="font-semibold">{{ $slaTotal }}</span></div>
                             <div class="flex justify-between"><span class="text-gray-500">On-time rate</span><span class="font-semibold {{ $onTimeRate >= 80 ? 'text-green-600' : 'text-amber-600' }}">{{ $onTimeRate }}%</span></div>
+                            <div class="flex justify-between"><span class="text-gray-500">Avg. completion time</span><span class="font-semibold">{{ $slaStats['avg_completion'] !== null ? $slaStats['avg_completion'].' days' : '—' }}</span></div>
+                            <div class="flex justify-between"><span class="text-gray-500">Avg. days over limit</span><span class="font-semibold text-red-600">{{ $slaStats['avg_over'] !== null ? '+'.$slaStats['avg_over'].' days' : '—' }}</span></div>
                             <div class="flex justify-between"><span class="text-gray-500">Total overdue</span><span class="font-semibold text-red-600">{{ $overdueTotal }}</span></div>
-                            <div class="flex justify-between"><span class="text-gray-500">Still open & overdue</span><span class="font-semibold text-amber-600">{{ $slaSummary['overdue_open'] }}</span></div>
+                            <div class="flex justify-between"><span class="text-gray-500">Worst overshoot</span><span class="font-semibold text-red-600">{{ $slaStats['worst_over'] !== null ? '+'.$slaStats['worst_over'].' days' : '—' }}</span></div>
                             <div class="col-span-2 pt-2 mt-1 border-t border-gray-100 dark:border-gray-700 text-xs text-gray-400">
-                                Offices tracked: {{ $slaDepartments->map(fn($d) => $d->code.' ('.$d->sla_days.'d)')->join(', ') }}
+                                Offices tracked: {{ $slaDepartments->map(fn($d) => $d->code.' ('.$d->sla_days.'d limit)')->join(', ') }}
                             </div>
                         </div>
                     </x-card>
