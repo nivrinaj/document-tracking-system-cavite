@@ -6,6 +6,16 @@ reviewed or rolled back. Format based on [Keep a Changelog](https://keepachangel
 
 ---
 
+## v2.6.1 — 2026-06-21
+**Report security fix, redesigned login & report polish**
+- **Security fix (important):** reports were not scoped — any user could generate reports (and PDFs) containing **other offices' documents**. Reports now respect document visibility: non-executive users only ever see their **own office's** documents, divisions and statistics.
+- The **division filter** on Reports now lists only **your own office's divisions** (not every division in the system).
+- The **Processing Time & Overdue** report is now hidden from offices that don't have a processing time configured (e.g. PICTO) — it only appears for offices that have one (Accounting) or users who can see all departments.
+- **Fixed broken icons** on the *Pending*, *Open within time* and *Open & overdue* stat cards (incomplete clock glyph).
+- **"Allowed" / "Days taken"** columns now spell out **days** (e.g. "7 days").
+- **Fixed** sample vouchers showing **0 concerned staff** (assignees weren't attached).
+- **Redesigned the login page** — modern split-screen: branded gradient panel (logo, system name, feature highlights) beside a clean sign-in card, full-height, responsive, with a branded primary "Sign in" button.
+
 ## v2.6.0 — 2026-06-21
 **Reports with charts & statistics, friendlier wording, QOL**
 - **Every report now has charts + statistics**, not just the summary: pie/doughnut breakdowns (status, priority, type), bar charts (division, staff workload), stat cards, and an on-time-rate statistic on the Processing Time report.

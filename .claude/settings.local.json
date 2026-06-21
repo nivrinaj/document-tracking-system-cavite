@@ -7,7 +7,10 @@
       "mcp__Claude_Preview__preview_start",
       "PowerShell(try { $r = Invoke-WebRequest http://127.0.0.1:8000/login -UseBasicParsing -TimeoutSec 15; Write-Output \"STATUS: $\\($r.StatusCode\\)\"; Write-Output \"LEN: $\\($r.Content.Length\\)\"; Write-Output $r.Content.Substring\\(0, [Math]::Min\\(600,$r.Content.Length\\)\\) } catch { Write-Output \"ERR: $\\($_.Exception.Message\\)\"; if\\($_.Exception.Response\\){ $s=$_.Exception.Response.GetResponseStream\\(\\); $sr=New-Object IO.StreamReader\\($s\\); Write-Output $sr.ReadToEnd\\(\\).Substring\\(0,800\\) } })",
       "Bash(curl -s -c /tmp/cj2.txt http://localhost:8000/login)",
-      "Bash(rm -f \"D:/PGC/storage/app/_sla_preview.pdf\" /tmp/sla.pdf /tmp/sum.pdf /tmp/cj.txt /tmp/cj2.txt; echo done)"
+      "Bash(rm -f \"D:/PGC/storage/app/_sla_preview.pdf\" /tmp/sla.pdf /tmp/sum.pdf /tmp/cj.txt /tmp/cj2.txt; echo done)",
+      "Bash(git -C D:/PGC add -A)",
+      "Bash(git -C D:/PGC commit -q -m ' *)",
+      "Bash(git -C D:/PGC log --oneline -4)"
     ]
   }
 }

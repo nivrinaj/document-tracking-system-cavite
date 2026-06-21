@@ -5,14 +5,16 @@ namespace App\Http\Controllers;
 use App\Models\Division;
 use App\Models\Document;
 use App\Models\Setting;
+use App\Models\User;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 class ReportController extends Controller
 {
-    /** Recommended report types shown on the Reports page. */
+    /** All report types. The Processing Time report is only offered to offices that have one. */
     public const TYPES = [
         'summary'        => 'Summary Overview (counts by status, division & priority)',
         'incoming'       => 'Incoming Documents (encoded within a date range)',
@@ -24,27 +26,62 @@ class ReportController extends Controller
         'sla_compliance' => 'Processing Time & Overdue (on-time vs late)',
     ];
 
+    /**
+     * Report types this user may run. The Processing Time / Overdue report is
+     * only relevant to offices that actually have a processing time configured
+     * (e.g. Accounting), or to users who can see every department.
+     */
+    private function availableTypes(User $user): array
+    {
+        $types = self::TYPES;
+
+        $hasProcessingTime = $user->canViewAllDepartments()
+            || ($user->department_id && \App\Models\Department::where('id', $user->department_id)
+                ->where('sla_enabled', true)->whereNotNull('sla_days')->exists());
+
+        if (! $hasProcessingTime) {
+            unset($types['sla_compliance']);
+        }
+
+        return $types;
+    }
+
+    /** Divisions this user may filter by — their own office only, unless they can view all. */
+    private function visibleDivisions(User $user)
+    {
+        if ($user->canViewAllDepartments()) {
+            return Division::orderBy('name')->get();
+        }
+
+        return Division::where('department_id', $user->department_id)->orderBy('name')->get();
+    }
+
     public function index()
     {
-        // A few quick numbers for the cards at the top of the page.
+        $user = Auth::user();
+
+        // Quick numbers — scoped to what this user is allowed to see.
         $quick = [
-            'total'     => Document::count(),
-            'pending'   => Document::whereIn('status', ['draft', 'released', 'received', 'forwarded'])->count(),
-            'completed' => Document::whereIn('status', ['archived', 'completed'])->count(),
-            'this_month' => Document::whereMonth('created_at', now()->month)->whereYear('created_at', now()->year)->count(),
+            'total'     => Document::visibleTo($user)->count(),
+            'pending'   => Document::visibleTo($user)->whereIn('status', ['draft', 'released', 'received', 'forwarded'])->count(),
+            'completed' => Document::visibleTo($user)->whereIn('status', ['archived', 'completed'])->count(),
+            'this_month' => Document::visibleTo($user)->whereMonth('created_at', now()->month)->whereYear('created_at', now()->year)->count(),
         ];
 
         return view('reports.index', [
-            'types' => self::TYPES,
-            'divisions' => Division::orderBy('name')->get(),
+            'types' => $this->availableTypes($user),
+            'divisions' => $this->visibleDivisions($user),
             'quick' => $quick,
         ]);
     }
 
     public function generate(Request $request)
     {
+        $user = Auth::user();
+        $allowedTypes = $this->availableTypes($user);
+
         $request->validate([
-            'type' => ['required', 'in:'.implode(',', array_keys(self::TYPES))],
+            'type' => ['required', 'in:'.implode(',', array_keys($allowedTypes))],
             'date_from' => ['nullable', 'date'],
             'date_to' => ['nullable', 'date'],
             'division_id' => ['nullable', 'exists:divisions,id'],
@@ -54,12 +91,17 @@ class ReportController extends Controller
         $type = $request->input('type');
         $from = $request->filled('date_from') ? Carbon::parse($request->date_from)->startOfDay() : null;
         $to = $request->filled('date_to') ? Carbon::parse($request->date_to)->endOfDay() : null;
-        $divisionId = $request->input('division_id');
 
-        $payload = $this->build($type, $from, $to, $divisionId);
+        // A user may only filter by a division inside their own office (unless they see all).
+        $divisionId = $request->input('division_id');
+        if ($divisionId && ! $this->visibleDivisions($user)->contains('id', (int) $divisionId)) {
+            $divisionId = null;
+        }
+
+        $payload = $this->build($type, $from, $to, $divisionId, $user);
 
         $data = array_merge($payload, [
-            'reportTitle' => self::TYPES[$type],
+            'reportTitle' => $allowedTypes[$type],
             'type' => $type,
             'from' => $from,
             'to' => $to,
@@ -78,9 +120,12 @@ class ReportController extends Controller
         return view('reports.result', $data);
     }
 
-    /** Build the dataset for a given report type. */
-    private function build(string $type, ?Carbon $from, ?Carbon $to, $divisionId): array
+    /** Build the dataset for a given report type. Always scoped to what $user may see. */
+    private function build(string $type, ?Carbon $from, ?Carbon $to, $divisionId, User $user): array
     {
+        // Base query is ALWAYS limited to documents this user is allowed to see.
+        $base = fn () => Document::query()->visibleTo($user);
+
         $scope = function ($q) use ($from, $to, $divisionId) {
             if ($from) {
                 $q->where('created_at', '>=', $from);
@@ -97,14 +142,14 @@ class ReportController extends Controller
 
         return match ($type) {
             'summary' => [
-                'byStatus' => $scope(Document::query())->select('status', DB::raw('count(*) as total'))->groupBy('status')->pluck('total', 'status')->toArray(),
-                'byPriority' => $scope(Document::query())->select('priority', DB::raw('count(*) as total'))->groupBy('priority')->pluck('total', 'priority')->toArray(),
-                'byDivision' => $scope(Document::query())->with('division')->select('division_id', DB::raw('count(*) as total'))->groupBy('division_id')->get()
+                'byStatus' => $scope($base())->select('status', DB::raw('count(*) as total'))->groupBy('status')->pluck('total', 'status')->toArray(),
+                'byPriority' => $scope($base())->select('priority', DB::raw('count(*) as total'))->groupBy('priority')->pluck('total', 'priority')->toArray(),
+                'byDivision' => $scope($base())->with('division')->select('division_id', DB::raw('count(*) as total'))->groupBy('division_id')->get()
                     ->mapWithKeys(fn ($r) => [optional($r->division)->code ?? 'Unassigned' => $r->total])->toArray(),
                 'documents' => collect(),
             ],
             'incoming', 'pending', 'completed', 'by_status', 'by_division' => [
-                'documents' => $scope(Document::query()->with(['creator', 'currentHolder', 'division']))
+                'documents' => $scope($base()->with(['creator', 'currentHolder', 'division']))
                     ->when($type === 'pending', fn ($q) => $q->whereIn('status', ['draft', 'released', 'received', 'forwarded']))
                     ->when($type === 'completed', fn ($q) => $q->whereIn('status', ['archived', 'completed']))
                     ->when($type === 'by_status', fn ($q) => $q->orderBy('status'))
@@ -113,28 +158,34 @@ class ReportController extends Controller
             ],
             'staff_workload' => [
                 'documents' => collect(),
-                'workload' => $scope(Document::query())
+                'workload' => $scope($base())
                     ->whereNotNull('current_holder_id')
                     ->whereNotIn('status', ['archived', 'completed'])
                     ->with('currentHolder.division')
                     ->select('current_holder_id', DB::raw('count(*) as total'))
                     ->groupBy('current_holder_id')->get(),
             ],
-            'sla_compliance' => $this->buildSla($from, $to, $divisionId),
+            'sla_compliance' => $this->buildSla($from, $to, $divisionId, $user),
             default => ['documents' => collect()],
         };
     }
 
-    /** Evaluate documents against each department's configured turnaround SLA. */
-    private function buildSla(?Carbon $from, ?Carbon $to, $divisionId): array
+    /** Evaluate documents against each department's configured processing time. Scoped to $user. */
+    private function buildSla(?Carbon $from, ?Carbon $to, $divisionId, User $user): array
     {
-        $departments = \App\Models\Department::where('sla_enabled', true)->whereNotNull('sla_days')->get()->keyBy('id');
+        $deptQuery = \App\Models\Department::where('sla_enabled', true)->whereNotNull('sla_days');
+        // A user who can't see all departments only ever evaluates their own office.
+        if (! $user->canViewAllDepartments()) {
+            $deptQuery->where('id', $user->department_id);
+        }
+        $departments = $deptQuery->get()->keyBy('id');
 
         $rows = collect();
         $summary = ['on_time' => 0, 'overdue' => 0, 'on_track' => 0, 'overdue_open' => 0];
 
         if ($departments->isNotEmpty()) {
             $docs = Document::with(['department', 'currentHolder'])
+                ->visibleTo($user)
                 ->whereIn('department_id', $departments->keys())
                 ->when($from, fn ($q) => $q->where('created_at', '>=', $from))
                 ->when($to, fn ($q) => $q->where('created_at', '<=', $to))

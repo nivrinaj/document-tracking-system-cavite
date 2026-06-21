@@ -34,7 +34,7 @@
             @php $sTotal = array_sum($byStatus); @endphp
             <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 <x-stat-card label="Total Documents" :value="$sTotal" color="primary"><x-slot:icon><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></x-slot:icon></x-stat-card>
-                <x-stat-card label="Open / Pending" :value="($byStatus['draft']??0)+($byStatus['released']??0)+($byStatus['received']??0)+($byStatus['forwarded']??0)" color="amber"><x-slot:icon><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3"/></x-slot:icon></x-stat-card>
+                <x-stat-card label="Open / Pending" :value="($byStatus['draft']??0)+($byStatus['released']??0)+($byStatus['received']??0)+($byStatus['forwarded']??0)" color="amber"><x-slot:icon><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></x-slot:icon></x-stat-card>
                 <x-stat-card label="Completed / Archived" :value="($byStatus['completed']??0)+($byStatus['archived']??0)" color="green"><x-slot:icon><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></x-slot:icon></x-stat-card>
                 <x-stat-card label="Urgent + High" :value="($byPriority['urgent']??0)+($byPriority['high']??0)" color="red"><x-slot:icon><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></x-slot:icon></x-stat-card>
             </div>
@@ -56,8 +56,8 @@
                 <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
                     <x-stat-card label="Completed on time" :value="$slaSummary['on_time']" color="green"><x-slot:icon><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></x-slot:icon></x-stat-card>
                     <x-stat-card label="Completed late" :value="$slaSummary['overdue']" color="red"><x-slot:icon><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></x-slot:icon></x-stat-card>
-                    <x-stat-card label="Open, within time" :value="$slaSummary['on_track']" color="blue"><x-slot:icon><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3"/></x-slot:icon></x-stat-card>
-                    <x-stat-card label="Open & overdue" :value="$slaSummary['overdue_open']" color="amber"><x-slot:icon><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3"/></x-slot:icon></x-stat-card>
+                    <x-stat-card label="Open, within time" :value="$slaSummary['on_track']" color="blue"><x-slot:icon><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></x-slot:icon></x-stat-card>
+                    <x-stat-card label="Open & overdue" :value="$slaSummary['overdue_open']" color="amber"><x-slot:icon><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></x-slot:icon></x-stat-card>
                 </div>
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
                     <x-card class="lg:col-span-1"><h3 class="font-semibold text-sm mb-3">On-time vs Overdue</h3><div class="h-56"><canvas id="rSla"></canvas></div></x-card>
@@ -86,8 +86,8 @@
                                     <td class="table-td font-mono text-xs" data-label="Code">{{ $row['doc']->tracking_code }}</td>
                                     <td class="table-td" data-label="Title">{{ $row['doc']->title }}</td>
                                     <td class="table-td" data-label="Office">{{ $row['dept'] }}</td>
-                                    <td class="table-td" data-label="Days taken">{{ $row['days'] }}</td>
-                                    <td class="table-td" data-label="Allowed">{{ $row['sla'] }}</td>
+                                    <td class="table-td" data-label="Days taken">{{ $row['days'] }} {{ \Illuminate\Support\Str::plural('day', $row['days']) }}</td>
+                                    <td class="table-td" data-label="Allowed">{{ $row['sla'] }} days</td>
                                     <td class="table-td" data-label="Result"><x-badge :color="$labels[$row['status']][1]">{{ $labels[$row['status']][0] }}</x-badge></td>
                                 </tr>
                             @empty
@@ -118,7 +118,7 @@
             @php $listTotal = $documents->count(); @endphp
             <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 <x-stat-card label="Total in report" :value="$listTotal" color="primary"><x-slot:icon><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></x-slot:icon></x-stat-card>
-                <x-stat-card label="Open / Pending" :value="($statusCounts['draft']??0)+($statusCounts['released']??0)+($statusCounts['received']??0)+($statusCounts['forwarded']??0)" color="amber"><x-slot:icon><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3"/></x-slot:icon></x-stat-card>
+                <x-stat-card label="Open / Pending" :value="($statusCounts['draft']??0)+($statusCounts['released']??0)+($statusCounts['received']??0)+($statusCounts['forwarded']??0)" color="amber"><x-slot:icon><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></x-slot:icon></x-stat-card>
                 <x-stat-card label="Completed / Archived" :value="($statusCounts['completed']??0)+($statusCounts['archived']??0)" color="green"><x-slot:icon><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></x-slot:icon></x-stat-card>
                 <x-stat-card label="Urgent + High" :value="($prioCounts['urgent']??0)+($prioCounts['high']??0)" color="red"><x-slot:icon><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></x-slot:icon></x-stat-card>
             </div>

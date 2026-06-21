@@ -171,7 +171,7 @@
             <thead><tr><th>Code</th><th>Title</th><th>Office</th><th>Days taken</th><th>Allowed</th><th>Result</th></tr></thead>
             <tbody>
                 @forelse($slaRows as $row)
-                    <tr><td>{{ $row['doc']->tracking_code }}</td><td>{{ $row['doc']->title }}</td><td>{{ $row['dept'] }}</td><td>{{ $row['days'] }}</td><td>{{ $row['sla'] }}</td>
+                    <tr><td>{{ $row['doc']->tracking_code }}</td><td>{{ $row['doc']->title }}</td><td>{{ $row['dept'] }}</td><td>{{ $row['days'] }} {{ \Illuminate\Support\Str::plural('day', $row['days']) }}</td><td>{{ $row['sla'] }} days</td>
                         <td><span class="badge" style="background:{{ $badgeColors[$row['status']] }}">{{ $labels[$row['status']] }}</span></td></tr>
                 @empty
                     <tr><td colspan="6">No documents match this report.</td></tr>
