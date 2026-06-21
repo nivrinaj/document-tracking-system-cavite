@@ -6,6 +6,10 @@ reviewed or rolled back. Format based on [Keep a Changelog](https://keepachangel
 
 ---
 
+## v2.6.6 — 2026-06-21
+**Mobile login: centered card**
+- The mobile sign-in card is now a floating card **vertically centered** over the branded background (logo + name + form inside), not pushed to the top or bottom. Uses dynamic viewport height so it's truly centered within the visible area on phones.
+
 ## v2.6.5 — 2026-06-21
 **Mobile login redesign + accurate routing status**
 - **Mobile login redesigned** into a proper branded layout: the uploaded background image with the gradient overlay fills the screen, branding sits on top, and the form is a clean white bottom-sheet (rounded top) anchored to the bottom — no more floating box on empty space. Desktop split-screen unchanged.

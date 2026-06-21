@@ -77,8 +77,10 @@
                 <p class="relative z-10 text-white/60 text-xs">{{ $settings['footer_text'] ?? '© '.date('Y').' '.($settings['organization'] ?? '') }}</p>
             </div>
 
-            {{-- ───────── Right: sign-in (desktop: centered card · mobile: branded bottom sheet) ───────── --}}
-            <div class="relative flex-1 flex flex-col min-h-screen min-h-[100dvh] lg:justify-center lg:items-center lg:p-12 bg-gray-50 dark:bg-gray-900">
+            {{-- ───────── Right: sign-in form ───────── --}}
+            {{-- Mobile: floating card over the branded background, biased toward the lower half.
+                 Desktop: clean centered card (left panel handles branding). --}}
+            <div class="relative flex-1 flex flex-col items-center justify-center lg:justify-center min-h-screen min-h-[100dvh] p-6 sm:p-12 bg-gray-50 dark:bg-gray-900">
 
                 {{-- Mobile-only branded background (image + gradient overlay) --}}
                 <div class="absolute inset-0 lg:hidden overflow-hidden">
@@ -88,25 +90,21 @@
                     <div class="absolute inset-0" style="background: linear-gradient(150deg, var(--color-primary) 0%, #1e293b 70%, #0f172a 100%); opacity: {{ !empty($settings['login_bg_path']) ? '0.9' : '1' }};"></div>
                 </div>
 
-                {{-- Mobile brand header (sits on the gradient, above the sheet) --}}
-                <div class="relative z-10 lg:hidden flex flex-col items-center text-center px-6 pt-12 pb-6">
-                    @if(!empty($settings['logo_path']))
-                        <img src="{{ asset('storage/'.$settings['logo_path']) }}" class="w-16 h-16 rounded-2xl object-contain bg-white p-1.5 shadow-lg">
-                    @else
-                        <div class="w-16 h-16 rounded-2xl flex items-center justify-center text-white text-2xl font-bold bg-white/20 backdrop-blur">
-                            {{ substr($settings['app_short_name'] ?? 'P', 0, 1) }}
-                        </div>
-                    @endif
-                    <h1 class="mt-3 text-white text-xl font-bold drop-shadow">{{ $settings['app_name'] ?? config('app.name') }}</h1>
-                    @if(!empty($settings['organization']))
-                        <p class="text-white/80 text-sm drop-shadow">{{ $settings['organization'] }}</p>
-                    @endif
-                </div>
+                {{-- Card: floating white card on mobile, vertically centered; transparent & flat on desktop --}}
+                <div class="relative z-10 w-full max-w-sm rounded-2xl shadow-2xl backdrop-blur p-6 sm:p-8 bg-white/95 dark:bg-gray-800/95
+                            lg:bg-transparent lg:dark:bg-transparent lg:shadow-none lg:backdrop-blur-none lg:p-0">
+                    {{-- compact brand for mobile (inside the card) --}}
+                    <div class="lg:hidden flex flex-col items-center mb-6">
+                        @if(!empty($settings['logo_path']))
+                            <img src="{{ asset('storage/'.$settings['logo_path']) }}" class="w-14 h-14 rounded-xl object-contain bg-white p-1 shadow">
+                        @else
+                            <div class="w-14 h-14 rounded-xl flex items-center justify-center text-white text-2xl font-bold" style="background: var(--color-primary)">
+                                {{ substr($settings['app_short_name'] ?? 'P', 0, 1) }}
+                            </div>
+                        @endif
+                        <h1 class="mt-3 font-semibold text-center text-gray-900 dark:text-white">{{ $settings['app_name'] ?? config('app.name') }}</h1>
+                    </div>
 
-                {{-- Form: bottom sheet on mobile (rounded top, anchored to bottom) · plain centered card on desktop --}}
-                <div class="relative z-10 w-full mt-auto lg:mt-0 lg:max-w-sm
-                            bg-white dark:bg-gray-800 rounded-t-3xl shadow-2xl px-6 py-8 sm:px-8
-                            lg:bg-transparent lg:dark:bg-transparent lg:rounded-none lg:shadow-none lg:p-0">
                     <div class="mb-6">
                         <h2 class="text-2xl font-bold text-gray-900 dark:text-white">Welcome back</h2>
                         <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Sign in to continue to your dashboard.</p>
