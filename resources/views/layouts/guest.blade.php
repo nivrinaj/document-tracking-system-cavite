@@ -18,22 +18,18 @@
 
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
-    <body class="font-sans text-gray-900 antialiased bg-gray-50 dark:bg-gray-900">
-        <div class="min-h-screen min-h-[100dvh] flex">
+    <body class="font-sans text-gray-900 antialiased">
+        <div class="flex h-screen h-[100dvh]">
 
-            {{-- ───────── Left: brand panel (hidden on small screens) ───────── --}}
+            {{-- ───────── Left: brand panel (desktop only) ───────── --}}
             <div class="relative hidden lg:flex lg:w-1/2 flex-col justify-between p-12 overflow-hidden">
-                {{-- background image (optional) --}}
                 @if(!empty($settings['login_bg_path']))
                     <div class="absolute inset-0 bg-cover bg-center" style="background-image: url('{{ asset('storage/'.$settings['login_bg_path']) }}');"></div>
                 @endif
-                {{-- gradient --}}
                 <div class="absolute inset-0" style="background: linear-gradient(150deg, var(--color-primary) 0%, #1e293b 70%, #0f172a 100%); opacity: {{ !empty($settings['login_bg_path']) ? '0.88' : '1' }};"></div>
-                {{-- decorative shapes --}}
                 <div class="absolute -top-24 -right-24 w-96 h-96 rounded-full bg-white/10 blur-2xl"></div>
                 <div class="absolute -bottom-32 -left-20 w-96 h-96 rounded-full bg-white/5 blur-2xl"></div>
 
-                {{-- brand top --}}
                 <div class="relative z-10 flex items-center gap-3">
                     @if(!empty($settings['logo_path']))
                         <img src="{{ asset('storage/'.$settings['logo_path']) }}" class="w-12 h-12 rounded-xl object-contain bg-white p-1 shadow-lg">
@@ -45,7 +41,6 @@
                     <span class="text-white/90 font-semibold tracking-wide">{{ $settings['app_short_name'] ?? 'PGC DTS' }}</span>
                 </div>
 
-                {{-- headline --}}
                 <div class="relative z-10 max-w-md">
                     <h2 class="text-white text-3xl font-bold leading-tight drop-shadow">{{ $settings['app_name'] ?? config('app.name') }}</h2>
                     @if(!empty($settings['organization']))
@@ -73,52 +68,48 @@
                     </div>
                 </div>
 
-                {{-- footer --}}
                 <p class="relative z-10 text-white/60 text-xs">{{ $settings['footer_text'] ?? '© '.date('Y').' '.($settings['organization'] ?? '') }}</p>
             </div>
 
             {{-- ───────── Right: sign-in form ───────── --}}
-            {{-- Mobile: glass card over the branded background. The card is centered when it
-                 fits and the page scrolls when it doesn't, so it's correct on every height.
-                 Desktop: clean centered card (left panel handles branding). --}}
-            <div class="relative flex-1 flex flex-col bg-gray-50 dark:bg-gray-900">
+            <div class="relative flex-1 flex items-center justify-center">
 
-                {{-- Mobile-only branded background (image + gradient overlay); fixed so it covers while scrolling --}}
-                <div class="fixed inset-0 lg:hidden overflow-hidden">
+                {{-- Mobile background --}}
+                <div class="fixed inset-0 lg:hidden">
                     @if(!empty($settings['login_bg_path']))
                         <div class="absolute inset-0 bg-cover bg-center" style="background-image: url('{{ asset('storage/'.$settings['login_bg_path']) }}');"></div>
                     @endif
                     <div class="absolute inset-0" style="background: linear-gradient(150deg, var(--color-primary) 0%, #1e293b 70%, #0f172a 100%); opacity: {{ !empty($settings['login_bg_path']) ? '0.9' : '1' }};"></div>
                 </div>
 
-                {{-- Centering wrapper: at least full height, centers the card; grows (page scrolls) if the card is taller --}}
-                <div class="relative z-10 flex-1 flex items-center justify-center min-h-screen min-h-[100dvh] p-6 sm:p-12">
+                {{-- Card --}}
+                <div class="relative z-10 w-full max-w-sm mx-6
+                            rounded-2xl p-6 bg-white/85 backdrop-blur-xl border border-white/40 shadow-2xl
+                            lg:bg-white lg:dark:bg-gray-800 lg:border-gray-200 lg:dark:border-gray-700 lg:backdrop-blur-none lg:shadow-lg lg:rounded-xl lg:p-8">
 
-                {{-- Card: modern glass card on mobile, vertically centered; transparent & flat on desktop --}}
-                <div class="w-full max-w-sm rounded-3xl p-7 sm:p-8 bg-white/80 dark:bg-gray-900/70 backdrop-blur-xl border border-white/60 dark:border-white/10 shadow-2xl ring-1 ring-black/5
-                            lg:bg-transparent lg:dark:bg-transparent lg:border-0 lg:ring-0 lg:shadow-none lg:backdrop-blur-none lg:p-0">
-                    {{-- compact brand for mobile (inside the card) --}}
-                    <div class="lg:hidden flex flex-col items-center mb-6">
+                    {{-- Logo + name (mobile only, compact) --}}
+                    <div class="lg:hidden flex items-center gap-3 mb-5">
                         @if(!empty($settings['logo_path']))
-                            <img src="{{ asset('storage/'.$settings['logo_path']) }}" class="w-16 h-16 rounded-2xl object-contain bg-white p-1.5 shadow-lg ring-1 ring-black/5">
+                            <img src="{{ asset('storage/'.$settings['logo_path']) }}" class="w-10 h-10 rounded-lg object-contain bg-white p-1 shadow ring-1 ring-black/5">
                         @else
-                            <div class="w-16 h-16 rounded-2xl flex items-center justify-center text-white text-2xl font-bold shadow-lg" style="background-image: linear-gradient(135deg, var(--color-primary), #1e293b);">
+                            <div class="w-10 h-10 rounded-lg flex items-center justify-center text-white text-lg font-bold shadow" style="background-image: linear-gradient(135deg, var(--color-primary), #1e293b);">
                                 {{ substr($settings['app_short_name'] ?? 'P', 0, 1) }}
                             </div>
                         @endif
-                        <h1 class="mt-3 font-semibold text-center text-gray-900 dark:text-white">{{ $settings['app_name'] ?? config('app.name') }}</h1>
-                        @if(!empty($settings['organization']))
-                            <p class="text-xs text-gray-500 dark:text-gray-400 text-center">{{ $settings['organization'] }}</p>
-                        @endif
+                        <div>
+                            <h1 class="font-semibold text-sm text-gray-800 dark:text-white leading-tight">{{ $settings['app_short_name'] ?? 'PGC DTS' }}</h1>
+                            @if(!empty($settings['organization']))
+                                <p class="text-[11px] text-gray-500 dark:text-gray-400 leading-tight">{{ $settings['organization'] }}</p>
+                            @endif
+                        </div>
                     </div>
 
-                    <div class="mb-6">
-                        <h2 class="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">Welcome back 👋</h2>
-                        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Sign in to continue to your dashboard.</p>
+                    <div class="mb-5">
+                        <h2 class="text-xl font-bold tracking-tight text-gray-900 dark:text-white">Welcome back</h2>
+                        <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5">Sign in to continue</p>
                     </div>
 
                     {{ $slot }}
-                </div>
                 </div>
             </div>
         </div>

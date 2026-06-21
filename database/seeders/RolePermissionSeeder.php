@@ -26,6 +26,7 @@ class RolePermissionSeeder extends Seeder
             'documents.assign',      // assign to a staff
             'documents.release',     // release (hand over the QR)
             'documents.receive',     // confirm physical receipt
+            'documents.claim',       // claim unclaimed cross-office transfer
             'documents.forward',     // forward to another staff
             'documents.archive',     // archive / complete
             'documents.delete',
@@ -61,7 +62,7 @@ class RolePermissionSeeder extends Seeder
             'dashboard.view',
             'documents.view', 'documents.viewAny',
             'documents.create', 'documents.assign', 'documents.release',
-            'documents.receive', 'documents.forward', 'documents.archive',
+            'documents.receive', 'documents.claim', 'documents.forward', 'documents.archive',
             'reports.view', 'logs.view', 'documentation.view',
         ];
         $head->syncPermissions($headPerms);
@@ -71,7 +72,7 @@ class RolePermissionSeeder extends Seeder
         $receiving->syncPermissions([
             'dashboard.view',
             'documents.view', 'documents.create', 'documents.assign',
-            'documents.release', 'documents.receive', 'documents.forward',
+            'documents.release', 'documents.receive', 'documents.claim', 'documents.forward',
             'documents.archive', 'reports.view', 'documentation.view',
         ]);
 
@@ -87,7 +88,7 @@ class RolePermissionSeeder extends Seeder
         $divisionHead->syncPermissions([
             'dashboard.view',
             'documents.view', 'documents.create', 'documents.assign', 'documents.release',
-            'documents.receive', 'documents.forward', 'documents.archive',
+            'documents.receive', 'documents.claim', 'documents.forward', 'documents.archive',
             'reports.view', 'documentation.view',
         ]);
 
@@ -108,7 +109,7 @@ class RolePermissionSeeder extends Seeder
         }
 
         // Chiefs of Staff: run their office workflow + org-wide visibility.
-        $chiefPerms = array_merge($execPerms, ['documents.create', 'documents.assign', 'documents.release']);
+        $chiefPerms = array_merge($execPerms, ['documents.create', 'documents.assign', 'documents.release', 'documents.claim']);
         foreach (['Chief of Staff (OPG)', 'Chief of Staff (OPVG)'] as $chiefName) {
             Role::firstOrCreate(['name' => $chiefName, 'guard_name' => 'web'])->syncPermissions($chiefPerms);
         }

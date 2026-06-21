@@ -78,8 +78,9 @@ class DocumentPolicy
             return true;
         }
 
-        // 2. Unclaimed transfer in my department
-        return $this->isClaimable($document)
+        // 2. Unclaimed transfer in my department — requires claim permission
+        return $user->can('documents.claim')
+            && $this->isClaimable($document)
             && $user->department_id
             && $document->department_id === $user->department_id;
     }
