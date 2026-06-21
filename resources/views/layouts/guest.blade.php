@@ -90,23 +90,26 @@
                     <div class="absolute inset-0" style="background: linear-gradient(150deg, var(--color-primary) 0%, #1e293b 70%, #0f172a 100%); opacity: {{ !empty($settings['login_bg_path']) ? '0.9' : '1' }};"></div>
                 </div>
 
-                {{-- Card: floating white card on mobile, vertically centered; transparent & flat on desktop --}}
-                <div class="relative z-10 w-full max-w-sm rounded-2xl shadow-2xl backdrop-blur p-6 sm:p-8 bg-white/95 dark:bg-gray-800/95
-                            lg:bg-transparent lg:dark:bg-transparent lg:shadow-none lg:backdrop-blur-none lg:p-0">
+                {{-- Card: modern glass card on mobile, vertically centered; transparent & flat on desktop --}}
+                <div class="relative z-10 w-full max-w-sm rounded-3xl p-7 sm:p-8 bg-white/80 dark:bg-gray-900/70 backdrop-blur-xl border border-white/60 dark:border-white/10 shadow-2xl ring-1 ring-black/5
+                            lg:bg-transparent lg:dark:bg-transparent lg:border-0 lg:ring-0 lg:shadow-none lg:backdrop-blur-none lg:p-0">
                     {{-- compact brand for mobile (inside the card) --}}
                     <div class="lg:hidden flex flex-col items-center mb-6">
                         @if(!empty($settings['logo_path']))
-                            <img src="{{ asset('storage/'.$settings['logo_path']) }}" class="w-14 h-14 rounded-xl object-contain bg-white p-1 shadow">
+                            <img src="{{ asset('storage/'.$settings['logo_path']) }}" class="w-16 h-16 rounded-2xl object-contain bg-white p-1.5 shadow-lg ring-1 ring-black/5">
                         @else
-                            <div class="w-14 h-14 rounded-xl flex items-center justify-center text-white text-2xl font-bold" style="background: var(--color-primary)">
+                            <div class="w-16 h-16 rounded-2xl flex items-center justify-center text-white text-2xl font-bold shadow-lg" style="background-image: linear-gradient(135deg, var(--color-primary), #1e293b);">
                                 {{ substr($settings['app_short_name'] ?? 'P', 0, 1) }}
                             </div>
                         @endif
                         <h1 class="mt-3 font-semibold text-center text-gray-900 dark:text-white">{{ $settings['app_name'] ?? config('app.name') }}</h1>
+                        @if(!empty($settings['organization']))
+                            <p class="text-xs text-gray-500 dark:text-gray-400 text-center">{{ $settings['organization'] }}</p>
+                        @endif
                     </div>
 
                     <div class="mb-6">
-                        <h2 class="text-2xl font-bold text-gray-900 dark:text-white">Welcome back</h2>
+                        <h2 class="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">Welcome back 👋</h2>
                         <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Sign in to continue to your dashboard.</p>
                     </div>
 

@@ -6,6 +6,10 @@ reviewed or rolled back. Format based on [Keep a Changelog](https://keepachangel
 
 ---
 
+## v2.6.7 — 2026-06-21
+**Modern login design**
+- Refreshed the sign-in UI: a **glassmorphism card** (frosted blur, subtle border, soft shadow), a gradient **logo badge**, **inputs with leading icons** and soft focus rings, a show/hide password toggle, and a **gradient "Sign in" button** with a hover lift. Mobile keeps the vertically-centered card over the branded background; desktop keeps the split-screen.
+
 ## v2.6.6 — 2026-06-21
 **Mobile login: centered card**
 - The mobile sign-in card is now a floating card **vertically centered** over the branded background (logo + name + form inside), not pushed to the top or bottom. Uses dynamic viewport height so it's truly centered within the visible area on phones.
