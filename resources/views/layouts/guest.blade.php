@@ -19,7 +19,7 @@
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
     <body class="font-sans text-gray-900 antialiased bg-gray-50 dark:bg-gray-900">
-        <div class="min-h-screen flex">
+        <div class="min-h-screen min-h-[100dvh] flex">
 
             {{-- ───────── Left: brand panel (hidden on small screens) ───────── --}}
             <div class="relative hidden lg:flex lg:w-1/2 flex-col justify-between p-12 overflow-hidden">
@@ -78,7 +78,7 @@
             </div>
 
             {{-- ───────── Right: sign-in form ───────── --}}
-            <div class="relative flex-1 flex flex-col justify-center items-center min-h-screen p-6 sm:p-12 bg-gray-50 dark:bg-gray-900">
+            <div class="relative flex-1 flex flex-col justify-center items-center min-h-screen min-h-[100dvh] p-6 sm:p-12 bg-gray-50 dark:bg-gray-900">
 
                 {{-- Mobile-only branded background (image + gradient overlay); hidden on desktop where the left panel handles branding --}}
                 <div class="absolute inset-0 lg:hidden overflow-hidden">

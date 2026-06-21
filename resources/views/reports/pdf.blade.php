@@ -41,6 +41,7 @@
         if ($isList) {
             $statusCounts = $documents->groupBy('status')->map->count()->toArray();
             $prioCounts   = $documents->groupBy('priority')->map->count()->toArray();
+            $divCounts    = $documents->groupBy(fn ($d) => $d->division?->code ?? 'Unassigned')->map->count()->toArray();
         }
     @endphp
     <style>
@@ -179,14 +180,14 @@
 
     @elseif($type === 'staff_workload')
         @php $wl = $workload->mapWithKeys(fn($r) => [($r->currentHolder?->name ?? '—') => $r->total])->toArray(); @endphp
-        <div class="panel"><h3>Open documents per staff</h3>{!! $bars($wl, $palette) !!}</div>
+        <div class="panel"><h3>Open documents currently held — per staff member</h3>{!! $bars($wl, $palette) !!}</div>
         <table class="data">
-            <thead><tr><th>Staff</th><th>Division</th><th>Open Documents</th></tr></thead>
+            <thead><tr><th>#</th><th>Staff member</th><th>Office &middot; Division</th><th>Open documents held</th></tr></thead>
             <tbody>
-                @forelse($workload as $row)
-                    <tr><td>{{ $row->currentHolder?->name ?? '—' }}</td><td>{{ $row->currentHolder?->division?->code ?? '—' }}</td><td>{{ $row->total }}</td></tr>
+                @forelse($workload as $i => $row)
+                    <tr><td>{{ $i + 1 }}</td><td>{{ $row->currentHolder?->name ?? '—' }}</td><td>{{ $row->currentHolder?->orgShort() ?? '—' }}</td><td>{{ $row->total }}</td></tr>
                 @empty
-                    <tr><td colspan="3">No open documents.</td></tr>
+                    <tr><td colspan="4">No open documents are currently held by anyone.</td></tr>
                 @endforelse
             </tbody>
         </table>
@@ -210,19 +211,23 @@
                     <table style="width:100%"><tr><td style="width:140px;">{!! $svgPie($prioCounts, $prioColors) !!}</td><td>{!! $legend($prioCounts, $prioColors) !!}</td></tr></table>
                 </div></td>
             </tr></table>
+            @if($type === 'by_division')
+                <div class="panel" style="margin-top:10px;"><h3>By Division</h3>{!! $bars($divCounts, $palette) !!}</div>
+            @endif
         @endif
 
         <table class="data">
-            <thead><tr><th>Code</th><th>Title</th><th>Type</th><th>Priority</th><th>Status</th><th>Holder</th><th>Created</th></tr></thead>
+            <thead><tr><th>Code</th><th>Title</th><th>Type</th><th>Division</th><th>Priority</th><th>Status</th><th>Holder</th><th>Created</th></tr></thead>
             <tbody>
                 @forelse($documents as $doc)
                     <tr>
                         <td>{{ $doc->tracking_code }}</td><td>{{ $doc->title }}</td><td>{{ $doc->document_type }}</td>
+                        <td>{{ $doc->division?->code ?? '—' }}</td>
                         <td>{{ ucfirst($doc->priority) }}</td><td>{{ \App\Models\Document::statusLabel($doc->status) }}</td>
                         <td>{{ $doc->currentHolder?->name ?? '—' }}</td><td>{{ $doc->created_at->format('M d, Y') }}</td>
                     </tr>
                 @empty
-                    <tr><td colspan="7">No documents match this report.</td></tr>
+                    <tr><td colspan="8">No documents match this report.</td></tr>
                 @endforelse
             </tbody>
         </table>

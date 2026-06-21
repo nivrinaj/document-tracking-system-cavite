@@ -36,7 +36,11 @@
                         </div>
                         <div class="rounded-xl border-2 p-4" style="border-color: var(--color-primary)">
                             <div class="text-[11px] uppercase tracking-wider text-gray-400 mb-1">Currently with</div>
-                            @if($document->currentHolder)
+                            @if($document->current_holder_id && $document->status === 'draft')
+                                {{-- Assigned but not released yet — the encoder still physically holds it. --}}
+                                <div class="font-semibold text-amber-600 dark:text-amber-400">Pending release</div>
+                                <div class="text-xs text-gray-500 dark:text-gray-400">Assigned to {{ $document->currentHolder->name }} ({{ $document->currentHolder->orgShort() }}) — not yet handed over</div>
+                            @elseif($document->currentHolder)
                                 <div class="font-semibold">{{ $document->currentHolder->name }}</div>
                                 <div class="text-xs text-gray-500 dark:text-gray-400">{{ $document->currentHolder->orgUnit() }}</div>
                             @elseif($document->is_broadcast)

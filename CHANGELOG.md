@@ -6,6 +6,13 @@ reviewed or rolled back. Format based on [Keep a Changelog](https://keepachangel
 
 ---
 
+## v2.6.4 — 2026-06-21
+**Routing clarity & report fixes**
+- **"Currently with" no longer implies possession before release.** A document that is *Pending Release* but already assigned now shows **"Pending release — Assigned to X, not yet handed over"** (both on the detail page and the documents list), instead of looking like the recipient already has it.
+- **Documents by Division report fixed** — the table now has a **Division** column and a **By Division** chart (previously you couldn't see the division at all).
+- **Staff Workload is now clearly per staff member** — ranked by number of documents held, with each person's Office · Division shown (it was already grouped per holder, but the layout made it look division-based).
+- **Mobile login vertical centering fixed** — uses dynamic viewport height (`100dvh`) so the form is centered within the *visible* area on phones, not pushed below the browser's address bar.
+
 ## v2.6.3 — 2026-06-21
 **QOL: wording, sticky sidebar, safer reset, mobile login**
 - **"Draft" is now shown as "Pending Release"** everywhere (badges, filters, reports, charts). The stored value is unchanged — only the label.

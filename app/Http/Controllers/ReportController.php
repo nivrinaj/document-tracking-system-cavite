@@ -161,9 +161,10 @@ class ReportController extends Controller
                 'workload' => $scope($base())
                     ->whereNotNull('current_holder_id')
                     ->whereNotIn('status', ['archived', 'completed'])
-                    ->with('currentHolder.division')
+                    ->with('currentHolder.division', 'currentHolder.department')
                     ->select('current_holder_id', DB::raw('count(*) as total'))
-                    ->groupBy('current_holder_id')->get(),
+                    ->groupBy('current_holder_id')
+                    ->orderByDesc('total')->get(),
             ],
             'sla_compliance' => $this->buildSla($from, $to, $divisionId, $user),
             default => ['documents' => collect()],

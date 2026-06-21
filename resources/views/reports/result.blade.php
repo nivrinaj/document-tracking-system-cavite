@@ -8,6 +8,7 @@
             $statusCounts = $documents->groupBy('status')->map->count()->toArray();
             $prioCounts   = $documents->groupBy('priority')->map->count()->toArray();
             $typeCounts   = $documents->groupBy('document_type')->map->count()->toArray();
+            $divCounts    = $documents->groupBy(fn ($d) => $d->division?->code ?? 'Unassigned')->map->count()->toArray();
         }
     @endphp
 
@@ -113,15 +114,20 @@
             @endif
 
         @elseif($type === 'staff_workload')
-            <x-card><h3 class="font-semibold text-sm mb-3">Open documents per staff</h3><div class="h-64"><canvas id="rWorkload"></canvas></div></x-card>
+            <x-card><h3 class="font-semibold text-sm mb-3">Open documents currently held — per staff member</h3><div class="h-64"><canvas id="rWorkload"></canvas></div></x-card>
             <x-card padding="p-0">
                 <table class="r-table min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                    <thead class="bg-gray-50 dark:bg-gray-700/40"><tr><th class="table-th">Staff</th><th class="table-th">Division</th><th class="table-th">Open documents</th></tr></thead>
+                    <thead class="bg-gray-50 dark:bg-gray-700/40"><tr><th class="table-th">#</th><th class="table-th">Staff member</th><th class="table-th">Office · Division</th><th class="table-th">Open documents held</th></tr></thead>
                     <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
-                        @forelse($workload as $row)
-                            <tr><td class="table-td" data-label="Staff">{{ $row->currentHolder?->name ?? '—' }}</td><td class="table-td" data-label="Division">{{ $row->currentHolder?->division?->code ?? '—' }}</td><td class="table-td font-medium" data-label="Open documents">{{ $row->total }}</td></tr>
+                        @forelse($workload as $i => $row)
+                            <tr>
+                                <td class="table-td text-gray-400" data-label="#">{{ $i + 1 }}</td>
+                                <td class="table-td font-medium" data-label="Staff member">{{ $row->currentHolder?->name ?? '—' }}</td>
+                                <td class="table-td text-gray-500 dark:text-gray-400" data-label="Office · Division">{{ $row->currentHolder?->orgShort() ?? '—' }}</td>
+                                <td class="table-td font-semibold" data-label="Open documents held">{{ $row->total }}</td>
+                            </tr>
                         @empty
-                            <tr><td colspan="3" class="px-4 py-8 text-center text-sm text-gray-400">No open documents.</td></tr>
+                            <tr><td colspan="4" class="px-4 py-8 text-center text-sm text-gray-400">No open documents are currently held by anyone.</td></tr>
                         @endforelse
                     </tbody>
                 </table>
@@ -140,14 +146,18 @@
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
                     <x-card><h3 class="font-semibold text-sm mb-3">By Status</h3><div class="h-56"><canvas id="lStatus"></canvas></div></x-card>
                     <x-card><h3 class="font-semibold text-sm mb-3">By Priority</h3><div class="h-56"><canvas id="lPriority"></canvas></div></x-card>
-                    <x-card><h3 class="font-semibold text-sm mb-3">By Document Type</h3><div class="h-56"><canvas id="lType"></canvas></div></x-card>
+                    @if($type === 'by_division')
+                        <x-card><h3 class="font-semibold text-sm mb-3">By Division</h3><div class="h-56"><canvas id="lDiv"></canvas></div></x-card>
+                    @else
+                        <x-card><h3 class="font-semibold text-sm mb-3">By Document Type</h3><div class="h-56"><canvas id="lType"></canvas></div></x-card>
+                    @endif
                 </div>
             @endif
             <x-card padding="p-0">
                 <div class="overflow-x-auto">
                     <table class="r-table min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                         <thead class="bg-gray-50 dark:bg-gray-700/40"><tr>
-                            <th class="table-th">Code</th><th class="table-th">Title</th><th class="table-th">Type</th><th class="table-th">Priority</th><th class="table-th">Status</th><th class="table-th">Holder</th><th class="table-th">Created</th>
+                            <th class="table-th">Code</th><th class="table-th">Title</th><th class="table-th">Type</th><th class="table-th">Division</th><th class="table-th">Priority</th><th class="table-th">Status</th><th class="table-th">Holder</th><th class="table-th">Created</th>
                         </tr></thead>
                         <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
                             @forelse($documents as $doc)
@@ -155,13 +165,14 @@
                                     <td class="table-td font-mono text-xs" data-label="Code">{{ $doc->tracking_code }}</td>
                                     <td class="table-td" data-label="Title">{{ $doc->title }}</td>
                                     <td class="table-td" data-label="Type">{{ $doc->document_type }}</td>
+                                    <td class="table-td" data-label="Division">{{ $doc->division?->code ?? '—' }}</td>
                                     <td class="table-td" data-label="Priority">{{ ucfirst($doc->priority) }}</td>
                                     <td class="table-td" data-label="Status">{{ \App\Models\Document::statusLabel($doc->status) }}</td>
                                     <td class="table-td" data-label="Holder">{{ $doc->currentHolder?->name ?? '—' }}</td>
                                     <td class="table-td text-xs text-gray-400" data-label="Created">{{ $doc->created_at->format('M d, Y') }}</td>
                                 </tr>
                             @empty
-                                <tr><td colspan="7" class="px-4 py-8 text-center text-sm text-gray-400">No documents match this report.</td></tr>
+                                <tr><td colspan="8" class="px-4 py-8 text-center text-sm text-gray-400">No documents match this report.</td></tr>
                             @endforelse
                         </tbody>
                     </table>
@@ -205,6 +216,7 @@
                 mk('lStatus', @json(\App\Models\Document::relabelStatuses($statusCounts ?? [])));
                 mk('lPriority', @json($prioCounts ?? []), 'doughnut', ['#ef4444','#f59e0b','#0ea5e9','#94a3b8','#6366f1','#22c55e']);
                 mk('lType', @json($typeCounts ?? []), 'bar', '#14b8a6');
+                mk('lDiv', @json($divCounts ?? []), 'bar', '#6366f1');
             @endif
         };
         const run = () => requestAnimationFrame(initCharts);
