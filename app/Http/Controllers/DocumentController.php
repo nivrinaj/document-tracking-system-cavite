@@ -118,7 +118,8 @@ class DocumentController extends Controller
             'division_id' => ['nullable', 'exists:divisions,id'],
             'assignee_id' => ['nullable', 'exists:users,id'],
             'assign_remarks' => ['nullable', 'string'],
-            'broadcast_scope' => ['nullable', 'in:none,division,department'],
+            'broadcast_scope' => ['nullable', 'in:none,division,department,transfer'],
+            'to_department_id' => ['nullable', 'required_if:broadcast_scope,transfer', 'exists:departments,id'],
         ]);
 
         // Make sure a voucher number isn't already in use for this year.
@@ -143,8 +144,9 @@ class DocumentController extends Controller
             $data['source'] = $request->input('source_other') ?: null;
         }
 
-        // Memo broadcast — distribute to everyone in the chosen scope.
         $scope = $data['broadcast_scope'] ?? 'none';
+
+        // Memo broadcast — distribute to everyone in the chosen scope.
         if (in_array($scope, ['division', 'department'])) {
             $document = $service->broadcast($data, $request->user(), $scope);
 
@@ -152,6 +154,19 @@ class DocumentController extends Controller
                 ->with('success', "Memo broadcast to your {$scope}. Tracking code: {$document->tracking_code}");
         }
 
+        // Transfer to another office's receiving pool (no specific person).
+        if ($scope === 'transfer') {
+            // The encoder's own office is implicitly the origin for a transfer.
+            $actor = $request->user();
+            $data['source'] = trim(($actor->department?->code ?? '').($actor->division ? ' · '.$actor->division->name : '')) ?: 'Internal';
+            $document = $service->encode($data, $request->user(), null);
+            $service->transferToOffice($document, (int) $data['to_department_id'], $request->user(), $data['assign_remarks'] ?: 'Transferred to your office.');
+
+            return redirect()->route('documents.show', $document)
+                ->with('success', "Document encoded and sent to the selected office's receiving pool. Tracking code: {$document->tracking_code}");
+        }
+
+        // Normal: assign to a specific staff in my own office (or assign later).
         $document = $service->encode($data, $request->user(), $data['assignee_id'] ?? null);
 
         return redirect()->route('documents.show', $document)
@@ -345,16 +360,16 @@ class DocumentController extends Controller
     /* -------------------- Helpers -------------------- */
 
     /**
-     * Active staff who can be assigned. When cross-department routing is OFF,
-     * limited to the actor's own department; when ON, spans every office.
+     * Staff who can be directly assigned a specific document — always limited to
+     * the actor's OWN department. Sending to another office goes through that
+     * office's receiving pool (see transferToOffice), never to a named person.
      */
     private function assignableUsers()
     {
         $user = Auth::user();
-        $crossDept = \App\Models\Setting::get('allow_cross_department', '0') === '1';
 
         return User::with('division', 'department')->where('is_active', true)
-            ->when(! $crossDept && $user->department_id, fn ($q) => $q->where('department_id', $user->department_id))
+            ->when($user->department_id, fn ($q) => $q->where('department_id', $user->department_id))
             ->orderBy('name')->get();
     }
 

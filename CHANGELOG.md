@@ -11,19 +11,20 @@ reviewed or rolled back. Format based on [Keep a Changelog](https://keepachangel
 - New **"Transfer to another office"** action — sends a document to an office's **receiving pool** (no specific person needed). Requires the cross-department setting.
 - That office's receivers see it under **"📥 To claim"** on their dashboard and get a notification. **Whoever claims it** becomes the holder and the only one with actions; it's recorded against them. Others stop seeing it as claimable.
 - Documents list shows **"📥 To claim · OFFICE"** for unclaimed transfers; the claim is a one-tap **Claim & Receive** (works on desktop or via QR scan).
+- Encode page: **direct assignment is own-office only** (division → staff); the **Source/Origin** section hides when transferring out (your office is auto-recorded as the origin).
 
 ## v2.4.0 — 2026-06-20
 **Encode page redesign + cross-department control**
 - **Redesigned Encode page** into clean sections (Document details · Source/Origin · Distribution) with a modern look.
 - **Source / Origin**: division stays empty until an office is chosen; your **own office is listed first**; *Other/External* swaps to a free-text field.
-- **Distribution**: choose **office → division → staff** (cascading), own office first. The stray standalone Division field was removed.
+- **Distribution**: assign within your office (**division → staff**), or send as a memo. The stray standalone Division field was removed.
 - **Cross-department setting** (System Settings → Workflow): OFF = assign only within your own department; ON = route to any office. Applies to encoding, assigning and forwarding.
 - Added **sample data**: a department memo broadcast to 15 staff (partly acknowledged) and two Accounting vouchers breaching the 7-day SLA — to preview the concerned-staff panel and the SLA report.
 
 ## v2.3.0 — 2026-06-20
 **Inter-office routing & encoding improvements**
 - **Source / Origin** is now a smart picker: choose the originating **office → division**, or pick **Other / External** to type an external client's name.
-- **Assign / release to any office** — the assignee list now spans every department (grouped by office), so a document can go straight to another office.
+- Groundwork for inter-office routing (finalized in v2.5.0: direct assignment stays within your own office; sending to another office goes through that office's receiving pool).
 - Unassigned documents now correctly show **"Not yet assigned · In transit"** instead of a misleading department/division.
 - **Concerned staff** panel handles large lists cleanly: a count, an acknowledgement progress bar (for memos), and a **Show all** toggle beyond 12 people.
 - _Who can encode_ is controlled by the **`documents.create`** permission per role (Roles & Permissions) — already in place.

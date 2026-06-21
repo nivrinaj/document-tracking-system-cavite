@@ -17,9 +17,8 @@
                   divisions: @js($divisions->map(fn($d) => ['id' => $d->id, 'name' => $d->code.' — '.$d->name, 'department_id' => $d->department_id])),
                   users: @js($users->map(fn($u) => ['id' => $u->id, 'name' => $u->name, 'department_id' => $u->department_id, 'division_id' => $u->division_id, 'division' => $u->division?->code ?? 'Head'])),
                   get srcDivs() { return this.divisions.filter(d => this.srcOffice && String(d.department_id) === String(this.srcOffice)); },
-                  get effOffice() { return this.cross ? this.office : this.ownDept; },
-                  get distDivs() { return this.divisions.filter(d => this.effOffice && String(d.department_id) === String(this.effOffice)); },
-                  get distStaff() { return this.users.filter(u => (!this.effOffice || String(u.department_id) === String(this.effOffice)) && (!this.div || String(u.division_id) === String(this.div))); },
+                  get ownDivs() { return this.divisions.filter(d => String(d.department_id) === String(this.ownDept)); },
+                  get ownStaff() { return this.users.filter(u => !this.div || String(u.division_id) === String(this.div)); },
               }">
             @csrf
 
@@ -69,7 +68,8 @@
                 </div>
             </x-card>
 
-            {{-- ───── Source / Origin ───── --}}
+            {{-- ───── Source / Origin (not needed when transferring out — your office is the origin) ───── --}}
+            <div x-show="scope !== 'transfer'" x-cloak>
             <x-card title="Source / Origin">
                 <p class="text-xs text-gray-400 mb-3">Where did this document come from?</p>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -102,57 +102,66 @@
                     </div>
                 </div>
             </x-card>
+            </div>
 
             {{-- ───── Distribution ───── --}}
             <x-card title="Distribution">
                 <div class="mb-4">
                     <label class="label">Send as</label>
-                    <select name="broadcast_scope" x-model="scope" class="input">
-                        <option value="none">Assign to one staff (normal routing)</option>
-                        <option value="division">📣 Division memo — broadcast to everyone in my division</option>
-                        <option value="department">📣 Department memo — broadcast to everyone in my department</option>
+                    <select name="broadcast_scope" x-model="scope" @change="div=''" class="input">
+                        <option value="none">Assign to a staff in my office</option>
+                        @if($crossDept)
+                            <option value="transfer">📤 Transfer to another office (their receiving staff will claim &amp; assign)</option>
+                        @endif
+                        <option value="division">📣 Division memo — everyone in my division</option>
+                        <option value="department">📣 Department memo — everyone in my department</option>
                     </select>
-                    <p class="text-xs text-gray-400 mt-1" x-show="scope !== 'none'" x-cloak>Every recipient is notified and acknowledges receipt individually.</p>
+                    <p class="text-xs text-gray-400 mt-1" x-show="scope === 'division' || scope === 'department'" x-cloak>Every recipient is notified and acknowledges receipt individually.</p>
                 </div>
 
-                {{-- Assign-to-one cascade --}}
-                <div x-show="scope === 'none'" x-cloak class="space-y-4 border-t border-gray-100 dark:border-gray-700 pt-4">
-                    <p class="text-xs text-gray-400">Leave staff blank to assign later. @if($crossDept)You can route to <strong>any office</strong>.@endif</p>
-
-                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                        @if($crossDept)
-                            <div>
-                                <label class="label">Office</label>
-                                <select x-model="office" @change="div=''" class="input">
-                                    <option value="">— Select office —</option>
-                                    @foreach($departments as $dept)
-                                        <option value="{{ $dept->id }}">{{ $dept->code }}@if($dept->id == $ownDeptId) (mine)@endif</option>
-                                    @endforeach
-                                </select>
-                            </div>
-                        @endif
+                {{-- Assign to a staff in my own office --}}
+                <div x-show="scope === 'none'" x-cloak class="border-t border-gray-100 dark:border-gray-700 pt-4">
+                    <p class="text-xs text-gray-400 mb-3">Assign to someone in <strong>your office</strong>, or leave blank to assign later.</p>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div>
                             <label class="label">Division</label>
                             <select x-model="div" class="input">
                                 <option value="">All divisions</option>
-                                <template x-for="d in distDivs" :key="d.id"><option :value="d.id" x-text="d.name"></option></template>
+                                <template x-for="d in ownDivs" :key="d.id"><option :value="d.id" x-text="d.name"></option></template>
                             </select>
                         </div>
-                        <div class="@if(!$crossDept) sm:col-span-2 @endif">
+                        <div>
                             <label class="label">Assignee</label>
                             <select name="assignee_id" class="input">
                                 <option value="">— Assign later —</option>
-                                <template x-for="u in distStaff" :key="u.id">
+                                <template x-for="u in ownStaff" :key="u.id">
                                     <option :value="u.id" x-text="u.name + ' — ' + u.division"></option>
                                 </template>
                             </select>
                         </div>
                     </div>
+                </div>
 
-                    <div>
-                        <label class="label">Assignment remarks</label>
-                        <input type="text" name="assign_remarks" value="{{ old('assign_remarks') }}" class="input" placeholder="Instructions for the assignee…">
+                {{-- Transfer to another office's receiving pool --}}
+                @if($crossDept)
+                    <div x-show="scope === 'transfer'" x-cloak class="border-t border-gray-100 dark:border-gray-700 pt-4">
+                        <p class="text-xs text-gray-400 mb-3">Goes to the office's <strong>receiving pool</strong> — no specific person. Their receiving staff claims it, then assigns the exact staff inside their office.</p>
+                        <label class="label">Destination office</label>
+                        <select name="to_department_id" class="input" x-bind:required="scope === 'transfer'">
+                            <option value="">— Select office —</option>
+                            @foreach($departments as $dept)
+                                @if($dept->id != $ownDeptId)
+                                    <option value="{{ $dept->id }}">{{ $dept->code }} — {{ $dept->name }}</option>
+                                @endif
+                            @endforeach
+                        </select>
                     </div>
+                @endif
+
+                {{-- Shared remarks for assign / transfer --}}
+                <div x-show="scope === 'none' || scope === 'transfer'" x-cloak class="mt-4">
+                    <label class="label" x-text="scope === 'transfer' ? 'Note to the receiving office' : 'Assignment remarks'"></label>
+                    <input type="text" name="assign_remarks" value="{{ old('assign_remarks') }}" class="input" placeholder="Optional instructions / note…">
                 </div>
             </x-card>
 
