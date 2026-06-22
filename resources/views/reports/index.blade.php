@@ -4,10 +4,10 @@
     <div class="space-y-6">
         {{-- Quick numbers --}}
         <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <x-stat-card label="Total Documents" :value="$quick['total']" color="primary"><x-slot:icon><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></x-slot:icon></x-stat-card>
-            <x-stat-card label="Pending" :value="$quick['pending']" color="amber"><x-slot:icon><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></x-slot:icon></x-stat-card>
-            <x-stat-card label="Completed" :value="$quick['completed']" color="green"><x-slot:icon><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></x-slot:icon></x-stat-card>
-            <x-stat-card label="This Month" :value="$quick['this_month']" color="blue"><x-slot:icon><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></x-slot:icon></x-stat-card>
+            <x-stat-card label="Total documents" :value="$quick['total']" color="primary"><x-slot:icon><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></x-slot:icon></x-stat-card>
+            <x-stat-card label="Active (ongoing)" :value="$quick['active']" color="blue"><x-slot:icon><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></x-slot:icon></x-stat-card>
+            <x-stat-card label="Pending (paused)" :value="$quick['pending']" color="amber"><x-slot:icon><path stroke-linecap="round" stroke-linejoin="round" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z"/></x-slot:icon></x-stat-card>
+            <x-stat-card label="Completed / Archived" :value="$quick['completed']" color="green"><x-slot:icon><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></x-slot:icon></x-stat-card>
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">

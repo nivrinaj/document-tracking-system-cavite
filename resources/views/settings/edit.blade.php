@@ -166,6 +166,20 @@
                             </span>
                         </span>
                     </label>
+
+                    <label class="flex items-start gap-3 cursor-pointer border-t border-gray-100 dark:border-gray-700 pt-4">
+                        <input type="hidden" name="enable_route_items" value="0">
+                        <input type="checkbox" name="enable_route_items" value="1" class="mt-1 rounded text-[color:var(--color-primary)]"
+                               @checked(($settings['enable_route_items'] ?? '0') === '1')>
+                        <span>
+                            <span class="font-medium text-sm">Enable “Route slip” multi-document tracking</span>
+                            <span class="block text-xs text-gray-400 mt-0.5">
+                                When <strong>on</strong>, a single document/QR (a “route slip”) can list several individual documents. The holder can mark each one
+                                <strong>Cleared</strong> (good to go) or <strong>Rejected</strong> (returned to origin) — so partial outcomes (e.g. 4 cleared, 1 rejected) are tracked.
+                                When <strong>off</strong> (default), this is hidden.
+                            </span>
+                        </span>
+                    </label>
                 </div>
             </x-card>
 

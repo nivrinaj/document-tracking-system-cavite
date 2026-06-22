@@ -180,6 +180,13 @@ class DocumentService
     public function encode(array $data, User $actor, ?int $assigneeId = null): Document
     {
         return DB::transaction(function () use ($data, $actor, $assigneeId) {
+            // Route-slip line items (optional) are saved separately from the document.
+            $items = collect($data['items'] ?? [])
+                ->map(fn ($t) => trim((string) $t))
+                ->filter()
+                ->values();
+            unset($data['items']);
+
             // Vouchers use their voucher number as the tail of the tracking code.
             $trackingCode = null;
             if (strtolower($data['document_type'] ?? '') === 'voucher' && ! empty($data['voucher_number'])) {
@@ -195,6 +202,11 @@ class DocumentService
                 'department_id' => $data['department_id'] ?? $actor->department_id,
                 'received_at' => $data['received_at'] ?? now(),
             ]));
+
+            // Create route-slip line items, if any were provided.
+            foreach ($items as $title) {
+                $document->items()->create(['title' => $title, 'status' => 'pending']);
+            }
 
             $this->addAssignee($document, $actor->id);
             $this->log($document, 'encoded', $actor, remarks: $data['encode_remarks'] ?? 'Document encoded.');
@@ -381,6 +393,28 @@ class DocumentService
     }
 
     /**
+     * Decide a single route-slip item: cleared (good to go) or rejected (returned
+     * to origin). Logged on the parent document so it shows in the trail.
+     */
+    public function decideItem(\App\Models\DocumentItem $item, User $actor, string $status, ?string $remarks = null): \App\Models\DocumentItem
+    {
+        return DB::transaction(function () use ($item, $actor, $status, $remarks) {
+            $item->update([
+                'status' => $status,
+                'remarks' => $remarks,
+                'decided_by' => $actor->id,
+                'decided_at' => now(),
+            ]);
+
+            $verb = $status === 'cleared' ? 'cleared' : 'rejected & returned to origin';
+            $this->log($item->document, $status === 'cleared' ? 'item_cleared' : 'item_rejected', $actor,
+                remarks: "Item “{$item->title}” {$verb}.".($remarks ? " — {$remarks}" : ''));
+
+            return $item->refresh();
+        });
+    }
+
+    /**
      * Send a document to a hand-picked list of people — possibly across several
      * offices. Like a memo: each recipient is a concerned party who acknowledges
      * receipt individually (tracked via the acknowledged_at pivot).
@@ -403,6 +437,7 @@ class DocumentService
             $recipients = User::where('is_active', true)
                 ->whereIn('id', $userIds)
                 ->where('id', '!=', $actor->id)
+                ->when($actor->department_id, fn ($q) => $q->where('department_id', $actor->department_id))
                 ->get();
 
             foreach ($recipients as $r) {

@@ -62,11 +62,12 @@ class ReportController extends Controller
         $user = Auth::user();
 
         // Quick numbers — scoped to what this user is allowed to see.
+        $openBase = fn () => Document::visibleTo($user)->whereIn('status', ['draft', 'released', 'received', 'forwarded']);
         $quick = [
             'total'     => Document::visibleTo($user)->count(),
-            'pending'   => Document::visibleTo($user)->whereIn('status', ['draft', 'released', 'received', 'forwarded'])->count(),
+            'active'    => (clone $openBase())->where('is_pending', false)->count(),
+            'pending'   => Document::visibleTo($user)->where('is_pending', true)->count(),
             'completed' => Document::visibleTo($user)->whereIn('status', ['archived', 'completed'])->count(),
-            'this_month' => Document::visibleTo($user)->whereMonth('created_at', now()->month)->whereYear('created_at', now()->year)->count(),
         ];
 
         return view('reports.index', [
@@ -149,6 +150,7 @@ class ReportController extends Controller
                     : [],
                 'byDivision' => $scope($base())->with('division')->select('division_id', DB::raw('count(*) as total'))->groupBy('division_id')->get()
                     ->mapWithKeys(fn ($r) => [optional($r->division)->code ?? 'Unassigned' => $r->total])->toArray(),
+                'pendingCount' => $scope($base())->where('is_pending', true)->count(),
                 'documents' => collect(),
             ], ['stats' => $this->completionStats($scope($base()))]),
             'aging' => $this->buildAging($scope($base()->with(['creator', 'currentHolder.department', 'currentHolder.division', 'department', 'openPossession.holder.department', 'openPossession.holder.division', 'openPossession.department']))),
@@ -190,6 +192,23 @@ class ReportController extends Controller
 
         $holderSeconds = $docs->map(fn ($d) => $d->secondsWithCurrentHolder())->filter(fn ($v) => $v > 0);
 
+        // How long documents have been sitting with their current holder, bucketed.
+        $buckets = ['under_1h' => 0, 'h1_8' => 0, 'h8_24' => 0, 'd1_3' => 0, 'over_3d' => 0];
+        foreach ($docs as $d) {
+            $s = $d->secondsWithCurrentHolder();
+            if ($s < 3600) {
+                $buckets['under_1h']++;
+            } elseif ($s < 8 * 3600) {
+                $buckets['h1_8']++;
+            } elseif ($s < 24 * 3600) {
+                $buckets['h8_24']++;
+            } elseif ($s < 3 * 86400) {
+                $buckets['d1_3']++;
+            } else {
+                $buckets['over_3d']++;
+            }
+        }
+
         return [
             'documents' => collect(),
             'aging' => $docs,
@@ -198,6 +217,7 @@ class ReportController extends Controller
                 'oldest' => $docs->first(),
                 'avg_holder' => $holderSeconds->count() ? (int) round($holderSeconds->avg()) : null,
                 'longest_holder' => $holderSeconds->count() ? (int) $holderSeconds->max() : null,
+                'buckets' => $buckets,
             ],
         ];
     }

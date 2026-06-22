@@ -16,6 +16,7 @@
                   div: '',
                   recipientSearch: '',
                   recipients: [],
+                  routeItems: [''],
                   divisions: @js($divisions->map(fn($d) => ['id' => $d->id, 'name' => $d->code.' — '.$d->name, 'department_id' => $d->department_id])),
                   users: @js($users->map(fn($u) => ['id' => $u->id, 'name' => $u->name, 'department_id' => $u->department_id, 'division_id' => $u->division_id, 'division' => $u->division?->code ?? 'Head'])),
                   allUsers: @js($allUsers->map(fn($u) => ['id' => $u->id, 'name' => $u->name, 'office' => $u->department?->code ?? '—', 'division' => $u->division?->code ?? 'Head'])),
@@ -81,6 +82,36 @@
                     </div>
                 </div>
             </x-card>
+
+            {{-- ───── Route slip items (optional, when enabled) ───── --}}
+            @if(\App\Models\Document::routeItemsEnabled())
+            <x-card padding="p-5">
+                <div class="flex items-start gap-3 mb-4">
+                    <span class="shrink-0 w-8 h-8 rounded-full grid place-items-center text-white text-sm font-semibold" style="background: var(--color-primary)">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+                    </span>
+                    <div>
+                        <h2 class="font-semibold text-sm">Route slip items <span class="text-gray-400 font-normal">(optional)</span></h2>
+                        <p class="text-xs text-gray-400">List the individual documents carried by this slip. Each can later be cleared or rejected on its own.</p>
+                    </div>
+                </div>
+                <div class="space-y-2">
+                    <template x-for="(it, idx) in routeItems" :key="idx">
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs text-gray-400 w-5 text-right" x-text="(idx+1)+'.'"></span>
+                            <input type="text" name="items[]" x-model="routeItems[idx]" class="input" placeholder="e.g. Disbursement Voucher #123">
+                            <button type="button" @click="routeItems.splice(idx,1)" x-show="routeItems.length > 1" class="shrink-0 p-2 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20" title="Remove">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                            </button>
+                        </div>
+                    </template>
+                </div>
+                <button type="button" @click="routeItems.push('')" class="mt-3 inline-flex items-center gap-1.5 text-sm font-medium" style="color: var(--color-primary)">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+                    Add another document
+                </button>
+            </x-card>
+            @endif
 
             {{-- ───── Source / Origin (not needed when transferring out — your office is the origin) ───── --}}
             <div x-show="scope !== 'transfer'" x-cloak>
@@ -148,7 +179,7 @@
                         @endif
                         <option value="division">📣 Division memo — everyone in my division</option>
                         <option value="department">📣 Department memo — everyone in my department</option>
-                        <option value="multi">👥 Send to selected people (across offices)</option>
+                        <option value="multi">👥 Send to selected people (within my office)</option>
                     </select>
                     <p class="text-xs text-gray-400 mt-1" x-show="scope === 'division' || scope === 'department' || scope === 'multi'" x-cloak>Every recipient is notified and acknowledges receipt individually.</p>
                 </div>
@@ -194,7 +225,7 @@
 
                 {{-- Send to selected people (across offices) --}}
                 <div x-show="scope === 'multi'" x-cloak class="border-t border-gray-100 dark:border-gray-700 pt-4">
-                    <p class="text-xs text-gray-400 mb-3">Pick one or more people — from any office. Each is notified and acknowledges receipt individually, just like a memo. You can track who has received it.</p>
+                    <p class="text-xs text-gray-400 mb-3">Pick one or more people in <strong>your office</strong> (across its divisions). Each is notified and acknowledges receipt individually, just like a memo. You can track who has received it.</p>
 
                     {{-- selected chips --}}
                     <div class="flex flex-wrap gap-1.5 mb-2" x-show="recipients.length">

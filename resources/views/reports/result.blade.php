@@ -33,14 +33,18 @@
         </div>
 
         @if($type === 'summary')
-            @php $sTotal = array_sum($byStatus); @endphp
+            @php
+                $sTotal = array_sum($byStatus);
+                $sOpen = ($byStatus['draft']??0)+($byStatus['released']??0)+($byStatus['received']??0)+($byStatus['forwarded']??0);
+                $sPending = $pendingCount ?? 0;
+                $sActive = max(0, $sOpen - $sPending);
+                $sDone = ($byStatus['completed']??0)+($byStatus['archived']??0);
+            @endphp
             <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                <x-stat-card label="Total Documents" :value="$sTotal" color="primary"><x-slot:icon><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></x-slot:icon></x-stat-card>
-                <x-stat-card label="Open / Pending" :value="($byStatus['draft']??0)+($byStatus['released']??0)+($byStatus['received']??0)+($byStatus['forwarded']??0)" color="amber"><x-slot:icon><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></x-slot:icon></x-stat-card>
-                <x-stat-card label="Completed / Archived" :value="($byStatus['completed']??0)+($byStatus['archived']??0)" color="green"><x-slot:icon><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></x-slot:icon></x-stat-card>
-                @if($prio)
-                <x-stat-card label="Urgent + High" :value="($byPriority['urgent']??0)+($byPriority['high']??0)" color="red"><x-slot:icon><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></x-slot:icon></x-stat-card>
-                @endif
+                <x-stat-card label="Total documents" :value="$sTotal" color="primary"><x-slot:icon><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></x-slot:icon></x-stat-card>
+                <x-stat-card label="Active (ongoing)" :value="$sActive" color="blue"><x-slot:icon><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></x-slot:icon></x-stat-card>
+                <x-stat-card label="Pending (paused)" :value="$sPending" color="amber"><x-slot:icon><path stroke-linecap="round" stroke-linejoin="round" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z"/></x-slot:icon></x-stat-card>
+                <x-stat-card label="Completed / Archived" :value="$sDone" color="green"><x-slot:icon><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></x-slot:icon></x-stat-card>
             </div>
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
                 <x-card><h3 class="font-semibold text-sm mb-3">By Status</h3><div class="h-56"><canvas id="rStatus"></canvas></div></x-card>
@@ -48,14 +52,53 @@
                 <x-card><h3 class="font-semibold text-sm mb-3">By Division</h3><div class="h-56"><canvas id="rDivision"></canvas></div></x-card>
             </div>
 
+            <x-card title="Statistics">
+                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 text-center">
+                    <div><div class="text-2xl font-bold">{{ $stats['avg_completion'] !== null ? $stats['avg_completion'] : '—' }}<span class="text-sm font-normal text-gray-400"> {{ $stats['avg_completion'] !== null ? 'days' : '' }}</span></div><div class="text-xs text-gray-500 mt-1">Avg. completion time</div></div>
+                    <div><div class="text-2xl font-bold text-green-600">{{ $stats['fastest'] !== null ? $stats['fastest'].'d' : '—' }}</div><div class="text-xs text-gray-500 mt-1">Fastest</div></div>
+                    <div><div class="text-2xl font-bold text-red-600">{{ $stats['slowest'] !== null ? $stats['slowest'].'d' : '—' }}</div><div class="text-xs text-gray-500 mt-1">Slowest</div></div>
+                    <div><div class="text-2xl font-bold">{{ $stats['completed_count'] }}</div><div class="text-xs text-gray-500 mt-1">Completed</div></div>
+                    <div><div class="text-2xl font-bold">{{ $stats['open_count'] }}</div><div class="text-xs text-gray-500 mt-1">Still active</div></div>
+                    <div><div class="text-2xl font-bold text-amber-600">{{ $stats['avg_open_age'] !== null ? $stats['avg_open_age'].'d' : '—' }}</div><div class="text-xs text-gray-500 mt-1">Avg. age (active)</div></div>
+                </div>
+                <p class="text-xs text-gray-400 mt-3">Completion time is measured from when a document was received (or encoded) to when it was completed/archived.</p>
+            </x-card>
+
         @elseif($type === 'aging')
-            @php $as = $agingStats; @endphp
+            @php $as = $agingStats; $bk = $as['buckets']; @endphp
             <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                <x-stat-card label="Open documents" :value="$as['count']" color="primary"><x-slot:icon><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></x-slot:icon></x-stat-card>
+                <x-stat-card label="Active documents" :value="$as['count']" color="primary"><x-slot:icon><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></x-slot:icon></x-stat-card>
                 <x-stat-card label="Oldest document" :value="$as['oldest'] ? $as['oldest']->totalTime() : '—'" color="red"><x-slot:icon><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></x-slot:icon></x-stat-card>
                 <x-stat-card label="Avg. time w/ holder" :value="$as['avg_holder'] !== null ? \App\Models\Document::humanDuration($as['avg_holder']) : '—'" color="amber"><x-slot:icon><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></x-slot:icon></x-stat-card>
                 <x-stat-card label="Longest w/ a holder" :value="$as['longest_holder'] !== null ? \App\Models\Document::humanDuration($as['longest_holder']) : '—'" color="red"><x-slot:icon><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></x-slot:icon></x-stat-card>
             </div>
+
+            {{-- How long active documents have been sitting with their current holder --}}
+            <x-card title="How long with the current holder">
+                @php
+                    $bkMeta = [
+                        'under_1h' => ['Under 1 hour', 'green'],
+                        'h1_8'     => ['1–8 hours', 'blue'],
+                        'h8_24'    => ['8–24 hours', 'amber'],
+                        'd1_3'     => ['1–3 days', 'orange'],
+                        'over_3d'  => ['Over 3 days', 'red'],
+                    ];
+                    $bkColors = ['green'=>'bg-green-500','blue'=>'bg-blue-500','amber'=>'bg-amber-500','orange'=>'bg-orange-500','red'=>'bg-red-500'];
+                @endphp
+                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 text-center">
+                    @foreach($bkMeta as $key => [$label, $color])
+                        <div class="rounded-xl border border-gray-100 dark:border-gray-700 p-3">
+                            <div class="flex items-center justify-center gap-1.5">
+                                <span class="w-2.5 h-2.5 rounded-full {{ $bkColors[$color] }}"></span>
+                                <span class="text-2xl font-bold {{ $bk[$key] > 0 && $color === 'red' ? 'text-red-600' : '' }}">{{ $bk[$key] }}</span>
+                            </div>
+                            <div class="text-xs text-gray-500 mt-1">{{ $label }}</div>
+                        </div>
+                    @endforeach
+                </div>
+                <p class="text-xs text-gray-400 mt-3">Counts active documents by how long they've been sitting with whoever currently holds them. Pending documents are excluded.</p>
+            </x-card>
+
             <x-card padding="p-0">
                 <div class="overflow-x-auto">
                     <table class="r-table min-w-full divide-y divide-gray-200 dark:divide-gray-700">
@@ -86,18 +129,6 @@
                     </table>
                 </div>
                 @if($aging->isNotEmpty())<div class="px-4 py-3 text-sm text-gray-400 border-t border-gray-100 dark:border-gray-700">Oldest first · pending documents are excluded · {{ $aging->count() }} document(s)</div>@endif
-            </x-card>
-
-            <x-card title="Statistics">
-                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 text-center">
-                    <div><div class="text-2xl font-bold">{{ $stats['avg_completion'] !== null ? $stats['avg_completion'] : '—' }}<span class="text-sm font-normal text-gray-400"> {{ $stats['avg_completion'] !== null ? 'days' : '' }}</span></div><div class="text-xs text-gray-500 mt-1">Avg. completion time</div></div>
-                    <div><div class="text-2xl font-bold text-green-600">{{ $stats['fastest'] !== null ? $stats['fastest'].'d' : '—' }}</div><div class="text-xs text-gray-500 mt-1">Fastest</div></div>
-                    <div><div class="text-2xl font-bold text-red-600">{{ $stats['slowest'] !== null ? $stats['slowest'].'d' : '—' }}</div><div class="text-xs text-gray-500 mt-1">Slowest</div></div>
-                    <div><div class="text-2xl font-bold">{{ $stats['completed_count'] }}</div><div class="text-xs text-gray-500 mt-1">Completed</div></div>
-                    <div><div class="text-2xl font-bold">{{ $stats['open_count'] }}</div><div class="text-xs text-gray-500 mt-1">Still open</div></div>
-                    <div><div class="text-2xl font-bold text-amber-600">{{ $stats['avg_open_age'] !== null ? $stats['avg_open_age'].'d' : '—' }}</div><div class="text-xs text-gray-500 mt-1">Avg. age (open)</div></div>
-                </div>
-                <p class="text-xs text-gray-400 mt-3">Completion time is measured from when a document was received (or encoded) to when it was completed/archived.</p>
             </x-card>
 
         @elseif($type === 'sla_compliance')
@@ -178,14 +209,18 @@
 
         @else
             {{-- Document-list reports: stats + charts + table --}}
-            @php $listTotal = $documents->count(); @endphp
+            @php
+                $listTotal = $documents->count();
+                $listOpen = ($statusCounts['draft']??0)+($statusCounts['released']??0)+($statusCounts['received']??0)+($statusCounts['forwarded']??0);
+                $listPending = $documents->where('is_pending', true)->count();
+                $listActive = max(0, $listOpen - $listPending);
+                $listDone = ($statusCounts['completed']??0)+($statusCounts['archived']??0);
+            @endphp
             <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                <x-stat-card label="Total in report" :value="$listTotal" color="primary"><x-slot:icon><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></x-slot:icon></x-stat-card>
-                <x-stat-card label="Open / Pending" :value="($statusCounts['draft']??0)+($statusCounts['released']??0)+($statusCounts['received']??0)+($statusCounts['forwarded']??0)" color="amber"><x-slot:icon><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></x-slot:icon></x-stat-card>
-                <x-stat-card label="Completed / Archived" :value="($statusCounts['completed']??0)+($statusCounts['archived']??0)" color="green"><x-slot:icon><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></x-slot:icon></x-stat-card>
-                @if($prio)
-                <x-stat-card label="Urgent + High" :value="($prioCounts['urgent']??0)+($prioCounts['high']??0)" color="red"><x-slot:icon><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></x-slot:icon></x-stat-card>
-                @endif
+                <x-stat-card label="Total documents" :value="$listTotal" color="primary"><x-slot:icon><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></x-slot:icon></x-stat-card>
+                <x-stat-card label="Active (ongoing)" :value="$listActive" color="blue"><x-slot:icon><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></x-slot:icon></x-stat-card>
+                <x-stat-card label="Pending (paused)" :value="$listPending" color="amber"><x-slot:icon><path stroke-linecap="round" stroke-linejoin="round" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z"/></x-slot:icon></x-stat-card>
+                <x-stat-card label="Completed / Archived" :value="$listDone" color="green"><x-slot:icon><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></x-slot:icon></x-stat-card>
             </div>
             @if($listTotal)
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">

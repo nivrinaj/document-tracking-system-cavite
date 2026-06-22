@@ -54,7 +54,7 @@
                             @csrf
                             <select name="to_user_id" class="input" required>
                                 <option value="">— Forward to —</option>
-                                @foreach($users->groupBy(fn($u) => $u->department?->code ?? 'No office') as $group => $gu)
+                                @foreach($users->where('id', '!=', $document->current_holder_id)->groupBy(fn($u) => $u->department?->code ?? 'No office') as $group => $gu)
                                     <optgroup label="{{ $group }}">@foreach($gu as $u)<option value="{{ $u->id }}">{{ $u->name }} — {{ $u->division?->code ?? 'Head' }}</option>@endforeach</optgroup>
                                 @endforeach
                             </select>
@@ -82,6 +82,7 @@
                           data-confirm="Resume work on this document?">
                         @csrf
                         <p class="text-sm text-amber-700 dark:text-amber-300">⏸ This document is <strong>pending</strong>. Resume to start your timer again.</p>
+                        <textarea name="remarks" rows="2" class="input" placeholder="What changed / why resume now? (required)" required></textarea>
                         <x-btn type="submit" class="w-full">▶ Resume work</x-btn>
                     </form>
                 @endcan

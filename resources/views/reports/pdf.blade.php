@@ -94,12 +94,17 @@
     </div>
 
     @if($type === 'summary')
-        @php $sTotal = array_sum($byStatus); @endphp
+        @php
+            $sTotal = array_sum($byStatus);
+            $sOpen = ($byStatus['draft']??0)+($byStatus['released']??0)+($byStatus['received']??0)+($byStatus['forwarded']??0);
+            $sPending = $pendingCount ?? 0;
+            $sActive = max(0, $sOpen - $sPending);
+        @endphp
         <table class="stats"><tr>
-            <td><div class="stat" style="background:{{ $primary }}"><div class="n">{{ $sTotal }}</div><div class="l">Total Documents</div></div></td>
-            <td><div class="stat" style="background:#f59e0b"><div class="n">{{ ($byStatus['draft']??0)+($byStatus['released']??0)+($byStatus['received']??0)+($byStatus['forwarded']??0) }}</div><div class="l">Open / Pending</div></div></td>
+            <td><div class="stat" style="background:{{ $primary }}"><div class="n">{{ $sTotal }}</div><div class="l">Total documents</div></div></td>
+            <td><div class="stat" style="background:#0ea5e9"><div class="n">{{ $sActive }}</div><div class="l">Active (ongoing)</div></div></td>
+            <td><div class="stat" style="background:#f59e0b"><div class="n">{{ $sPending }}</div><div class="l">Pending (paused)</div></div></td>
             <td><div class="stat" style="background:#22c55e"><div class="n">{{ ($byStatus['completed']??0)+($byStatus['archived']??0) }}</div><div class="l">Completed / Archived</div></div></td>
-            @if($prio)<td><div class="stat" style="background:#ef4444"><div class="n">{{ ($byPriority['urgent']??0)+($byPriority['high']??0) }}</div><div class="l">Urgent + High</div></div></td>@endif
         </tr></table>
 
         <table class="chart-wrap"><tr>
@@ -134,13 +139,22 @@
         </div>
 
     @elseif($type === 'aging')
-        @php $as = $agingStats; @endphp
+        @php $as = $agingStats; $bk = $as['buckets']; @endphp
         <table class="stats"><tr>
-            <td><div class="stat" style="background:{{ $primary }}"><div class="n">{{ $as['count'] }}</div><div class="l">Open documents</div></div></td>
+            <td><div class="stat" style="background:{{ $primary }}"><div class="n">{{ $as['count'] }}</div><div class="l">Active documents</div></div></td>
             <td><div class="stat" style="background:#ef4444"><div class="n" style="font-size:13px;">{{ $as['oldest'] ? $as['oldest']->totalTime() : '—' }}</div><div class="l">Oldest document</div></div></td>
             <td><div class="stat" style="background:#f59e0b"><div class="n" style="font-size:13px;">{{ $as['avg_holder'] !== null ? \App\Models\Document::humanDuration($as['avg_holder']) : '—' }}</div><div class="l">Avg. time w/ holder</div></div></td>
             <td><div class="stat" style="background:#ef4444"><div class="n" style="font-size:13px;">{{ $as['longest_holder'] !== null ? \App\Models\Document::humanDuration($as['longest_holder']) : '—' }}</div><div class="l">Longest w/ a holder</div></div></td>
         </tr></table>
+
+        <div class="panel" style="margin-bottom:10px;"><h3>How long with the current holder</h3>
+            @php $bkMeta = ['under_1h'=>['Under 1 hour','#22c55e'],'h1_8'=>['1–8 hours','#0ea5e9'],'h8_24'=>['8–24 hours','#f59e0b'],'d1_3'=>['1–3 days','#ea580c'],'over_3d'=>['Over 3 days','#ef4444']]; @endphp
+            <table style="width:100%;text-align:center;"><tr>
+                @foreach($bkMeta as $key => [$label, $color])
+                    <td style="width:20%;"><div style="font-size:18px;font-weight:bold;color:{{ $color }};">{{ $bk[$key] }}</div><div style="font-size:9px;color:#777;">{{ $label }}</div></td>
+                @endforeach
+            </tr></table>
+        </div>
         <table class="data">
             <thead><tr><th>#</th><th>Code</th><th>Title</th><th>Total time</th><th>Currently with</th><th>Time w/ holder</th><th>Status</th></tr></thead>
             <tbody>
@@ -224,12 +238,17 @@
         </table>
 
     @else
-        @php $listTotal = $documents->count(); @endphp
+        @php
+            $listTotal = $documents->count();
+            $listOpen = ($statusCounts['draft']??0)+($statusCounts['released']??0)+($statusCounts['received']??0)+($statusCounts['forwarded']??0);
+            $listPending = $documents->where('is_pending', true)->count();
+            $listActive = max(0, $listOpen - $listPending);
+        @endphp
         <table class="stats"><tr>
-            <td><div class="stat" style="background:{{ $primary }}"><div class="n">{{ $listTotal }}</div><div class="l">Total in report</div></div></td>
-            <td><div class="stat" style="background:#f59e0b"><div class="n">{{ ($statusCounts['draft']??0)+($statusCounts['released']??0)+($statusCounts['received']??0)+($statusCounts['forwarded']??0) }}</div><div class="l">Open / Pending</div></div></td>
+            <td><div class="stat" style="background:{{ $primary }}"><div class="n">{{ $listTotal }}</div><div class="l">Total documents</div></div></td>
+            <td><div class="stat" style="background:#0ea5e9"><div class="n">{{ $listActive }}</div><div class="l">Active (ongoing)</div></div></td>
+            <td><div class="stat" style="background:#f59e0b"><div class="n">{{ $listPending }}</div><div class="l">Pending (paused)</div></div></td>
             <td><div class="stat" style="background:#22c55e"><div class="n">{{ ($statusCounts['completed']??0)+($statusCounts['archived']??0) }}</div><div class="l">Completed / Archived</div></div></td>
-            @if($prio)<td><div class="stat" style="background:#ef4444"><div class="n">{{ ($prioCounts['urgent']??0)+($prioCounts['high']??0) }}</div><div class="l">Urgent + High</div></div></td>@endif
         </tr></table>
 
         @if($listTotal)

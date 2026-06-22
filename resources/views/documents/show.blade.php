@@ -69,13 +69,33 @@
                     </div>
 
                     {{-- Last status action (most recent movement) --}}
-                    @php $last = $document->logs->first(); @endphp
+                    @php
+                        $last = $document->logs->first();
+                        $lastIconBg = [
+                            'gray' => 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300',
+                            'purple' => 'bg-purple-100 dark:bg-purple-900/40 text-purple-600 dark:text-purple-300',
+                            'amber' => 'bg-amber-100 dark:bg-amber-900/40 text-amber-600 dark:text-amber-300',
+                            'blue' => 'bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-300',
+                            'indigo' => 'bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-300',
+                            'green' => 'bg-green-100 dark:bg-green-900/40 text-green-600 dark:text-green-300',
+                        ][$last?->actionColor()] ?? 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300';
+                    @endphp
                     @if($last)
-                        <div class="flex items-center gap-x-2 gap-y-1 flex-wrap mb-6 -mt-2 text-sm">
-                            <span class="text-[11px] uppercase tracking-wider text-gray-400">Last action</span>
-                            <x-badge :color="$last->actionColor()">{{ $last->actionLabel() }}</x-badge>
-                            <span class="text-gray-600 dark:text-gray-300">by {{ $last->actor?->name ?? 'System' }}</span>
-                            <span class="text-gray-400">· {{ $last->created_at->format('M d, Y g:i A') }} ({{ $last->created_at->diffForHumans() }})</span>
+                        <div class="flex items-center gap-3 mb-6 -mt-2 px-3.5 py-2.5 rounded-xl bg-gray-50 dark:bg-gray-700/40 border border-gray-100 dark:border-gray-700">
+                            <span class="shrink-0 w-9 h-9 rounded-full grid place-items-center {{ $lastIconBg }}">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                            </span>
+                            <div class="min-w-0">
+                                <div class="flex items-center gap-2 flex-wrap">
+                                    <span class="text-[10px] uppercase tracking-wider text-gray-400">Last action</span>
+                                    <x-badge :color="$last->actionColor()">{{ $last->actionLabel() }}</x-badge>
+                                </div>
+                                <p class="text-sm mt-0.5">
+                                    <span class="text-gray-700 dark:text-gray-200">by <span class="font-medium">{{ $last->actor?->name ?? 'System' }}</span></span>
+                                    <span class="text-gray-400">· {{ $last->created_at->diffForHumans() }}</span>
+                                    <span class="block text-[11px] text-gray-400">{{ $last->created_at->format('M d, Y g:i A') }}</span>
+                                </p>
+                            </div>
                         </div>
                     @endif
 
@@ -114,6 +134,70 @@
                         </div>
                     @endif
                 </x-card>
+
+                {{-- Route slip items (when enabled and present) --}}
+                @if(\App\Models\Document::routeItemsEnabled() && $document->items->isNotEmpty())
+                    @php
+                        $itemsCleared = $document->items->where('status', 'cleared')->count();
+                        $itemsRejected = $document->items->where('status', 'rejected')->count();
+                        $itemsPending = $document->items->where('status', 'pending')->count();
+                        $canDecideItems = auth()->user()->can('archive', $document) || auth()->user()->can('forward', $document);
+                    @endphp
+                    <x-card>
+                        <div class="flex items-center justify-between mb-3">
+                            <h2 class="font-semibold">Route slip items <span class="text-gray-400 font-normal text-sm">({{ $document->items->count() }})</span></h2>
+                            <div class="flex items-center gap-2 text-xs">
+                                <span class="inline-flex items-center gap-1 text-green-600 dark:text-green-400">● {{ $itemsCleared }} cleared</span>
+                                <span class="inline-flex items-center gap-1 text-red-600 dark:text-red-400">● {{ $itemsRejected }} rejected</span>
+                                <span class="inline-flex items-center gap-1 text-gray-400">● {{ $itemsPending }} pending</span>
+                            </div>
+                        </div>
+                        <ul class="divide-y divide-gray-100 dark:divide-gray-700">
+                            @foreach($document->items as $item)
+                                <li class="py-3" x-data="{ rejecting: false }">
+                                    <div class="flex items-start justify-between gap-3">
+                                        <div class="min-w-0">
+                                            <div class="flex items-center gap-2 flex-wrap">
+                                                <span class="font-medium text-sm">{{ $item->title }}</span>
+                                                <x-badge :color="$item->statusColor()">{{ $item->statusLabel() }}</x-badge>
+                                            </div>
+                                            @if($item->decided_at)
+                                                <p class="text-[11px] text-gray-400 mt-0.5">by {{ $item->decider?->name ?? 'System' }} · {{ $item->decided_at->diffForHumans() }}</p>
+                                            @endif
+                                            @if($item->remarks)
+                                                <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">“{{ $item->remarks }}”</p>
+                                            @endif
+                                        </div>
+                                        @if($canDecideItems && $item->status === 'pending')
+                                            <div class="flex items-center gap-1.5 shrink-0">
+                                                <form method="POST" action="{{ route('documents.items.decision', [$document, $item]) }}">
+                                                    @csrf
+                                                    <input type="hidden" name="status" value="cleared">
+                                                    <button type="submit" class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-300 text-xs font-medium hover:opacity-90" title="Mark cleared">
+                                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                                                        Clear
+                                                    </button>
+                                                </form>
+                                                <button type="button" @click="rejecting = !rejecting" class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-300 text-xs font-medium hover:opacity-90" title="Reject & return to origin">
+                                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                                                    Reject
+                                                </button>
+                                            </div>
+                                        @endif
+                                    </div>
+                                    @if($canDecideItems && $item->status === 'pending')
+                                        <form method="POST" action="{{ route('documents.items.decision', [$document, $item]) }}" x-show="rejecting" x-cloak class="mt-2 flex gap-2" data-confirm="Reject this item and flag it for return to origin?">
+                                            @csrf
+                                            <input type="hidden" name="status" value="rejected">
+                                            <input type="text" name="remarks" class="input" placeholder="Reason for rejection (required)" required>
+                                            <x-btn type="submit" variant="danger" class="shrink-0">Reject &amp; return</x-btn>
+                                        </form>
+                                    @endif
+                                </li>
+                            @endforeach
+                        </ul>
+                    </x-card>
+                @endif
 
                 {{-- Concerned staff --}}
                 @php
@@ -246,16 +330,19 @@
                         @endcan
 
                         @can('assign', $document)
-                            <button @click="panel = panel === 'assign' ? null : 'assign'" class="w-full text-left px-4 py-2 rounded-lg bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 text-sm font-medium hover:opacity-90">Assign / Re-assign</button>
+                            <button @click="panel = panel === 'assign' ? null : 'assign'" class="w-full flex items-center gap-2.5 px-4 py-2.5 rounded-lg bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 text-sm font-medium hover:opacity-90 transition">
+                                <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/></svg>
+                                Assign / Re-assign
+                            </button>
                             <div x-show="panel === 'assign'" x-cloak class="p-3 rounded-lg bg-gray-50 dark:bg-gray-700/40">
                                 <form method="POST" action="{{ route('documents.assign', $document) }}" class="space-y-2"
                                       data-confirm="Assign / re-assign this document to the selected staff?">
                                     @csrf
                                     <select name="assignee_id" class="input" required>
                                         <option value="">— Select staff —</option>
-                                        @foreach($users->groupBy(fn($u) => $u->department?->code ?? 'No office') as $group => $gu)
+                                        @foreach($users->where('id', '!=', $document->current_holder_id)->groupBy(fn($u) => $u->department?->code ?? 'No office') as $group => $gu)
                                             <optgroup label="{{ $group }}">
-                                                @foreach($gu as $u)<option value="{{ $u->id }}" @selected($document->current_holder_id==$u->id)>{{ $u->name }} — {{ $u->division?->code ?? 'Head' }}</option>@endforeach
+                                                @foreach($gu as $u)<option value="{{ $u->id }}">{{ $u->name }} — {{ $u->division?->code ?? 'Head' }}</option>@endforeach
                                             </optgroup>
                                         @endforeach
                                     </select>
@@ -308,7 +395,10 @@
                         @endcan
 
                         @can('forward', $document)
-                            <button @click="panel = panel === 'forward' ? null : 'forward'" class="w-full text-left px-4 py-2 rounded-lg bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 text-sm font-medium hover:opacity-90">Forward to another staff</button>
+                            <button @click="panel = panel === 'forward' ? null : 'forward'" class="w-full flex items-center gap-2.5 px-4 py-2.5 rounded-lg bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 text-sm font-medium hover:opacity-90 transition">
+                                <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 8l4-4m0 0l4 4M7 4v12m4 4h6a2 2 0 002-2V8"/></svg>
+                                Forward to another staff
+                            </button>
                             <div x-show="panel === 'forward'" x-cloak class="p-3 rounded-lg bg-gray-50 dark:bg-gray-700/40">
                                 <form method="POST" action="{{ route('documents.forward', $document) }}" class="space-y-2"
                                       data-confirm="Forward this document to the selected staff?">
@@ -316,7 +406,7 @@
                                     <p class="text-xs text-gray-500 dark:text-gray-400">Forwards within <strong>your own office</strong> only.</p>
                                     <select name="to_user_id" class="input" required>
                                         <option value="">— Forward to —</option>
-                                        @foreach($users->groupBy(fn($u) => $u->department?->code ?? 'No office') as $group => $gu)
+                                        @foreach($users->where('id', '!=', $document->current_holder_id)->groupBy(fn($u) => $u->department?->code ?? 'No office') as $group => $gu)
                                             <optgroup label="{{ $group }}">
                                                 @foreach($gu as $u)<option value="{{ $u->id }}">{{ $u->name }} — {{ $u->division?->code ?? 'Head' }}</option>@endforeach
                                             </optgroup>
@@ -330,7 +420,10 @@
 
                         @can('transfer', $document)
                             @if($crossDept)
-                                <button @click="panel = panel === 'transfer' ? null : 'transfer'" class="w-full text-left px-4 py-2 rounded-lg bg-teal-50 dark:bg-teal-900/30 text-teal-700 dark:text-teal-300 text-sm font-medium hover:opacity-90">Transfer to another office</button>
+                                <button @click="panel = panel === 'transfer' ? null : 'transfer'" class="w-full flex items-center gap-2.5 px-4 py-2.5 rounded-lg bg-teal-50 dark:bg-teal-900/30 text-teal-700 dark:text-teal-300 text-sm font-medium hover:opacity-90 transition">
+                                    <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
+                                    Transfer to another office
+                                </button>
                                 <div x-show="panel === 'transfer'" x-cloak class="p-3 rounded-lg bg-gray-50 dark:bg-gray-700/40">
                                     <form method="POST" action="{{ route('documents.transfer', $document) }}" class="space-y-2"
                                           data-confirm="Transfer this document to the selected office? Their receiving staff will be able to claim it.">
@@ -352,7 +445,10 @@
                         @endcan
 
                         @can('pending', $document)
-                            <button @click="panel = panel === 'pending' ? null : 'pending'" class="w-full text-left px-4 py-2 rounded-lg bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 text-sm font-medium hover:opacity-90">⏸ Mark as pending</button>
+                            <button @click="panel = panel === 'pending' ? null : 'pending'" class="w-full flex items-center gap-2.5 px-4 py-2.5 rounded-lg bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 text-sm font-medium hover:opacity-90 transition">
+                                <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                Mark as pending
+                            </button>
                             <div x-show="panel === 'pending'" x-cloak class="p-3 rounded-lg bg-gray-50 dark:bg-gray-700/40">
                                 <form method="POST" action="{{ route('documents.pending', $document) }}" class="space-y-2"
                                       data-confirm="Mark this document as pending? Your time will pause until it is resumed or received elsewhere.">
@@ -381,13 +477,16 @@
                                   data-confirm="Resume work on this document? The timer will start again.">
                                 @csrf
                                 <p class="text-xs text-amber-700 dark:text-amber-300">⏸ This document is <strong>pending</strong>. Resume to start your processing timer again.</p>
-                                <input type="text" name="remarks" class="input" placeholder="Remarks (optional)">
+                                <textarea name="remarks" rows="2" class="input" placeholder="What changed / why resume now? (required)" required></textarea>
                                 <x-btn type="submit" variant="primary" class="w-full">▶ Resume work</x-btn>
                             </form>
                         @endcan
 
                         @can('archive', $document)
-                            <button @click="panel = panel === 'archive' ? null : 'archive'" class="w-full text-left px-4 py-2 rounded-lg bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-300 text-sm font-medium hover:opacity-90">Archive / Complete</button>
+                            <button @click="panel = panel === 'archive' ? null : 'archive'" class="w-full flex items-center gap-2.5 px-4 py-2.5 rounded-lg bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-300 text-sm font-medium hover:opacity-90 transition">
+                                <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"/></svg>
+                                Archive / Complete
+                            </button>
                             <div x-show="panel === 'archive'" x-cloak class="p-3 rounded-lg bg-gray-50 dark:bg-gray-700/40">
                                 <form method="POST" action="{{ route('documents.archive', $document) }}" class="space-y-2"
                                       data-confirm="Archive/close this document? This ends its active tracking.">
@@ -416,7 +515,10 @@
                         @can('delete', $document)
                             <form method="POST" action="{{ route('documents.destroy', $document) }}" data-confirm="Delete this document permanently?">
                                 @csrf @method('DELETE')
-                                <button type="submit" class="w-full text-center px-4 py-2 rounded-lg text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 text-sm">Delete document</button>
+                                <button type="submit" class="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 text-sm">
+                                    <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                    Delete document
+                                </button>
                             </form>
                         @endcan
                     </div>

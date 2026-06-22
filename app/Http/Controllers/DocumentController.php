@@ -124,7 +124,14 @@ class DocumentController extends Controller
             'to_department_id' => ['nullable', 'required_if:broadcast_scope,transfer', 'exists:departments,id'],
             'recipient_ids' => ['nullable', 'required_if:broadcast_scope,multi', 'array'],
             'recipient_ids.*' => ['integer', 'exists:users,id'],
+            'items' => ['nullable', 'array'],
+            'items.*' => ['nullable', 'string', 'max:255'],
         ]);
+
+        // Route-slip items only apply when the feature is enabled.
+        if (! Document::routeItemsEnabled()) {
+            unset($data['items']);
+        }
 
         // Priority is optional; default to "normal" (and force it when the feature is off).
         $data['priority'] = Document::priorityEnabled() ? ($data['priority'] ?? 'normal') : 'normal';
@@ -201,6 +208,7 @@ class DocumentController extends Controller
             'logs.toUser.department', 'logs.toUser.division',
             'logs.fromUser',
             'possessions',
+            'items.decider',
         ]);
 
         $user = Auth::user();
@@ -268,6 +276,10 @@ class DocumentController extends Controller
             'remarks' => ['nullable', 'string'],
         ]);
 
+        if ((int) $data['assignee_id'] === (int) $document->current_holder_id) {
+            return back()->with('error', 'That staff member already holds this document — pick someone else.');
+        }
+
         $service->assign($document, (int) $data['assignee_id'], $request->user(), $data['remarks'] ?? null);
 
         return back()->with('success', 'Document assigned.');
@@ -301,6 +313,10 @@ class DocumentController extends Controller
             'to_user_id' => ['required', 'exists:users,id'],
             'remarks' => ['required', 'string', 'min:3'],
         ]);
+
+        if ((int) $data['to_user_id'] === (int) $document->current_holder_id) {
+            return back()->with('error', 'That staff member already holds this document — pick someone else.');
+        }
 
         // Forwarding is ALWAYS within the same office. To move a document to another
         // office, receiving staff use "Transfer to office" (the claim-pool flow).
@@ -342,8 +358,8 @@ class DocumentController extends Controller
     {
         $this->authorize('resume', $document);
 
-        $data = $request->validate(['remarks' => ['nullable', 'string']]);
-        $service->resume($document, $request->user(), $data['remarks'] ?? null);
+        $data = $request->validate(['remarks' => ['required', 'string', 'min:3']]);
+        $service->resume($document, $request->user(), $data['remarks']);
 
         return back()->with('success', 'Work resumed. The timer is running again.');
     }
@@ -397,6 +413,26 @@ class DocumentController extends Controller
         return back()->with('success', 'Document archived.');
     }
 
+    public function itemDecision(Request $request, Document $document, \App\Models\DocumentItem $item, DocumentService $service)
+    {
+        abort_unless($item->document_id === $document->id, 404);
+        abort_unless(\App\Models\Document::routeItemsEnabled(), 404);
+
+        // Only the current holder (or an override role) may decide items.
+        $user = $request->user();
+        $canDecide = $user->can('archive', $document) || $user->can('forward', $document);
+        abort_unless($canDecide, 403);
+
+        $data = $request->validate([
+            'status' => ['required', 'in:cleared,rejected'],
+            'remarks' => [$request->input('status') === 'rejected' ? 'required' : 'nullable', 'string', 'max:500'],
+        ]);
+
+        $service->decideItem($item, $user, $data['status'], $data['remarks'] ?? null);
+
+        return back()->with('success', $data['status'] === 'cleared' ? 'Item marked as cleared.' : 'Item rejected and flagged for return to origin.');
+    }
+
     /* -------------------- QR + print -------------------- */
 
     public function qrcode(Document $document)
@@ -441,13 +477,16 @@ class DocumentController extends Controller
     }
 
     /**
-     * Everyone who can be a hand-picked recipient of a multi-send (memo to named
-     * people) — across ALL offices, excluding the actor.
+     * Hand-picked recipients of a multi-send (memo to named people) — limited to
+     * the actor's OWN office (across its divisions), excluding the actor.
      */
     private function recipientUsers()
     {
+        $user = Auth::user();
+
         return User::with('division', 'department')->where('is_active', true)
-            ->where('id', '!=', Auth::id())
+            ->where('id', '!=', $user->id)
+            ->when($user->department_id, fn ($q) => $q->where('department_id', $user->department_id))
             ->orderBy('name')->get();
     }
 

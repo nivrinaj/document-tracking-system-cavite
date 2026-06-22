@@ -52,6 +52,12 @@ class Document extends Model
         return \App\Models\Setting::get('enable_priority', '0') === '1';
     }
 
+    /** Whether the multi-item "route slip" feature is enabled system-wide. */
+    public static function routeItemsEnabled(): bool
+    {
+        return \App\Models\Setting::get('enable_route_items', '0') === '1';
+    }
+
     /** Human-friendly label for a status value (the DB value stays 'draft'). */
     public static function statusLabel(?string $status): string
     {
@@ -177,6 +183,12 @@ class Document extends Model
     public function possessions(): HasMany
     {
         return $this->hasMany(DocumentPossession::class)->orderBy('started_at');
+    }
+
+    /** Route-slip line items (individual sub-documents carried by this slip). */
+    public function items(): HasMany
+    {
+        return $this->hasMany(DocumentItem::class)->orderBy('id');
     }
 
     /** The currently-open possession segment (null when paused/pending). */

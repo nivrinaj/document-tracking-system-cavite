@@ -6,6 +6,18 @@ reviewed or rolled back. Format based on [Keep a Changelog](https://keepachangel
 
 ---
 
+## v2.8.1 — 2026-06-22
+**Route-slip items, clearer reports, action icons & fixes**
+- **New: Route-slip multi-document tracking** (Super-Admin toggle in **Settings → Workflow**, off by default). One document/QR can list several individual documents; the holder marks each **Cleared** (good to go) or **Rejected** (returned to origin), so partial outcomes — e.g. 4 cleared, 1 rejected — are tracked, with reasons and an audit trail. Add the list on the encode form; decide per item on the document page.
+- **Fixed: the “Aging & Bottlenecks” report crashed** (`Undefined variable $stats`) — the summary's statistics card had leaked into the aging branch. Fixed.
+- **Aging report now has a summary at the top** — counts of how long active documents have been sitting with their current holder, bucketed: under 1 hour, 1–8 hours, 8–24 hours, 1–3 days, over 3 days.
+- **Clearer, consistent report terminology** everywhere: **Total documents** (all), **Active (ongoing)** (in progress, not paused), **Pending (paused)** (on hold), **Completed / Archived**.
+- **“Send to selected people” is now limited to your own office** (across its divisions), not other departments.
+- **Per-person “time held” now shows for older/completed documents too** — the possession history is rebuilt from each document's audit trail.
+- **You can no longer forward or re-assign a document to the person who already holds it** — the current holder is excluded from those lists (and blocked server-side).
+- **Resume now requires remarks.**
+- **Action buttons have clean icons** for quick recognition, and the **“Last action” panel was redesigned** into a tidier card.
+
 ## v2.8.0 — 2026-06-22
 **Possession timing, pending workflow, multi-send, priority toggle, longer sessions**
 - **Per-holder time tracking.** Every document now keeps a possession ledger — the time a document spends is attributed to whoever **physically holds** it. While a liaison/encoder still holds an assigned-but-not-yet-received document, the clock counts against *them*; once the recipient **receives** it, the clock moves to the recipient, and so on. This nudges encoders to actually hand documents over.
