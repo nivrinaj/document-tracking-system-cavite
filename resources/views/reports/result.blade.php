@@ -2,6 +2,7 @@
     <x-slot name="header">Report Result</x-slot>
 
     @php
+        $prio = \App\Models\Document::priorityEnabled();
         // Derive distributions for document-list reports so every report gets charts + stats.
         $isList = in_array($type, ['incoming','pending','completed','by_status','by_division']);
         if ($isList) {
@@ -37,13 +38,55 @@
                 <x-stat-card label="Total Documents" :value="$sTotal" color="primary"><x-slot:icon><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></x-slot:icon></x-stat-card>
                 <x-stat-card label="Open / Pending" :value="($byStatus['draft']??0)+($byStatus['released']??0)+($byStatus['received']??0)+($byStatus['forwarded']??0)" color="amber"><x-slot:icon><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></x-slot:icon></x-stat-card>
                 <x-stat-card label="Completed / Archived" :value="($byStatus['completed']??0)+($byStatus['archived']??0)" color="green"><x-slot:icon><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></x-slot:icon></x-stat-card>
+                @if($prio)
                 <x-stat-card label="Urgent + High" :value="($byPriority['urgent']??0)+($byPriority['high']??0)" color="red"><x-slot:icon><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></x-slot:icon></x-stat-card>
+                @endif
             </div>
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
                 <x-card><h3 class="font-semibold text-sm mb-3">By Status</h3><div class="h-56"><canvas id="rStatus"></canvas></div></x-card>
-                <x-card><h3 class="font-semibold text-sm mb-3">By Priority</h3><div class="h-56"><canvas id="rPriority"></canvas></div></x-card>
+                @if($prio)<x-card><h3 class="font-semibold text-sm mb-3">By Priority</h3><div class="h-56"><canvas id="rPriority"></canvas></div></x-card>@endif
                 <x-card><h3 class="font-semibold text-sm mb-3">By Division</h3><div class="h-56"><canvas id="rDivision"></canvas></div></x-card>
             </div>
+
+        @elseif($type === 'aging')
+            @php $as = $agingStats; @endphp
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                <x-stat-card label="Open documents" :value="$as['count']" color="primary"><x-slot:icon><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></x-slot:icon></x-stat-card>
+                <x-stat-card label="Oldest document" :value="$as['oldest'] ? $as['oldest']->totalTime() : '—'" color="red"><x-slot:icon><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></x-slot:icon></x-stat-card>
+                <x-stat-card label="Avg. time w/ holder" :value="$as['avg_holder'] !== null ? \App\Models\Document::humanDuration($as['avg_holder']) : '—'" color="amber"><x-slot:icon><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></x-slot:icon></x-stat-card>
+                <x-stat-card label="Longest w/ a holder" :value="$as['longest_holder'] !== null ? \App\Models\Document::humanDuration($as['longest_holder']) : '—'" color="red"><x-slot:icon><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></x-slot:icon></x-stat-card>
+            </div>
+            <x-card padding="p-0">
+                <div class="overflow-x-auto">
+                    <table class="r-table min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                        <thead class="bg-gray-50 dark:bg-gray-700/40"><tr>
+                            <th class="table-th">#</th><th class="table-th">Code</th><th class="table-th">Title</th><th class="table-th">Total time</th><th class="table-th">Currently with</th><th class="table-th">Time w/ holder</th><th class="table-th">Status</th>
+                        </tr></thead>
+                        <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
+                            @forelse($aging as $i => $doc)
+                                <tr @class(['bg-red-50/50 dark:bg-red-900/10' => $doc->secondsWithCurrentHolder() >= 3*86400])>
+                                    <td class="table-td text-gray-400" data-label="#">{{ $i + 1 }}</td>
+                                    <td class="table-td font-mono text-xs" data-label="Code">{{ $doc->tracking_code }}</td>
+                                    <td class="table-td" data-label="Title">{{ $doc->title }}</td>
+                                    <td class="table-td font-medium" data-label="Total time">{{ $doc->totalTime() }}</td>
+                                    <td class="table-td" data-label="Currently with">
+                                        @if($p = $doc->currentPossessor())
+                                            {{ $p->name }}<span class="block text-xs text-gray-400">{{ $p->orgShort() }}</span>
+                                        @else
+                                            <span class="text-amber-600 dark:text-amber-400">Office pool</span><span class="block text-xs text-gray-400">{{ $doc->openPossession?->department?->code ?? $doc->department?->code ?? '—' }}</span>
+                                        @endif
+                                    </td>
+                                    <td class="table-td font-semibold {{ $doc->secondsWithCurrentHolder() >= 3*86400 ? 'text-red-600' : '' }}" data-label="Time w/ holder">{{ $doc->timeWithCurrentHolder() }}</td>
+                                    <td class="table-td" data-label="Status"><x-status-badge :status="$doc->status" /></td>
+                                </tr>
+                            @empty
+                                <tr><td colspan="7" class="px-4 py-8 text-center text-sm text-gray-400">No open documents — nothing is aging. 🎉</td></tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+                @if($aging->isNotEmpty())<div class="px-4 py-3 text-sm text-gray-400 border-t border-gray-100 dark:border-gray-700">Oldest first · pending documents are excluded · {{ $aging->count() }} document(s)</div>@endif
+            </x-card>
 
             <x-card title="Statistics">
                 <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 text-center">
@@ -140,12 +183,14 @@
                 <x-stat-card label="Total in report" :value="$listTotal" color="primary"><x-slot:icon><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></x-slot:icon></x-stat-card>
                 <x-stat-card label="Open / Pending" :value="($statusCounts['draft']??0)+($statusCounts['released']??0)+($statusCounts['received']??0)+($statusCounts['forwarded']??0)" color="amber"><x-slot:icon><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></x-slot:icon></x-stat-card>
                 <x-stat-card label="Completed / Archived" :value="($statusCounts['completed']??0)+($statusCounts['archived']??0)" color="green"><x-slot:icon><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></x-slot:icon></x-stat-card>
+                @if($prio)
                 <x-stat-card label="Urgent + High" :value="($prioCounts['urgent']??0)+($prioCounts['high']??0)" color="red"><x-slot:icon><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></x-slot:icon></x-stat-card>
+                @endif
             </div>
             @if($listTotal)
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
                     <x-card><h3 class="font-semibold text-sm mb-3">By Status</h3><div class="h-56"><canvas id="lStatus"></canvas></div></x-card>
-                    <x-card><h3 class="font-semibold text-sm mb-3">By Priority</h3><div class="h-56"><canvas id="lPriority"></canvas></div></x-card>
+                    @if($prio)<x-card><h3 class="font-semibold text-sm mb-3">By Priority</h3><div class="h-56"><canvas id="lPriority"></canvas></div></x-card>@endif
                     @if($type === 'by_division')
                         <x-card><h3 class="font-semibold text-sm mb-3">By Division</h3><div class="h-56"><canvas id="lDiv"></canvas></div></x-card>
                     @else
@@ -157,7 +202,7 @@
                 <div class="overflow-x-auto">
                     <table class="r-table min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                         <thead class="bg-gray-50 dark:bg-gray-700/40"><tr>
-                            <th class="table-th">Code</th><th class="table-th">Title</th><th class="table-th">Type</th><th class="table-th">Division</th><th class="table-th">Priority</th><th class="table-th">Status</th><th class="table-th">Holder</th><th class="table-th">Created</th>
+                            <th class="table-th">Code</th><th class="table-th">Title</th><th class="table-th">Type</th><th class="table-th">Division</th>@if($prio)<th class="table-th">Priority</th>@endif<th class="table-th">Status</th><th class="table-th">Holder</th><th class="table-th">Created</th>
                         </tr></thead>
                         <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
                             @forelse($documents as $doc)
@@ -166,13 +211,13 @@
                                     <td class="table-td" data-label="Title">{{ $doc->title }}</td>
                                     <td class="table-td" data-label="Type">{{ $doc->document_type }}</td>
                                     <td class="table-td" data-label="Division">{{ $doc->division?->code ?? '—' }}</td>
-                                    <td class="table-td" data-label="Priority">{{ ucfirst($doc->priority) }}</td>
+                                    @if($prio)<td class="table-td" data-label="Priority">{{ ucfirst($doc->priority) }}</td>@endif
                                     <td class="table-td" data-label="Status">{{ \App\Models\Document::statusLabel($doc->status) }}</td>
                                     <td class="table-td" data-label="Holder">{{ $doc->currentHolder?->name ?? '—' }}</td>
                                     <td class="table-td text-xs text-gray-400" data-label="Created">{{ $doc->created_at->format('M d, Y') }}</td>
                                 </tr>
                             @empty
-                                <tr><td colspan="8" class="px-4 py-8 text-center text-sm text-gray-400">No documents match this report.</td></tr>
+                                <tr><td colspan="{{ $prio ? 8 : 7 }}" class="px-4 py-8 text-center text-sm text-gray-400">No documents match this report.</td></tr>
                             @endforelse
                         </tbody>
                     </table>

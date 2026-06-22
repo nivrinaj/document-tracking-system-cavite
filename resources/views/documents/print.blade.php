@@ -65,7 +65,7 @@
         <div class="body">
             <div class="code-row">
                 <span class="code">{{ $document->tracking_code }}</span>
-                <span class="prio">{{ $prio }}</span>
+                @if(\App\Models\Document::priorityEnabled())<span class="prio">{{ $prio }}</span>@endif
             </div>
 
             <div class="qr-wrap">

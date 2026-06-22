@@ -17,6 +17,7 @@ class ReportController extends Controller
     /** All report types. The Processing Time report is only offered to offices that have one. */
     public const TYPES = [
         'summary'        => 'Summary Overview (counts by status, division & priority)',
+        'aging'          => 'Aging & Bottlenecks (oldest documents & where they are stuck)',
         'incoming'       => 'Incoming Documents (encoded within a date range)',
         'by_status'      => 'Documents by Status',
         'by_division'    => 'Documents by Division',
@@ -143,11 +144,14 @@ class ReportController extends Controller
         return match ($type) {
             'summary' => array_merge([
                 'byStatus' => $scope($base())->select('status', DB::raw('count(*) as total'))->groupBy('status')->pluck('total', 'status')->toArray(),
-                'byPriority' => $scope($base())->select('priority', DB::raw('count(*) as total'))->groupBy('priority')->pluck('total', 'priority')->toArray(),
+                'byPriority' => Document::priorityEnabled()
+                    ? $scope($base())->select('priority', DB::raw('count(*) as total'))->groupBy('priority')->pluck('total', 'priority')->toArray()
+                    : [],
                 'byDivision' => $scope($base())->with('division')->select('division_id', DB::raw('count(*) as total'))->groupBy('division_id')->get()
                     ->mapWithKeys(fn ($r) => [optional($r->division)->code ?? 'Unassigned' => $r->total])->toArray(),
                 'documents' => collect(),
             ], ['stats' => $this->completionStats($scope($base()))]),
+            'aging' => $this->buildAging($scope($base()->with(['creator', 'currentHolder.department', 'currentHolder.division', 'department', 'openPossession.holder.department', 'openPossession.holder.division', 'openPossession.department']))),
             'incoming', 'pending', 'completed', 'by_status', 'by_division' => [
                 'documents' => $scope($base()->with(['creator', 'currentHolder', 'division']))
                     ->when($type === 'pending', fn ($q) => $q->whereIn('status', ['draft', 'released', 'received', 'forwarded']))
@@ -169,6 +173,33 @@ class ReportController extends Controller
             'sla_compliance' => $this->buildSla($from, $to, $divisionId, $user),
             default => ['documents' => collect()],
         };
+    }
+
+    /**
+     * Aging / bottlenecks — every OPEN document (excluding those marked pending)
+     * ordered oldest-first, so you can see what is taking too long and who is
+     * holding it up. Includes total lifetime and time with the current holder.
+     */
+    private function buildAging($q): array
+    {
+        $docs = $q->whereNotIn('status', ['archived', 'completed'])
+            ->where('is_pending', false)
+            ->where('is_broadcast', false)
+            ->orderBy('created_at') // oldest first
+            ->get();
+
+        $holderSeconds = $docs->map(fn ($d) => $d->secondsWithCurrentHolder())->filter(fn ($v) => $v > 0);
+
+        return [
+            'documents' => collect(),
+            'aging' => $docs,
+            'agingStats' => [
+                'count' => $docs->count(),
+                'oldest' => $docs->first(),
+                'avg_holder' => $holderSeconds->count() ? (int) round($holderSeconds->avg()) : null,
+                'longest_holder' => $holderSeconds->count() ? (int) $holderSeconds->max() : null,
+            ],
+        ];
     }
 
     /**

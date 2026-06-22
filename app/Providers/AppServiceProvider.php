@@ -41,7 +41,7 @@ class AppServiceProvider extends ServiceProvider
             if (! $user->hasRole('Super Admin')) {
                 return null;
             }
-            $documentAbilities = ['view', 'receive', 'forward', 'archive', 'release', 'assign', 'update', 'delete', 'reopen', 'acknowledge'];
+            $documentAbilities = ['view', 'receive', 'forward', 'transfer', 'pending', 'resume', 'archive', 'release', 'assign', 'update', 'delete', 'reopen', 'acknowledge'];
 
             return in_array($ability, $documentAbilities, true) ? null : true;
         });
@@ -74,6 +74,7 @@ class AppServiceProvider extends ServiceProvider
                     'footer_text'    => Setting::get('footer_text', ''),
                     'allow_desktop_receive' => Setting::get('allow_desktop_receive', '0'),
                     'allow_cross_department' => Setting::get('allow_cross_department', '0'),
+                    'enable_priority' => Setting::get('enable_priority', '0'),
                     'tracking_prefix' => Setting::get('tracking_prefix', 'PGC'),
                     'records_per_page' => Setting::get('records_per_page', '12'),
                     'support_contact' => Setting::get('support_contact', ''),
@@ -92,6 +93,7 @@ class AppServiceProvider extends ServiceProvider
                     'footer_text' => '',
                     'allow_desktop_receive' => '0',
                     'allow_cross_department' => '0',
+                    'enable_priority' => '0',
                     'tracking_prefix' => 'PGC',
                     'records_per_page' => '12',
                     'support_contact' => '',

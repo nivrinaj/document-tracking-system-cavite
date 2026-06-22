@@ -26,12 +26,14 @@
                         <option value="{{ $s }}" @selected(request('status')===$s)>{{ \App\Models\Document::statusLabel($s) }}</option>
                     @endforeach
                 </select>
+                @if(\App\Models\Document::priorityEnabled())
                 <select name="priority" class="input">
                     <option value="">All priorities</option>
                     @foreach(['urgent','high','normal','low'] as $p)
                         <option value="{{ $p }}" @selected(request('priority')===$p)>{{ ucfirst($p) }}</option>
                     @endforeach
                 </select>
+                @endif
                 <select name="department_id" x-model="dept" @change="divId=''" class="input">
                     <option value="">All departments</option>
                     @foreach($departments as $dept)<option value="{{ $dept->id }}">{{ $dept->code }} — {{ $dept->name }}</option>@endforeach
@@ -65,7 +67,7 @@
                         <tr>
                             <th class="table-th">Tracking Code</th>
                             <th class="table-th">Title</th>
-                            <th class="table-th">Priority</th>
+                            @if(\App\Models\Document::priorityEnabled())<th class="table-th">Priority</th>@endif
                             <th class="table-th">Status</th>
                             <th class="table-th">Origin (from)</th>
                             <th class="table-th">Current Holder</th>
@@ -81,7 +83,7 @@
                                     <div class="font-medium">{{ $doc->title }}</div>
                                     <div class="text-xs text-gray-400">{{ $doc->document_type }} @if($doc->reference_no) · {{ $doc->reference_no }} @endif</div>
                                 </td>
-                                <td class="table-td" data-label="Priority"><x-priority-badge :priority="$doc->priority" /></td>
+                                @if(\App\Models\Document::priorityEnabled())<td class="table-td" data-label="Priority"><x-priority-badge :priority="$doc->priority" /></td>@endif
                                 <td class="table-td" data-label="Status"><x-status-badge :status="$doc->status" /></td>
                                 <td class="table-td" data-label="Origin (from)">
                                     <div>{{ $doc->creator?->name ?? '—' }}</div>
@@ -99,6 +101,7 @@
                                     @elseif($doc->currentHolder)
                                         <div class="font-medium">{{ $doc->currentHolder->name }}</div>
                                         <div class="text-xs text-gray-400">{{ $doc->currentHolder->orgShort() }}</div>
+                                        @if($doc->is_pending)<div class="text-xs text-amber-600 dark:text-amber-400">⏸ Pending</div>@endif
                                     @elseif($doc->status === 'released')
                                         <span class="text-amber-600 dark:text-amber-400">📥 To claim</span>
                                         <div class="text-xs text-gray-400">{{ $doc->department?->code }}</div>

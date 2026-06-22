@@ -36,6 +36,7 @@
             return $out;
         };
 
+        $prio = \App\Models\Document::priorityEnabled();
         // Distributions for document-list reports.
         $isList = in_array($type, ['incoming','pending','completed','by_status','by_division']);
         if ($isList) {
@@ -98,7 +99,7 @@
             <td><div class="stat" style="background:{{ $primary }}"><div class="n">{{ $sTotal }}</div><div class="l">Total Documents</div></div></td>
             <td><div class="stat" style="background:#f59e0b"><div class="n">{{ ($byStatus['draft']??0)+($byStatus['released']??0)+($byStatus['received']??0)+($byStatus['forwarded']??0) }}</div><div class="l">Open / Pending</div></div></td>
             <td><div class="stat" style="background:#22c55e"><div class="n">{{ ($byStatus['completed']??0)+($byStatus['archived']??0) }}</div><div class="l">Completed / Archived</div></div></td>
-            <td><div class="stat" style="background:#ef4444"><div class="n">{{ ($byPriority['urgent']??0)+($byPriority['high']??0) }}</div><div class="l">Urgent + High</div></div></td>
+            @if($prio)<td><div class="stat" style="background:#ef4444"><div class="n">{{ ($byPriority['urgent']??0)+($byPriority['high']??0) }}</div><div class="l">Urgent + High</div></div></td>@endif
         </tr></table>
 
         <table class="chart-wrap"><tr>
@@ -108,6 +109,7 @@
                     <td>{!! $legend(\App\Models\Document::relabelStatuses($byStatus), $palette) !!}</td>
                 </tr></table>
             </div></td>
+            @if($prio)
             <td style="width:50%;"><div class="panel"><h3>By Priority</h3>
                 @php $prioColors=['#ef4444','#f59e0b','#0ea5e9','#94a3b8','#6366f1']; @endphp
                 <table style="width:100%"><tr>
@@ -115,6 +117,7 @@
                     <td>{!! $legend($byPriority, $prioColors) !!}</td>
                 </tr></table>
             </div></td>
+            @endif
         </tr></table>
         <div class="panel"><h3>By Division</h3>{!! $bars($byDivision, $palette) !!}</div>
 
@@ -129,6 +132,34 @@
             </tr></table>
             <div style="font-size:8px;color:#999;margin-top:4px;">Completion time = received (or encoded) → completed/archived.</div>
         </div>
+
+    @elseif($type === 'aging')
+        @php $as = $agingStats; @endphp
+        <table class="stats"><tr>
+            <td><div class="stat" style="background:{{ $primary }}"><div class="n">{{ $as['count'] }}</div><div class="l">Open documents</div></div></td>
+            <td><div class="stat" style="background:#ef4444"><div class="n" style="font-size:13px;">{{ $as['oldest'] ? $as['oldest']->totalTime() : '—' }}</div><div class="l">Oldest document</div></div></td>
+            <td><div class="stat" style="background:#f59e0b"><div class="n" style="font-size:13px;">{{ $as['avg_holder'] !== null ? \App\Models\Document::humanDuration($as['avg_holder']) : '—' }}</div><div class="l">Avg. time w/ holder</div></div></td>
+            <td><div class="stat" style="background:#ef4444"><div class="n" style="font-size:13px;">{{ $as['longest_holder'] !== null ? \App\Models\Document::humanDuration($as['longest_holder']) : '—' }}</div><div class="l">Longest w/ a holder</div></div></td>
+        </tr></table>
+        <table class="data">
+            <thead><tr><th>#</th><th>Code</th><th>Title</th><th>Total time</th><th>Currently with</th><th>Time w/ holder</th><th>Status</th></tr></thead>
+            <tbody>
+                @forelse($aging as $i => $doc)
+                    <tr>
+                        <td>{{ $i + 1 }}</td>
+                        <td>{{ $doc->tracking_code }}</td>
+                        <td>{{ $doc->title }}</td>
+                        <td>{{ $doc->totalTime() }}</td>
+                        <td>{{ $doc->possessorLabel() }}</td>
+                        <td>{{ $doc->timeWithCurrentHolder() }}</td>
+                        <td>{{ \App\Models\Document::statusLabel($doc->status) }}</td>
+                    </tr>
+                @empty
+                    <tr><td colspan="7">No open documents — nothing is aging.</td></tr>
+                @endforelse
+            </tbody>
+        </table>
+        <p style="margin-top:8px;font-size:9px;color:#777;">Oldest first. Pending documents are excluded. Total: {{ $aging->count() }} document(s).</p>
 
     @elseif($type === 'sla_compliance')
         @php
@@ -198,7 +229,7 @@
             <td><div class="stat" style="background:{{ $primary }}"><div class="n">{{ $listTotal }}</div><div class="l">Total in report</div></div></td>
             <td><div class="stat" style="background:#f59e0b"><div class="n">{{ ($statusCounts['draft']??0)+($statusCounts['released']??0)+($statusCounts['received']??0)+($statusCounts['forwarded']??0) }}</div><div class="l">Open / Pending</div></div></td>
             <td><div class="stat" style="background:#22c55e"><div class="n">{{ ($statusCounts['completed']??0)+($statusCounts['archived']??0) }}</div><div class="l">Completed / Archived</div></div></td>
-            <td><div class="stat" style="background:#ef4444"><div class="n">{{ ($prioCounts['urgent']??0)+($prioCounts['high']??0) }}</div><div class="l">Urgent + High</div></div></td>
+            @if($prio)<td><div class="stat" style="background:#ef4444"><div class="n">{{ ($prioCounts['urgent']??0)+($prioCounts['high']??0) }}</div><div class="l">Urgent + High</div></div></td>@endif
         </tr></table>
 
         @if($listTotal)
@@ -206,10 +237,12 @@
                 <td style="width:50%;"><div class="panel"><h3>By Status</h3>
                     <table style="width:100%"><tr><td style="width:140px;">{!! $svgPie(\App\Models\Document::relabelStatuses($statusCounts), $palette) !!}</td><td>{!! $legend(\App\Models\Document::relabelStatuses($statusCounts), $palette) !!}</td></tr></table>
                 </div></td>
+                @if($prio)
                 <td style="width:50%;"><div class="panel"><h3>By Priority</h3>
                     @php $prioColors=['#ef4444','#f59e0b','#0ea5e9','#94a3b8','#6366f1','#22c55e']; @endphp
                     <table style="width:100%"><tr><td style="width:140px;">{!! $svgPie($prioCounts, $prioColors) !!}</td><td>{!! $legend($prioCounts, $prioColors) !!}</td></tr></table>
                 </div></td>
+                @endif
             </tr></table>
             @if($type === 'by_division')
                 <div class="panel" style="margin-top:10px;"><h3>By Division</h3>{!! $bars($divCounts, $palette) !!}</div>
@@ -217,17 +250,17 @@
         @endif
 
         <table class="data">
-            <thead><tr><th>Code</th><th>Title</th><th>Type</th><th>Division</th><th>Priority</th><th>Status</th><th>Holder</th><th>Created</th></tr></thead>
+            <thead><tr><th>Code</th><th>Title</th><th>Type</th><th>Division</th>@if($prio)<th>Priority</th>@endif<th>Status</th><th>Holder</th><th>Created</th></tr></thead>
             <tbody>
                 @forelse($documents as $doc)
                     <tr>
                         <td>{{ $doc->tracking_code }}</td><td>{{ $doc->title }}</td><td>{{ $doc->document_type }}</td>
                         <td>{{ $doc->division?->code ?? '—' }}</td>
-                        <td>{{ ucfirst($doc->priority) }}</td><td>{{ \App\Models\Document::statusLabel($doc->status) }}</td>
+                        @if($prio)<td>{{ ucfirst($doc->priority) }}</td>@endif<td>{{ \App\Models\Document::statusLabel($doc->status) }}</td>
                         <td>{{ $doc->currentHolder?->name ?? '—' }}</td><td>{{ $doc->created_at->format('M d, Y') }}</td>
                     </tr>
                 @empty
-                    <tr><td colspan="8">No documents match this report.</td></tr>
+                    <tr><td colspan="{{ $prio ? 8 : 7 }}">No documents match this report.</td></tr>
                 @endforelse
             </tbody>
         </table>

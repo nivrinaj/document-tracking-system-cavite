@@ -118,6 +118,45 @@ class DocumentPolicy
             || $this->canOverride($user);
     }
 
+    /**
+     * Pause work on a document the holder currently has (status received).
+     * Pausing stops their possession clock until they resume / forward it.
+     */
+    public function pending(User $user, Document $document): bool
+    {
+        if ($document->isClosed() || $document->is_pending) {
+            return false;
+        }
+
+        return ($document->current_holder_id === $user->id && $document->status === 'received')
+            || $this->canOverride($user);
+    }
+
+    /** Resume a paused document — only the holder (or an override role). */
+    public function resume(User $user, Document $document): bool
+    {
+        if (! $document->is_pending || $document->isClosed()) {
+            return false;
+        }
+
+        return $document->current_holder_id === $user->id || $this->canOverride($user);
+    }
+
+    /**
+     * Send the document to ANOTHER office's claim pool. This is a receiving-staff
+     * privilege (they hold documents.release); regular staff can only forward
+     * within their own office.
+     */
+    public function transfer(User $user, Document $document): bool
+    {
+        if (! $user->can('documents.release') || $document->isClosed()) {
+            return false;
+        }
+
+        return ($document->current_holder_id === $user->id && $document->status === 'received')
+            || $this->canOverride($user);
+    }
+
     /** Release is done by the encoder while still a draft with an assignee. */
     public function release(User $user, Document $document): bool
     {

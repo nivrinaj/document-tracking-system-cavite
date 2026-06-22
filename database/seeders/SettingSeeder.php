@@ -20,6 +20,7 @@ class SettingSeeder extends Seeder
             'footer_text'    => '© '.date('Y').' PGC Document Tracking System',
             'allow_desktop_receive' => '0', // off by default -> staff should receive via mobile QR scan
             'allow_cross_department' => '0', // off -> can only route within own department
+            'enable_priority' => '0',       // off -> priority field hidden everywhere
             'tracking_prefix' => 'PGC',     // prefix for tracking codes: {PREFIX}-2026-XXXXX
             'records_per_page' => '12',      // pagination size for tables
             'support_contact' => '',         // e.g. "ISDA Help Desk · local 1234" shown in footer

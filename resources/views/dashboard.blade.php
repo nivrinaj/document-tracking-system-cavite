@@ -159,6 +159,7 @@
                 </x-card>
                 @endcan
 
+                @if(\App\Models\Document::priorityEnabled())
                 <x-card>
                     <h2 class="font-semibold mb-3">By priority</h2>
                     @if(array_sum($priorityBreakdown) > 0)
@@ -168,6 +169,7 @@
                         <p class="text-sm text-gray-400">No data yet.</p>
                     @endif
                 </x-card>
+                @endif
             </div>
         </div>
 

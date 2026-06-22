@@ -6,6 +6,30 @@ reviewed or rolled back. Format based on [Keep a Changelog](https://keepachangel
 
 ---
 
+## v2.8.0 — 2026-06-22
+**Possession timing, pending workflow, multi-send, priority toggle, longer sessions**
+- **Per-holder time tracking.** Every document now keeps a possession ledger — the time a document spends is attributed to whoever **physically holds** it. While a liaison/encoder still holds an assigned-but-not-yet-received document, the clock counts against *them*; once the recipient **receives** it, the clock moves to the recipient, and so on. This nudges encoders to actually hand documents over.
+- **Concerned-staff panel now shows time held** — each person’s total holding time, with the current holder marked “holding now”.
+- **New “Pending” action.** A holder can mark a document **pending** (awaiting the origin / someone else); this **pauses their timer** and drops the document out of the aging report. Remarks are required. Resume puts the clock back on. With cross-office routing on, they can **return it to another office** — the clock then starts against that office once they receive it.
+- **New report — “Aging & Bottlenecks.”** Lists every open document **oldest-first** (excluding pending ones), showing total lifetime, **who currently holds it**, and **how long it’s been with that holder** — so you can see exactly what’s stuck and where.
+- **Send to selected people (across offices).** A new distribution option lets you hand-pick multiple recipients from any office; each is notified and acknowledges receipt individually, tracked just like a memo.
+- **Forwarding is now strictly within your own office.** Only **receiving staff** can release/transfer a document to **another office** (its receiving pool). Regular staff forward within the office only.
+- **Priority is now optional.** A Super-Admin toggle in **Settings → Workflow** enables/disables the Priority field everywhere — encode form, lists, filters, document details, dashboard and reports. It is **off by default**.
+- **Remarks are required to archive/complete** a document.
+- **Longer sessions** — you now stay signed in for **4 hours** of inactivity (was 2) on both desktop and mobile.
+
+## v2.7.0 — 2026-06-22
+**Clean mobile login + assignment fixes**
+- **Mobile login rebuilt clean.** Removed the background image/glass card on phones in favour of a plain white, **vertically-centered** form that **never scrolls** — sized to the dynamic viewport (`100dvh`) so the address bar can’t push it off-centre.
+- **Fixed invisible login icons** — the user/lock/eye (show-password) icons used a non-existent size class and rendered at zero size; the show-password toggle is back.
+- **You can no longer assign a document to yourself** — the encoder is excluded from the assignee/forward lists (you assign to *someone else* in your office).
+
+## v2.6.9 — 2026-06-22
+**Login no-scroll, claim permission, self-exclude**
+- **Mobile login no longer scrolls** — the page is locked to the visible viewport height so the form stays centered on tall phones (e.g. OnePlus/Brave).
+- **New “claim” permission.** Only **receiving-type staff** (Receiving Staff, Division/Department Heads, Chiefs of Staff, Super Admin) can claim a document from another office’s pool. Regular staff can still receive what’s directly assigned to them, but can’t claim office transfers.
+- Excluded the current user from the **assignable staff** list.
+
 ## v2.6.8 — 2026-06-21
 **Login centering + mobile notification dropdown**
 - Fixed the modern glass card not centering on mobile. The taller card could overflow the viewport, which broke flex centering. It now sits in a centering wrapper that **centers the card when it fits and lets the page scroll when it doesn't** — correct on any phone height. The branded background is fixed so it stays put while scrolling.

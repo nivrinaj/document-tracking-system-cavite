@@ -52,6 +52,11 @@
                                 {{-- Received (or closed): the holder actually possesses it. --}}
                                 <div class="font-semibold">{{ $h->name }}</div>
                                 <div class="text-xs text-gray-500 dark:text-gray-400">{{ $h->orgUnit() }}</div>
+                                @if($document->is_pending)
+                                    <div class="mt-1 inline-flex items-center gap-1 text-xs text-amber-600 dark:text-amber-400">⏸ Pending — timer paused</div>
+                                @elseif(! $document->isClosed())
+                                    <div class="mt-1 text-xs text-gray-500 dark:text-gray-400">Held for <span class="font-medium">{{ $document->timeWithCurrentHolder() }}</span></div>
+                                @endif
                             @elseif($document->status === 'released')
                                 {{-- Transferred to an office pool, not yet claimed. --}}
                                 <div class="font-semibold text-amber-600 dark:text-amber-400">Awaiting claim</div>
@@ -114,6 +119,13 @@
                 @php
                     $concernedCount = $document->assignees->count();
                     $ackedCount = $document->is_broadcast ? $document->assignees->filter(fn ($p) => $p->pivot->acknowledged_at)->count() : null;
+                    // Total possession time per holder (from the ledger).
+                    $heldSeconds = [];
+                    foreach ($document->possessions as $seg) {
+                        if ($seg->holder_id) {
+                            $heldSeconds[$seg->holder_id] = ($heldSeconds[$seg->holder_id] ?? 0) + $seg->seconds();
+                        }
+                    }
                 @endphp
                 <x-card>
                     <div class="flex items-center justify-between mb-3">
@@ -122,6 +134,9 @@
                             {{ $concernedCount }} {{ \Illuminate\Support\Str::plural('person', $concernedCount) }}@if($ackedCount !== null) · {{ $ackedCount }}/{{ $concernedCount }} acknowledged @endif
                         </span>
                     </div>
+                    @unless($document->is_broadcast)
+                        <p class="text-xs text-gray-400 mb-3 -mt-1">Time shown is how long each person has physically held the document.</p>
+                    @endunless
 
                     @if($ackedCount !== null && $concernedCount)
                         <div class="h-1.5 rounded-full bg-gray-100 dark:bg-gray-700 overflow-hidden mb-3">
@@ -147,6 +162,13 @@
                                             @endif
                                         </span>
                                         <span class="block text-[11px] text-gray-400">{{ $person->orgUnit() }}</span>
+                                        @unless($document->is_broadcast)
+                                            @if(isset($heldSeconds[$person->id]))
+                                                <span class="block text-[11px] {{ $document->current_holder_id === $person->id && !$document->is_pending && !$document->isClosed() ? 'text-[color:var(--color-primary)] font-medium' : 'text-gray-400' }}">
+                                                    ⏱ {{ \App\Models\Document::humanDuration($heldSeconds[$person->id]) }}{{ $document->current_holder_id === $person->id && !$document->is_pending && !$document->isClosed() ? ' (holding now)' : '' }}
+                                                </span>
+                                            @endif
+                                        @endunless
                                     </span>
                                 </span>
                             @endforeach
@@ -206,7 +228,8 @@
                 @php
                     $u = auth()->user();
                     $canAct = $u->can('assign', $document) || $u->can('release', $document) || $u->can('receive', $document)
-                        || $u->can('forward', $document) || $u->can('archive', $document) || $u->can('delete', $document)
+                        || $u->can('forward', $document) || $u->can('transfer', $document) || $u->can('archive', $document)
+                        || $u->can('pending', $document) || $u->can('resume', $document) || $u->can('delete', $document)
                         || $u->can('acknowledge', $document) || $u->can('reopen', $document);
                 @endphp
                 @if($canAct || $document->isClosed())
@@ -290,6 +313,7 @@
                                 <form method="POST" action="{{ route('documents.forward', $document) }}" class="space-y-2"
                                       data-confirm="Forward this document to the selected staff?">
                                     @csrf
+                                    <p class="text-xs text-gray-500 dark:text-gray-400">Forwards within <strong>your own office</strong> only.</p>
                                     <select name="to_user_id" class="input" required>
                                         <option value="">— Forward to —</option>
                                         @foreach($users->groupBy(fn($u) => $u->department?->code ?? 'No office') as $group => $gu)
@@ -302,7 +326,9 @@
                                     <x-btn type="submit" class="w-full">Forward</x-btn>
                                 </form>
                             </div>
+                        @endcan
 
+                        @can('transfer', $document)
                             @if($crossDept)
                                 <button @click="panel = panel === 'transfer' ? null : 'transfer'" class="w-full text-left px-4 py-2 rounded-lg bg-teal-50 dark:bg-teal-900/30 text-teal-700 dark:text-teal-300 text-sm font-medium hover:opacity-90">Transfer to another office</button>
                                 <div x-show="panel === 'transfer'" x-cloak class="p-3 rounded-lg bg-gray-50 dark:bg-gray-700/40">
@@ -323,6 +349,41 @@
                                     </form>
                                 </div>
                             @endif
+                        @endcan
+
+                        @can('pending', $document)
+                            <button @click="panel = panel === 'pending' ? null : 'pending'" class="w-full text-left px-4 py-2 rounded-lg bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 text-sm font-medium hover:opacity-90">⏸ Mark as pending</button>
+                            <div x-show="panel === 'pending'" x-cloak class="p-3 rounded-lg bg-gray-50 dark:bg-gray-700/40">
+                                <form method="POST" action="{{ route('documents.pending', $document) }}" class="space-y-2"
+                                      data-confirm="Mark this document as pending? Your time will pause until it is resumed or received elsewhere.">
+                                    @csrf
+                                    <p class="text-xs text-gray-500 dark:text-gray-400">Pauses <strong>your</strong> processing time (awaiting action of the origin / someone else). It drops out of the “aging” report while pending.</p>
+                                    @if($crossDept)
+                                        <label class="label">Return to office <span class="text-gray-400 text-xs">(optional)</span></label>
+                                        <select name="return_department_id" class="input">
+                                            <option value="">— Keep it with me, just pause the timer —</option>
+                                            @foreach($departments as $dept)
+                                                @if($dept->id != $document->department_id)
+                                                    <option value="{{ $dept->id }}">{{ $dept->code }} — {{ $dept->name }}</option>
+                                                @endif
+                                            @endforeach
+                                        </select>
+                                        <p class="text-xs text-gray-400">If you pick an office, it goes back to them — and the clock starts against them once they receive it.</p>
+                                    @endif
+                                    <textarea name="remarks" rows="2" class="input" placeholder="Why is this pending? (required)" required></textarea>
+                                    <x-btn type="submit" class="w-full">⏸ Mark pending</x-btn>
+                                </form>
+                            </div>
+                        @endcan
+
+                        @can('resume', $document)
+                            <form method="POST" action="{{ route('documents.resume', $document) }}" class="space-y-2 p-3 rounded-lg bg-amber-50 dark:bg-amber-900/20"
+                                  data-confirm="Resume work on this document? The timer will start again.">
+                                @csrf
+                                <p class="text-xs text-amber-700 dark:text-amber-300">⏸ This document is <strong>pending</strong>. Resume to start your processing timer again.</p>
+                                <input type="text" name="remarks" class="input" placeholder="Remarks (optional)">
+                                <x-btn type="submit" variant="primary" class="w-full">▶ Resume work</x-btn>
+                            </form>
                         @endcan
 
                         @can('archive', $document)

@@ -30,9 +30,13 @@ class TrackController extends Controller
             'division', 'logs.actor', 'logs.toUser',
         ]);
 
+        // Forwarding is within the user's own office only (matches the policy).
         return view('track.show', [
             'document' => $document,
-            'users' => \App\Models\User::with('division')->where('is_active', true)->orderBy('name')->get(),
+            'users' => \App\Models\User::with('division')->where('is_active', true)
+                ->where('id', '!=', $user->id)
+                ->when($user->department_id, fn ($q) => $q->where('department_id', $user->department_id))
+                ->orderBy('name')->get(),
         ]);
     }
 }

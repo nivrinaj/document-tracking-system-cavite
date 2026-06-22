@@ -14,11 +14,16 @@
                   ownDept: '{{ $ownDeptId }}',
                   office: '{{ old('assignee_office', $crossDept ? '' : $ownDeptId) }}',
                   div: '',
+                  recipientSearch: '',
+                  recipients: [],
                   divisions: @js($divisions->map(fn($d) => ['id' => $d->id, 'name' => $d->code.' — '.$d->name, 'department_id' => $d->department_id])),
                   users: @js($users->map(fn($u) => ['id' => $u->id, 'name' => $u->name, 'department_id' => $u->department_id, 'division_id' => $u->division_id, 'division' => $u->division?->code ?? 'Head'])),
+                  allUsers: @js($allUsers->map(fn($u) => ['id' => $u->id, 'name' => $u->name, 'office' => $u->department?->code ?? '—', 'division' => $u->division?->code ?? 'Head'])),
                   get srcDivs() { return this.divisions.filter(d => this.srcOffice && String(d.department_id) === String(this.srcOffice)); },
                   get ownDivs() { return this.divisions.filter(d => String(d.department_id) === String(this.ownDept)); },
                   get ownStaff() { return this.users.filter(u => !this.div || String(u.division_id) === String(this.div)); },
+                  get filteredRecipients() { const q = this.recipientSearch.toLowerCase().trim(); return this.allUsers.filter(u => !q || u.name.toLowerCase().includes(q) || u.office.toLowerCase().includes(q)); },
+                  toggleRecipient(id) { const i = this.recipients.indexOf(id); if (i === -1) this.recipients.push(id); else this.recipients.splice(i, 1); },
               }">
             @csrf
 
@@ -59,6 +64,7 @@
                         <input type="text" name="reference_no" value="{{ old('reference_no') }}" class="input" placeholder="e.g. MEMO-2026-001">
                     </div>
 
+                    @if($priorityEnabled)
                     <div>
                         <label class="label">Priority <span class="text-red-500">*</span></label>
                         <select name="priority" class="input" required>
@@ -67,6 +73,7 @@
                             @endforeach
                         </select>
                     </div>
+                    @endif
 
                     <div class="sm:col-span-2">
                         <label class="label">Description</label>
@@ -141,8 +148,9 @@
                         @endif
                         <option value="division">📣 Division memo — everyone in my division</option>
                         <option value="department">📣 Department memo — everyone in my department</option>
+                        <option value="multi">👥 Send to selected people (across offices)</option>
                     </select>
-                    <p class="text-xs text-gray-400 mt-1" x-show="scope === 'division' || scope === 'department'" x-cloak>Every recipient is notified and acknowledges receipt individually.</p>
+                    <p class="text-xs text-gray-400 mt-1" x-show="scope === 'division' || scope === 'department' || scope === 'multi'" x-cloak>Every recipient is notified and acknowledges receipt individually.</p>
                 </div>
 
                 {{-- Assign to a staff in my own office --}}
@@ -184,9 +192,45 @@
                     </div>
                 @endif
 
-                {{-- Shared remarks for assign / transfer --}}
-                <div x-show="scope === 'none' || scope === 'transfer'" x-cloak class="mt-4">
-                    <label class="label" x-text="scope === 'transfer' ? 'Note to the receiving office' : 'Assignment remarks'"></label>
+                {{-- Send to selected people (across offices) --}}
+                <div x-show="scope === 'multi'" x-cloak class="border-t border-gray-100 dark:border-gray-700 pt-4">
+                    <p class="text-xs text-gray-400 mb-3">Pick one or more people — from any office. Each is notified and acknowledges receipt individually, just like a memo. You can track who has received it.</p>
+
+                    {{-- selected chips --}}
+                    <div class="flex flex-wrap gap-1.5 mb-2" x-show="recipients.length">
+                        <template x-for="id in recipients" :key="id">
+                            <span class="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-[color:var(--color-primary)]/10 text-[color:var(--color-primary)] text-xs">
+                                <span x-text="(allUsers.find(u => u.id === id) || {}).name"></span>
+                                <button type="button" @click="toggleRecipient(id)" class="hover:opacity-70">&times;</button>
+                            </span>
+                        </template>
+                    </div>
+
+                    <input type="text" x-model="recipientSearch" class="input mb-2" placeholder="Search by name or office…">
+                    <div class="max-h-56 overflow-y-auto rounded-lg border border-gray-200 dark:border-gray-700 divide-y divide-gray-100 dark:divide-gray-700">
+                        <template x-for="u in filteredRecipients" :key="u.id">
+                            <label class="flex items-center gap-2 px-3 py-2 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/40 text-sm">
+                                <input type="checkbox" :value="u.id" :checked="recipients.includes(u.id)" @change="toggleRecipient(u.id)"
+                                       class="rounded text-[color:var(--color-primary)]">
+                                <span class="flex-1">
+                                    <span x-text="u.name"></span>
+                                    <span class="text-xs text-gray-400" x-text="' — ' + u.office + ' · ' + u.division"></span>
+                                </span>
+                            </label>
+                        </template>
+                        <p class="px-3 py-3 text-xs text-gray-400 text-center" x-show="!filteredRecipients.length">No people match your search.</p>
+                    </div>
+                    <p class="text-xs text-gray-400 mt-1"><span x-text="recipients.length"></span> recipient(s) selected.</p>
+
+                    {{-- hidden inputs for submission --}}
+                    <template x-for="id in recipients" :key="'h'+id">
+                        <input type="hidden" name="recipient_ids[]" :value="id">
+                    </template>
+                </div>
+
+                {{-- Shared remarks for assign / transfer / multi --}}
+                <div x-show="scope === 'none' || scope === 'transfer' || scope === 'multi'" x-cloak class="mt-4">
+                    <label class="label" x-text="scope === 'transfer' ? 'Note to the receiving office' : (scope === 'multi' ? 'Note to recipients' : 'Assignment remarks')"></label>
                     <input type="text" name="assign_remarks" value="{{ old('assign_remarks') }}" class="input" placeholder="Optional instructions / note…">
                 </div>
             </x-card>

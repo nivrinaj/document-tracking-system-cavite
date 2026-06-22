@@ -23,6 +23,8 @@ class Document extends Model
         'source',
         'priority',
         'status',
+        'is_pending',
+        'pending_at',
         'is_broadcast',
         'division_id',
         'department_id',
@@ -31,14 +33,24 @@ class Document extends Model
         'received_at',
         'released_at',
         'completed_at',
+        'possession_started_at',
     ];
 
     protected $casts = [
         'received_at' => 'datetime',
         'released_at' => 'datetime',
         'completed_at' => 'datetime',
+        'pending_at' => 'datetime',
+        'possession_started_at' => 'datetime',
         'is_broadcast' => 'boolean',
+        'is_pending' => 'boolean',
     ];
+
+    /** Whether the priority feature is enabled system-wide. */
+    public static function priorityEnabled(): bool
+    {
+        return \App\Models\Setting::get('enable_priority', '0') === '1';
+    }
 
     /** Human-friendly label for a status value (the DB value stays 'draft'). */
     public static function statusLabel(?string $status): string
@@ -161,6 +173,18 @@ class Document extends Model
         return $this->belongsToMany(User::class, 'document_assignees')->withPivot('acknowledged_at')->withTimestamps();
     }
 
+    /** Possession ledger — every period the document sat with a holder / office pool. */
+    public function possessions(): HasMany
+    {
+        return $this->hasMany(DocumentPossession::class)->orderBy('started_at');
+    }
+
+    /** The currently-open possession segment (null when paused/pending). */
+    public function openPossession(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(DocumentPossession::class)->whereNull('ended_at')->latestOfMany('started_at');
+    }
+
     /* ----------------------------------------------------------------
      | Helpers
      * ---------------------------------------------------------------- */
@@ -244,5 +268,99 @@ class Document extends Model
             $hours >= 24 => 'amber',
             default => 'green',
         };
+    }
+
+    /* ----------------------------------------------------------------
+     | Possession-based timing (who holds it & for how long)
+     * ---------------------------------------------------------------- */
+
+    /** Seconds the current holder has physically had the document (0 when paused). */
+    public function secondsWithCurrentHolder(): int
+    {
+        if ($this->is_pending || ! $this->possession_started_at) {
+            return 0;
+        }
+
+        return (int) $this->possession_started_at->diffInSeconds(now());
+    }
+
+    /** Human "time with current holder", e.g. "2 days 3 hrs". */
+    public function timeWithCurrentHolder(): string
+    {
+        if ($this->is_pending) {
+            return 'Paused (pending)';
+        }
+        if (! $this->possession_started_at) {
+            return '—';
+        }
+
+        return static::humanDuration($this->secondsWithCurrentHolder());
+    }
+
+    /** The person physically holding the document now (from the open ledger segment). */
+    public function currentPossessor(): ?User
+    {
+        return $this->openPossession?->holder;
+    }
+
+    /** Label for who physically holds the document — a person, or an office pool. */
+    public function possessorLabel(): string
+    {
+        if ($p = $this->currentPossessor()) {
+            return $p->name;
+        }
+        if ($this->is_pending) {
+            return 'Pending (no one)';
+        }
+
+        return 'Office pool · '.($this->openPossession?->department?->code ?? $this->department?->code ?? '—');
+    }
+
+    /** Total seconds since the document was first encoded. */
+    public function totalSeconds(): int
+    {
+        $since = $this->created_at;
+
+        return $since ? (int) $since->diffInSeconds($this->completed_at ?? now()) : 0;
+    }
+
+    /** Human total lifetime of the document. */
+    public function totalTime(): string
+    {
+        return static::humanDuration($this->totalSeconds());
+    }
+
+    /**
+     * Format a number of seconds into a compact, human duration:
+     *   "45 mins", "3 hrs 10 mins", "2 days 4 hrs".
+     */
+    public static function humanDuration(?int $seconds): string
+    {
+        if ($seconds === null || $seconds < 0) {
+            return '—';
+        }
+        if ($seconds < 60) {
+            return $seconds.' sec'.($seconds === 1 ? '' : 's');
+        }
+
+        $minutes = intdiv($seconds, 60);
+        if ($minutes < 60) {
+            return $minutes.' min'.($minutes === 1 ? '' : 's');
+        }
+
+        $hours = intdiv($minutes, 60);
+        $remMin = $minutes % 60;
+        if ($hours < 24) {
+            return $remMin > 0
+                ? "{$hours} hr".($hours === 1 ? '' : 's')." {$remMin} min".($remMin === 1 ? '' : 's')
+                : "{$hours} hr".($hours === 1 ? '' : 's');
+        }
+
+        $days = intdiv($hours, 24);
+        $remHr = $hours % 24;
+
+        return $remHr > 0
+            ? "{$days} day".($days === 1 ? '' : 's')." {$remHr} hr".($remHr === 1 ? '' : 's')
+            : "{$days} day".($days === 1 ? '' : 's');
     }
 }

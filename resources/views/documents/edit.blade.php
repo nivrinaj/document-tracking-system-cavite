@@ -30,6 +30,7 @@
                         <label class="label">Reference No.</label>
                         <input type="text" name="reference_no" value="{{ old('reference_no', $document->reference_no) }}" class="input">
                     </div>
+                    @if(\App\Models\Document::priorityEnabled())
                     <div>
                         <label class="label">Priority <span class="text-red-500">*</span></label>
                         <select name="priority" class="input" required>
@@ -38,6 +39,7 @@
                             @endforeach
                         </select>
                     </div>
+                    @endif
                     <div>
                         <label class="label">Source / Origin</label>
                         <input type="text" name="source" value="{{ old('source', $document->source) }}" class="input">

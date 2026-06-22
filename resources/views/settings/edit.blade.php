@@ -153,6 +153,19 @@
                             </span>
                         </span>
                     </label>
+
+                    <label class="flex items-start gap-3 cursor-pointer border-t border-gray-100 dark:border-gray-700 pt-4">
+                        <input type="hidden" name="enable_priority" value="0">
+                        <input type="checkbox" name="enable_priority" value="1" class="mt-1 rounded text-[color:var(--color-primary)]"
+                               @checked(($settings['enable_priority'] ?? '0') === '1')>
+                        <span>
+                            <span class="font-medium text-sm">Enable the “Priority” field</span>
+                            <span class="block text-xs text-gray-400 mt-0.5">
+                                When <strong>off</strong> (default), the priority field is hidden everywhere — encode form, lists, document details and reports.
+                                When <strong>on</strong>, documents can be tagged Low / Normal / High / Urgent and filtered and reported on by priority.
+                            </span>
+                        </span>
+                    </label>
                 </div>
             </x-card>
 

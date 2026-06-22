@@ -94,9 +94,11 @@ class DocumentController extends Controller
             'divisions' => Division::where('is_active', true)->orderBy('name')->get(['id', 'code', 'name', 'department_id']),
             'departments' => $departments,
             'users' => $this->assignableUsers(),
+            'allUsers' => $this->recipientUsers(),
             'documentTypes' => $types,
             'voucherTypeNames' => $types->where('requires_voucher', true)->pluck('name')->values(),
             'crossDept' => \App\Models\Setting::get('allow_cross_department', '0') === '1',
+            'priorityEnabled' => Document::priorityEnabled(),
             'ownDeptId' => $user->department_id,
         ]);
     }
@@ -114,13 +116,18 @@ class DocumentController extends Controller
             'source_department_id' => ['nullable', 'string', 'max:50'],
             'source_division_id' => ['nullable', 'exists:divisions,id'],
             'source_other' => ['nullable', 'string', 'max:255'],
-            'priority' => ['required', 'in:low,normal,high,urgent'],
+            'priority' => ['nullable', 'in:low,normal,high,urgent'],
             'division_id' => ['nullable', 'exists:divisions,id'],
             'assignee_id' => ['nullable', 'exists:users,id'],
             'assign_remarks' => ['nullable', 'string'],
-            'broadcast_scope' => ['nullable', 'in:none,division,department,transfer'],
+            'broadcast_scope' => ['nullable', 'in:none,division,department,transfer,multi'],
             'to_department_id' => ['nullable', 'required_if:broadcast_scope,transfer', 'exists:departments,id'],
+            'recipient_ids' => ['nullable', 'required_if:broadcast_scope,multi', 'array'],
+            'recipient_ids.*' => ['integer', 'exists:users,id'],
         ]);
+
+        // Priority is optional; default to "normal" (and force it when the feature is off).
+        $data['priority'] = Document::priorityEnabled() ? ($data['priority'] ?? 'normal') : 'normal';
 
         // Make sure a voucher number isn't already in use for this year.
         if (strtolower($data['document_type']) === 'voucher' && ! empty($data['voucher_number'])) {
@@ -154,6 +161,14 @@ class DocumentController extends Controller
                 ->with('success', "Memo broadcast to your {$scope}. Tracking code: {$document->tracking_code}");
         }
 
+        // Send to a hand-picked list of people (possibly across offices).
+        if ($scope === 'multi') {
+            $document = $service->broadcastToUsers($data, $request->user(), $data['recipient_ids'] ?? []);
+
+            return redirect()->route('documents.show', $document)
+                ->with('success', "Document sent to the selected recipients. Tracking code: {$document->tracking_code}");
+        }
+
         // Transfer to another office's receiving pool (no specific person).
         if ($scope === 'transfer') {
             // The encoder's own office is implicitly the origin for a transfer.
@@ -185,6 +200,7 @@ class DocumentController extends Controller
             'logs.actor.department', 'logs.actor.division',
             'logs.toUser.department', 'logs.toUser.division',
             'logs.fromUser',
+            'possessions',
         ]);
 
         $user = Auth::user();
@@ -220,9 +236,13 @@ class DocumentController extends Controller
             'voucher_number' => ['nullable', 'string', 'max:100'],
             'description' => ['nullable', 'string'],
             'source' => ['nullable', 'string', 'max:255'],
-            'priority' => ['required', 'in:low,normal,high,urgent'],
+            'priority' => ['nullable', 'in:low,normal,high,urgent'],
             'division_id' => ['nullable', 'exists:divisions,id'],
         ]);
+
+        if (! Document::priorityEnabled()) {
+            unset($data['priority']);
+        }
 
         $document->update($data);
 
@@ -282,9 +302,50 @@ class DocumentController extends Controller
             'remarks' => ['required', 'string', 'min:3'],
         ]);
 
+        // Forwarding is ALWAYS within the same office. To move a document to another
+        // office, receiving staff use "Transfer to office" (the claim-pool flow).
+        $recipient = User::find($data['to_user_id']);
+        $actorDept = $request->user()->department_id;
+        if ($actorDept && $recipient && $recipient->department_id !== $actorDept) {
+            return back()->with('error', 'You can only forward to staff within your own office. To send it to another office, use “Transfer to office”.');
+        }
+
         $service->forward($document, (int) $data['to_user_id'], $request->user(), $data['remarks']);
 
         return back()->with('success', 'Document forwarded.');
+    }
+
+    public function pending(Request $request, Document $document, DocumentService $service)
+    {
+        $this->authorize('pending', $document);
+
+        $crossDept = \App\Models\Setting::get('allow_cross_department', '0') === '1';
+
+        $data = $request->validate([
+            'remarks' => ['required', 'string', 'min:3'],
+            'return_department_id' => [$crossDept ? 'nullable' : 'prohibited', 'exists:departments,id'],
+        ]);
+
+        // Cross-office on + an office chosen → return it there (clock resumes when they receive).
+        if ($crossDept && ! empty($data['return_department_id'])) {
+            $service->pendingReturn($document, (int) $data['return_department_id'], $request->user(), $data['remarks']);
+
+            return back()->with('success', 'Document marked pending and returned to the selected office.');
+        }
+
+        $service->markPending($document, $request->user(), $data['remarks']);
+
+        return back()->with('success', 'Document marked as pending. Its timer is paused.');
+    }
+
+    public function resume(Request $request, Document $document, DocumentService $service)
+    {
+        $this->authorize('resume', $document);
+
+        $data = $request->validate(['remarks' => ['nullable', 'string']]);
+        $service->resume($document, $request->user(), $data['remarks'] ?? null);
+
+        return back()->with('success', 'Work resumed. The timer is running again.');
     }
 
     public function reopen(Request $request, Document $document, DocumentService $service)
@@ -297,7 +358,7 @@ class DocumentController extends Controller
 
     public function transfer(Request $request, Document $document, DocumentService $service)
     {
-        $this->authorize('forward', $document);
+        $this->authorize('transfer', $document);
 
         $data = $request->validate([
             'to_department_id' => ['required', 'exists:departments,id'],
@@ -376,6 +437,17 @@ class DocumentController extends Controller
         return User::with('division', 'department')->where('is_active', true)
             ->where('id', '!=', $user->id)
             ->when($user->department_id, fn ($q) => $q->where('department_id', $user->department_id))
+            ->orderBy('name')->get();
+    }
+
+    /**
+     * Everyone who can be a hand-picked recipient of a multi-send (memo to named
+     * people) — across ALL offices, excluding the actor.
+     */
+    private function recipientUsers()
+    {
+        return User::with('division', 'department')->where('is_active', true)
+            ->where('id', '!=', Auth::id())
             ->orderBy('name')->get();
     }
 

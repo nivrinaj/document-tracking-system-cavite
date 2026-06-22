@@ -48,6 +48,8 @@ class DocumentLog extends Model
             'received' => 'Received',
             'forwarded' => 'Forwarded',
             'transferred' => 'Transferred to office',
+            'pending' => 'Marked pending',
+            'resumed' => 'Resumed',
             'reopened' => 'Reopened',
             'archived' => 'Archived',
             'completed' => 'Completed',
@@ -63,6 +65,8 @@ class DocumentLog extends Model
             'released' => 'amber',
             'received' => 'blue',
             'forwarded', 'transferred' => 'indigo',
+            'pending' => 'amber',
+            'resumed' => 'blue',
             'archived', 'completed' => 'green',
             default => 'gray',
         };

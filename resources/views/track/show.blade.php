@@ -64,6 +64,28 @@
                     </div>
                 @endcan
 
+                @can('pending', $document)
+                    <button @click="panel = panel === 'pending' ? null : 'pending'" class="w-full text-left px-4 py-2 rounded-lg bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 text-sm font-medium">⏸ Mark as pending</button>
+                    <div x-show="panel === 'pending'" x-cloak class="p-3 rounded-lg bg-gray-50 dark:bg-gray-700/40">
+                        <form method="POST" action="{{ route('documents.pending', $document) }}" class="space-y-2"
+                              data-confirm="Mark this document as pending? Your time will pause.">
+                            @csrf
+                            <p class="text-xs text-gray-500 dark:text-gray-400">Pauses your processing time (awaiting action of the origin / someone else).</p>
+                            <textarea name="remarks" rows="2" class="input" placeholder="Why is this pending? (required)" required></textarea>
+                            <x-btn type="submit" class="w-full">⏸ Mark pending</x-btn>
+                        </form>
+                    </div>
+                @endcan
+
+                @can('resume', $document)
+                    <form method="POST" action="{{ route('documents.resume', $document) }}" class="space-y-2 p-3 rounded-lg bg-amber-50 dark:bg-amber-900/20"
+                          data-confirm="Resume work on this document?">
+                        @csrf
+                        <p class="text-sm text-amber-700 dark:text-amber-300">⏸ This document is <strong>pending</strong>. Resume to start your timer again.</p>
+                        <x-btn type="submit" class="w-full">▶ Resume work</x-btn>
+                    </form>
+                @endcan
+
                 @can('archive', $document)
                     <button @click="panel = panel === 'archive' ? null : 'archive'" class="w-full text-left px-4 py-2 rounded-lg bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-300 text-sm font-medium">Archive / Complete</button>
                     <div x-show="panel === 'archive'" x-cloak class="p-3 rounded-lg bg-gray-50 dark:bg-gray-700/40">
