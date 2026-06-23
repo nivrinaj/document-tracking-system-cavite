@@ -412,12 +412,20 @@ class DocumentService
     public function distribute(Document $document, User $actor, string $scope, array $userIds = [], ?int $divisionId = null, ?string $remarks = null): Document
     {
         return DB::transaction(function () use ($document, $actor, $scope, $userIds, $divisionId, $remarks) {
+            // Skip people who were already asked to acknowledge this document.
+            $alreadyAsked = $document->assignees()->wherePivotNotNull('ack_requested_at')->pluck('users.id')->all();
+
             $recipients = User::where('is_active', true)
                 ->where('id', '!=', $actor->id)
+                ->whereNotIn('id', $alreadyAsked)
                 ->when($actor->department_id, fn ($q) => $q->where('department_id', $actor->department_id))
                 ->when($scope === 'selected', fn ($q) => $q->whereIn('id', $userIds))
                 ->when($scope === 'division', fn ($q) => $q->where('division_id', $divisionId))
                 ->get();
+
+            if ($recipients->isEmpty()) {
+                return $document; // nobody new to ask
+            }
 
             // Request acknowledgement from each recipient. The document keeps its
             // current holder (it is NOT turned into a broadcast) — only the people

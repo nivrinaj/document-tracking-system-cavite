@@ -58,6 +58,18 @@ class Document extends Model
         return \App\Models\Setting::get('enable_route_items', '0') === '1';
     }
 
+    /** Whether the batch-receive page is enabled system-wide. */
+    public static function batchReceiveEnabled(): bool
+    {
+        return \App\Models\Setting::get('enable_batch_receive', '1') === '1';
+    }
+
+    /** Whether linking related documents is enabled system-wide. */
+    public static function linkingEnabled(): bool
+    {
+        return \App\Models\Setting::get('enable_document_linking', '1') === '1';
+    }
+
     /** Human-friendly label for a status value (the DB value stays 'draft'). */
     public static function statusLabel(?string $status): string
     {
@@ -189,6 +201,12 @@ class Document extends Model
     public function items(): HasMany
     {
         return $this->hasMany(DocumentItem::class)->orderBy('id');
+    }
+
+    /** Other documents linked to this one (stored symmetrically). */
+    public function relatedDocuments(): BelongsToMany
+    {
+        return $this->belongsToMany(Document::class, 'document_links', 'document_id', 'related_document_id')->withTimestamps();
     }
 
     /** The currently-open possession segment (null when paused/pending). */

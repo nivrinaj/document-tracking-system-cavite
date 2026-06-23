@@ -22,6 +22,9 @@ class SettingSeeder extends Seeder
             'allow_cross_department' => '0', // off -> can only route within own department
             'enable_priority' => '0',       // off -> priority field hidden everywhere
             'enable_route_items' => '0',    // off -> route-slip multi-item tracking hidden
+            'enable_batch_receive' => '1',  // batch-receive page
+            'enable_document_linking' => '1', // link related documents
+            'enable_messaging' => '0',      // in-app chat (off by default)
             'tracking_prefix' => 'PGC',     // prefix for tracking codes: {PREFIX}-2026-XXXXX
             'records_per_page' => '12',      // pagination size for tables
             'support_contact' => '',         // e.g. "ISDA Help Desk · local 1234" shown in footer

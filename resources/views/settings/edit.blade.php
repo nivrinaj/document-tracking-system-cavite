@@ -180,6 +180,45 @@
                             </span>
                         </span>
                     </label>
+
+                    <label class="flex items-start gap-3 cursor-pointer border-t border-gray-100 dark:border-gray-700 pt-4">
+                        <input type="hidden" name="enable_batch_receive" value="0">
+                        <input type="checkbox" name="enable_batch_receive" value="1" class="mt-1 rounded text-[color:var(--color-primary)]"
+                               @checked(($settings['enable_batch_receive'] ?? '1') === '1')>
+                        <span>
+                            <span class="font-medium text-sm">Enable “Batch receive”</span>
+                            <span class="block text-xs text-gray-400 mt-0.5">
+                                When <strong>on</strong> (default), staff can receive a whole stack of QR-tagged documents at once from the <strong>Batch receive</strong> page (scan-scan-scan, then receive).
+                                When <strong>off</strong>, documents are received one at a time as usual.
+                            </span>
+                        </span>
+                    </label>
+
+                    <label class="flex items-start gap-3 cursor-pointer border-t border-gray-100 dark:border-gray-700 pt-4">
+                        <input type="hidden" name="enable_document_linking" value="0">
+                        <input type="checkbox" name="enable_document_linking" value="1" class="mt-1 rounded text-[color:var(--color-primary)]"
+                               @checked(($settings['enable_document_linking'] ?? '1') === '1')>
+                        <span>
+                            <span class="font-medium text-sm">Enable “Link related documents”</span>
+                            <span class="block text-xs text-gray-400 mt-0.5">
+                                When <strong>on</strong> (default), a document can be linked to other related documents (by tracking code) so their histories cross-reference.
+                                When <strong>off</strong>, the Related-documents panel is hidden.
+                            </span>
+                        </span>
+                    </label>
+
+                    <label class="flex items-start gap-3 cursor-pointer border-t border-gray-100 dark:border-gray-700 pt-4">
+                        <input type="hidden" name="enable_messaging" value="0">
+                        <input type="checkbox" name="enable_messaging" value="1" class="mt-1 rounded text-[color:var(--color-primary)]"
+                               @checked(($settings['enable_messaging'] ?? '0') === '1')>
+                        <span>
+                            <span class="font-medium text-sm">Enable in-app messaging (chat)</span>
+                            <span class="block text-xs text-gray-400 mt-0.5">
+                                When <strong>on</strong>, staff get a <strong>Messages</strong> area to chat with colleagues (handy to follow up or ask about a document), with live unread badges and new-message alerts.
+                                When <strong>off</strong> (default), messaging is hidden entirely.
+                            </span>
+                        </span>
+                    </label>
                 </div>
             </x-card>
 

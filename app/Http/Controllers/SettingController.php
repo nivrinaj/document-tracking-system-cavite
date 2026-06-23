@@ -32,6 +32,9 @@ class SettingController extends Controller
             'allow_cross_department' => ['nullable', 'boolean'],
             'enable_priority' => ['nullable', 'boolean'],
             'enable_route_items' => ['nullable', 'boolean'],
+            'enable_batch_receive' => ['nullable', 'boolean'],
+            'enable_document_linking' => ['nullable', 'boolean'],
+            'enable_messaging' => ['nullable', 'boolean'],
             'tracking_prefix' => ['required', 'string', 'max:10', 'alpha_dash'],
             'records_per_page' => ['required', 'integer', 'min:5', 'max:100'],
             'support_contact' => ['nullable', 'string', 'max:255'],
@@ -47,6 +50,9 @@ class SettingController extends Controller
         Setting::put('allow_cross_department', $request->boolean('allow_cross_department') ? '1' : '0');
         Setting::put('enable_priority', $request->boolean('enable_priority') ? '1' : '0');
         Setting::put('enable_route_items', $request->boolean('enable_route_items') ? '1' : '0');
+        Setting::put('enable_batch_receive', $request->boolean('enable_batch_receive') ? '1' : '0');
+        Setting::put('enable_document_linking', $request->boolean('enable_document_linking') ? '1' : '0');
+        Setting::put('enable_messaging', $request->boolean('enable_messaging') ? '1' : '0');
 
         // Image fields: [setting key => [form field, remove field]]
         $images = [

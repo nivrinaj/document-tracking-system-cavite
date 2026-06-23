@@ -272,6 +272,41 @@
                     </div>
                 </x-card>
 
+                {{-- Related documents --}}
+                @if(\App\Models\Document::linkingEnabled())
+                <x-card>
+                    <div class="flex items-center justify-between mb-3">
+                        <h2 class="font-semibold">Related documents <span class="text-gray-400 font-normal text-sm">({{ $document->relatedDocuments->count() }})</span></h2>
+                    </div>
+                    @if($document->relatedDocuments->isNotEmpty())
+                        <ul class="divide-y divide-gray-100 dark:divide-gray-700 mb-3">
+                            @foreach($document->relatedDocuments as $rel)
+                                <li class="flex items-center justify-between gap-3 py-2">
+                                    <a href="{{ route('documents.show', $rel) }}" class="min-w-0 group">
+                                        <div class="font-medium text-sm truncate group-hover:underline">{{ $rel->title }}</div>
+                                        <div class="text-xs text-gray-400 truncate"><span class="font-mono">{{ $rel->tracking_code }}</span> · <x-status-badge :status="$rel->status" /></div>
+                                    </a>
+                                    <form method="POST" action="{{ route('documents.unlink', [$document, $rel]) }}" data-confirm="Remove this link?">
+                                        @csrf @method('DELETE')
+                                        <button type="submit" class="shrink-0 p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20" title="Remove link">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                                        </button>
+                                    </form>
+                                </li>
+                            @endforeach
+                        </ul>
+                    @else
+                        <p class="text-sm text-gray-400 mb-3">No linked documents yet.</p>
+                    @endif
+                    <form method="POST" action="{{ route('documents.link', $document) }}" class="flex gap-2">
+                        @csrf
+                        <input type="text" name="tracking_code" class="input font-mono" placeholder="Link by tracking code (e.g. {{ \App\Models\Document::trackingPrefix() }}-{{ date('Y') }}-XXXX)">
+                        <x-btn type="submit" variant="secondary" class="shrink-0">🔗 Link</x-btn>
+                    </form>
+                    <p class="text-xs text-gray-400 mt-1.5">You can only link documents you have access to — your own office, or ones that already concern you.</p>
+                </x-card>
+                @endif
+
                 {{-- History timeline --}}
                 <x-card title="Tracking history">
                     <ol class="relative border-l border-gray-200 dark:border-gray-700 ml-2 space-y-6">
@@ -499,22 +534,30 @@
                         @endcan
 
                         @can('distribute', $document)
+                            @php
+                                $alreadyAsked = $document->assignees->filter(fn ($p) => $p->pivot->ack_requested_at)->pluck('id');
+                                $distributablePeople = $users->whereNotIn('id', $alreadyAsked);
+                                $hasDistributed = $alreadyAsked->isNotEmpty();
+                            @endphp
                             <button @click="panel = panel === 'distribute' ? null : 'distribute'" class="w-full flex items-center gap-2.5 px-4 py-2.5 rounded-lg bg-sky-50 dark:bg-sky-900/30 text-sky-700 dark:text-sky-300 text-sm font-medium hover:opacity-90 transition">
                                 <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 8a3 3 0 10-2.977-2.63l-4.94 2.47a3 3 0 100 4.319l4.94 2.47a3 3 0 10.895-1.789l-4.94-2.47a3.027 3.027 0 000-.74l4.94-2.47C13.456 7.68 14.19 8 15 8z"/></svg>
-                                Distribute for acknowledgement
+                                {{ $hasDistributed ? 'Distribute to more people' : 'Distribute for acknowledgement' }}
                             </button>
                             <div x-show="panel === 'distribute'" x-cloak class="p-3 rounded-lg bg-gray-50 dark:bg-gray-700/40"
                                  x-data="{
                                     scope: 'selected',
                                     search: '',
                                     picked: [],
-                                    people: @js($users->map(fn($p) => ['id' => $p->id, 'name' => $p->name, 'division' => $p->division?->code ?? 'Head'])),
+                                    people: @js($distributablePeople->map(fn($p) => ['id' => $p->id, 'name' => $p->name, 'division' => $p->division?->code ?? 'Head'])->values()),
                                     get filtered() { const q = this.search.toLowerCase().trim(); return this.people.filter(p => !q || p.name.toLowerCase().includes(q)); },
                                     toggle(id) { const i = this.picked.indexOf(id); if (i === -1) this.picked.push(id); else this.picked.splice(i,1); },
                                  }">
                                 <form method="POST" action="{{ route('documents.distribute', $document) }}" class="space-y-2"
                                       data-confirm="Distribute this document to the selected recipients for acknowledgement?">
                                     @csrf
+                                    @if($hasDistributed)
+                                        <p class="text-xs text-sky-700 dark:text-sky-300">Already sent to {{ $alreadyAsked->count() }} {{ \Illuminate\Support\Str::plural('person', $alreadyAsked->count()) }}. People already asked are no longer listed below.</p>
+                                    @endif
                                     <p class="text-xs text-gray-500 dark:text-gray-400">Send this document to people in <strong>your office</strong> to acknowledge — selected staff (across divisions), a whole division, or the entire department. You still keep the physical document.</p>
                                     <select name="scope" x-model="scope" class="input">
                                         <option value="selected">Selected people</option>

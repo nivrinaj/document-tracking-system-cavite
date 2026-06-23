@@ -1,10 +1,72 @@
 # Changelog
 
 All notable changes to the **PGC Document Tracking System** are recorded here.
-Each version corresponds to a git tag (e.g. `v1.4.0`) so any release can be
-reviewed or rolled back. Format based on [Keep a Changelog](https://keepachangelog.com).
+Each version corresponds to a git tag so any release can be reviewed or rolled back.
+Format based on [Keep a Changelog](https://keepachangelog.com).
 
 ---
+
+## 1.0.0 — Initial Release (2026-06-23)
+
+The first official release of the **PGC Document Tracking System**. Everything below
+this entry (the `v2.x` numbers) was **internal pre-release development** — those
+iterations are kept as a working history. The system is versioned starting at **1.0.0**
+now that it is ready for real use; a `2.0` will come after months of production use.
+
+**What the system does**
+- **QR-based document tracking** — encode a document, generate a QR slip, and follow
+  it as it's released, received, forwarded, transferred between offices, and completed.
+- **True possession timing** — time is attributed to whoever physically holds a
+  document; per-staff "time held", an **Aging & Bottlenecks** report, and a **Pending
+  (pause)** state for waiting on others.
+- **Accurate, possession-gated actions** — staff can only act on a document once they've
+  **received it by scanning the QR** (override is Super-Admin only).
+- **Distribution & acknowledgements** — send a document to selected people, a division,
+  or a whole department for acknowledgement, and track who has seen it.
+- **Route slips** — one QR can carry several documents, each cleared or rejected
+  individually *(toggle)*.
+- **Linked documents** — cross-reference related documents *(toggle)*.
+- **Batch receive** — receive a stack of QR-tagged documents at once *(toggle)*.
+- **In-app messaging** — a Messenger-style chat (sidebar page **and** a floating bubble
+  on every screen) with live unread badges *(toggle)*.
+- **Reports** (HTML + colour PDF), **dashboard** with action queues and insights,
+  **multi-department** routing, **roles & permissions**, **per-account encode rights**,
+  audit logs, in-app documentation, theming/branding, 4-hour sessions, and a clean
+  mobile experience.
+- **Super-Admin feature toggles** for priority, route slips, batch receive, document
+  linking, and messaging — turn capabilities on/off without code.
+
+> **Real-time note:** messaging delivers via lightweight polling (a few seconds), so it
+> runs on the current IIS + Cloudflare setup with no extra infrastructure. It can be
+> upgraded to instant WebSocket push (Laravel Reverb) later without data changes.
+
+---
+
+# Pre-release development history
+
+_The entries below used `v2.x` numbers during development and are retained for reference._
+
+## v2.9.0 — 2026-06-23
+**In-app messaging (chat) + feature toggles**
+- **New: in-app messaging.** A clean, modern **Messages** area lets staff chat with colleagues (great for following up or asking about a document). Direct conversations, a searchable “New chat” picker, a live **unread badge** in the top bar and sidebar, and **near-real-time delivery** (new messages appear every few seconds while a chat is open — no extra server software required). Off by default.
+- **Floating chat bubble on every page** (Messenger-style) — open, read, and reply to chats from the documents page or anywhere else without leaving what you're doing. Includes a “New chat” picker and an “open full page” shortcut; syncs with the same live unread badge.
+- **Three new Super-Admin toggles** (Settings → Workflow):
+  - **Batch receive** — on/off (default on).
+  - **Link related documents** — on/off (default on).
+  - **In-app messaging (chat)** — on/off (default off).
+  When a feature is off it's hidden everywhere and its routes are blocked.
+- Documentation: added a **Messaging (Chat)** guide.
+
+> **Note on real-time:** messaging uses lightweight polling (a few seconds) so it works on the current IIS + Cloudflare setup with **zero extra infrastructure**. If you ever want instant (sub-second) push, it can be upgraded to WebSockets (Laravel Reverb) later — same UI, no data changes.
+
+## v2.8.4 — 2026-06-23
+**Dashboard redesign, batch receive, linked documents, distribute polish**
+- **Dashboard reorganised** — your **action queues come first** (right after the stat cards, in a clean two-column grid with a count badge), then **Insights** (charts), then **Recent activity**. Quick actions (Encode, Batch receive, All documents) moved to the header.
+- **New: Batch receive.** Receive a whole stack of QR-tagged documents at once — scan them one after another with a handheld scanner (auto-ticks each) or tick them from the list, then receive all in one click. Button on the Dashboard.
+- **New: Link related documents.** Connect a document to another by tracking code; the link shows on both. You can only link documents you have access to (your office or ones that concern you).
+- **Distribute polish:** people already asked to acknowledge are now removed from the “distribute to more people” list (and skipped server-side), and the button is reworded on repeat use.
+- **Pending now blocks acknowledgement** — while a document is paused, recipients can't acknowledge until it's resumed (and all timers stay frozen).
+- **Documentation expanded** — new guides for route slips & splitting, distributing & acknowledgements, linking documents, and batch receiving.
 
 ## v2.8.3 — 2026-06-23
 **Acknowledgement targeting fix, combobox styling, archive vs complete clarity**

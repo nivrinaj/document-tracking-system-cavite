@@ -60,7 +60,8 @@ class DocumentPolicy
      */
     public function acknowledge(User $user, Document $document): bool
     {
-        if ($document->isClosed()) {
+        // While paused (pending), nobody can acknowledge until it is resumed.
+        if ($document->isClosed() || $document->is_pending) {
             return false;
         }
 

@@ -88,6 +88,12 @@
                 </x-nav-item>
                 @endcan
 
+                @if(\App\Models\Conversation::enabled())
+                <x-nav-item :active="request()->routeIs('messages.*')" :href="route('messages.index')" label="Messages">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.86 9.86 0 01-4-.8L3 20l1.3-3.5C3.5 15.3 3 13.7 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+                </x-nav-item>
+                @endif
+
                 @can('reports.view')
                 <x-nav-item :active="request()->routeIs('reports.*')" :href="route('reports.index')" label="Reports">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
@@ -169,6 +175,14 @@
                         <div class="font-semibold text-lg truncate">{{ $header }}</div>
                     @endisset
                 </div>
+
+                {{-- Messages --}}
+                @if(\App\Models\Conversation::enabled())
+                    <a href="{{ route('messages.index') }}" class="relative p-2 rounded-lg {{ request()->routeIs('messages.*') ? 'text-[color:var(--color-primary)] bg-[color:var(--color-primary)]/10' : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700' }}" title="Messages">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.86 9.86 0 01-4-.8L3 20l1.3-3.5C3.5 15.3 3 13.7 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+                        <span id="msgBadge" class="absolute -top-0.5 -right-0.5 text-white text-[10px] leading-none rounded-full px-1.5 py-0.5 hidden" style="background: var(--color-primary)"></span>
+                    </a>
+                @endif
 
                 {{-- Notifications bell --}}
                 @php $unreadCount = auth()->user()->unreadNotifications()->count(); @endphp
@@ -355,6 +369,38 @@
             setInterval(window.__notifLoad, 60000); // refresh badge + list every 60s
         })();
     </script>
+
+    @if(\App\Models\Conversation::enabled())
+    {{-- Live message badge: polls unread count for the navbar chat icon --}}
+    <script>
+        (function () {
+            const url = '{{ route('messages.unreadCount') }}';
+            const setBadge = (el, count) => {
+                if (!el) return;
+                if (count > 0) { el.textContent = count > 9 ? '9+' : count; el.classList.remove('hidden'); }
+                else { el.classList.add('hidden'); }
+            };
+            window.__msgUnread = 0;
+            window.__refreshMsgBadge = async function () {
+                try {
+                    const r = await fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+                    if (!r.ok) return;
+                    const d = await r.json();
+                    window.__msgUnread = d.count || 0;
+                    setBadge(document.getElementById('msgBadge'), d.count);
+                    setBadge(document.getElementById('msgBubbleBadge'), d.count);
+                    window.dispatchEvent(new CustomEvent('msg-unread', { detail: d.count }));
+                } catch (e) { /* ignore */ }
+            };
+            window.__refreshMsgBadge();
+            setInterval(() => { if (!document.hidden) window.__refreshMsgBadge(); }, 20000);
+        })();
+    </script>
+    @endif
+
+    @if(\App\Models\Conversation::enabled() && ! request()->routeIs('messages.index'))
+        @include('messages._widget')
+    @endif
 
     @stack('scripts')
 </body>

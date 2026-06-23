@@ -107,6 +107,167 @@ Everyone who has ever held the document — plus the Heads — can open it to se
 MD,
             ],
             [
+                'category' => 'User Guide', 'sort_order' => 2,
+                'title' => 'Route Slips: Grouped Documents in One QR',
+                'excerpt' => 'One QR can carry several documents. How to clear or reject each, and what happens when a slip splits.',
+                'content' => <<<'MD'
+# Route Slips: Grouped Documents in One QR
+
+Sometimes a single **route slip** (one QR code) carries **several individual
+documents** — for example, a transmittal that bundles 5 vouchers together.
+
+> This is optional. A Super Admin turns it on in **Settings → Workflow →
+> "Enable Route-slip multi-document tracking."** When off, documents are single items.
+
+## Adding the items
+When you encode a document, a **Route slip items** section lets you list each
+document it contains (e.g. *Voucher A, Voucher B, …*). Leave it blank for a normal
+single document.
+
+## Clearing or rejecting each item
+Whoever currently **holds** the slip (after receiving it) sees the item list on the
+document page. For each item they can:
+
+- **✅ Clear** — that document is good to go / approved.
+- **🗄 Reject** — that document is returned to origin (a reason is required).
+
+So if 4 documents are fine and 1 has a problem, you mark **4 Cleared, 1 Rejected**.
+The page shows a running tally (e.g. *4 cleared · 1 rejected · 0 pending*) and every
+decision is written to the history with who decided and why.
+
+## What happens when a slip "splits"
+A common real situation: most items continue, but one is sent back. Handle it like this:
+
+1. **Reject** the problem item (it's now flagged *Rejected — returned* with the reason).
+2. **Forward** the slip onward for the items that are good (they keep moving with the QR).
+3. For the rejected item, either:
+   - hand the physical document back to the origin and **encode it as its own document**
+     if it will be re-processed separately, and **link** it to the
+     original slip (see *Linking Related Documents*) so the history stays connected; or
+   - simply leave it marked *Rejected* on the slip — the record shows it did not proceed.
+
+The key idea: the **QR/slip keeps tracking the group**, while each item carries its own
+cleared/rejected outcome. Nothing gets lost because every decision is logged.
+MD,
+            ],
+            [
+                'category' => 'User Guide', 'sort_order' => 3,
+                'title' => 'Distributing a Document & Acknowledgements',
+                'excerpt' => 'Send one document to many people to acknowledge — even across divisions — and track who has seen it.',
+                'content' => <<<'MD'
+# Distributing a Document & Acknowledgements
+
+Besides forwarding to **one** person, the current holder can **distribute** a
+document to **many** people who each **acknowledge** they've seen it. Use this when,
+for example, a memo needs every division to attend to it.
+
+## How to distribute
+On the document page, click **Distribute for acknowledgement** and choose:
+
+- **Selected people** — pick names (across your office's divisions), or
+- **Everyone in a division**, or
+- **The entire department**.
+
+Each recipient is notified and must **acknowledge** by scanning the QR with their
+phone. You still **keep the physical document** — distributing only asks others to
+confirm receipt; it does not hand the document over.
+
+## Tracking acknowledgements
+The **Concerned staff** panel shows, per recipient:
+- *✓ acknowledged in 2 hrs*, or
+- *⏱ waiting 5 hrs* (not yet acknowledged).
+
+Only the people you actually selected are asked — earlier handlers and the
+distributor are **not** counted as acknowledgers.
+
+## Distributing again
+If you need to add more people later, the button becomes **Distribute to more
+people**, and anyone already asked is hidden from the list (no duplicate requests).
+
+## Pausing
+If you **Mark as pending**, all acknowledgement timers **pause** until you resume,
+and no one can acknowledge while it is paused.
+MD,
+            ],
+            [
+                'category' => 'User Guide', 'sort_order' => 4,
+                'title' => 'Linking Related Documents',
+                'excerpt' => 'Connect a document to another related one so their histories cross-reference.',
+                'content' => <<<'MD'
+# Linking Related Documents
+
+Documents are often related — a **request** and its **supporting voucher**, or a
+slip and an item that was split off and re-encoded. You can **link** them so each
+one shows the other.
+
+## How to link
+On a document page, find the **Related documents** card, type the **tracking code**
+of the other document, and click **🔗 Link**. The link is **two-way** — it appears on
+both documents automatically. Remove a link with the ✕ button.
+
+## The relationship rule
+You can only link documents you **have access to** — i.e. ones in **your own office**
+or that **already concern you**. This keeps links meaningful: you can't attach a
+document from an unrelated office you have nothing to do with.
+
+## When to use it
+- A route-slip item was **rejected** and re-encoded separately → link it back to the slip.
+- A follow-up document replaces or supplements an earlier one.
+- Several documents belong to the same case/transaction.
+MD,
+            ],
+            [
+                'category' => 'User Guide', 'sort_order' => 5,
+                'title' => 'Batch Receiving a Stack of Documents',
+                'excerpt' => 'Receive many QR-tagged documents at once instead of one by one.',
+                'content' => <<<'MD'
+# Batch Receiving a Stack of Documents
+
+When a desk gets a **pile of QR-tagged documents** from several offices, receiving
+them one-by-one is slow. Use **Batch receive** (button on the Dashboard).
+
+## Two ways to use it
+1. **Scan, scan, scan** — with a **USB/Bluetooth QR scanner**, place the cursor in the
+   scan box and scan each document. The scanner types the code and presses Enter, so
+   each scanned document is **ticked** automatically. When done, press **Receive
+   selected** — all of them are received in one click.
+2. **Tick the list** — on a phone or without a scanner, the page lists everything
+   waiting for you (released/forwarded to you, plus your office's claim pool). Tick
+   the ones you have and press **Receive selected**.
+
+Anything you can't legitimately receive (e.g. it was re-routed away) is safely skipped
+and reported, so the batch never receives the wrong thing.
+
+> Receiving still records possession against you for each document — the batch screen
+> is purely a faster way to do many at once.
+MD,
+            ],
+            [
+                'category' => 'User Guide', 'sort_order' => 6,
+                'title' => 'Messaging (Chat)',
+                'excerpt' => 'Chat with colleagues to follow up or ask about a document.',
+                'content' => <<<'MD'
+# Messaging (Chat)
+
+When enabled by a Super Admin (**Settings → Workflow → "Enable in-app messaging"**),
+a **Messages** area lets you chat with colleagues — handy to follow up on a document
+or ask a quick question.
+
+## Using it
+- Click the **chat icon** in the top bar (or **Messages** in the sidebar).
+- Press **New** and pick a colleague to start a conversation.
+- Type a message and press **Enter** to send.
+
+## Live updates
+- New messages appear on their own every few seconds while a chat is open.
+- The chat icon shows an **unread badge** that updates automatically across the app.
+
+> Messaging is for coordination between staff. The official record of a document is
+> still its **tracking history** — important decisions should be written in the
+> document's remarks (forward/receive/archive notes), not only in chat.
+MD,
+            ],
+            [
                 'category' => 'Developer Guide', 'sort_order' => 1,
                 'title' => 'Project Structure',
                 'excerpt' => 'Where everything lives in the codebase.',

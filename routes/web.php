@@ -27,6 +27,8 @@ Route::middleware(['auth', 'active'])->group(function () {
 
     /* -------------------- Document tracking -------------------- */
     Route::get('/documents', [DocumentController::class, 'index'])->name('documents.index');
+    Route::get('/documents/batch-receive', [DocumentController::class, 'batchReceive'])->name('documents.batchReceive')->middleware('permission:documents.receive');
+    Route::post('/documents/batch-receive', [DocumentController::class, 'batchReceiveStore'])->name('documents.batchReceive.store')->middleware('permission:documents.receive');
     Route::get('/documents/create', [DocumentController::class, 'create'])->name('documents.create')->middleware('permission:documents.create');
     Route::post('/documents', [DocumentController::class, 'store'])->name('documents.store')->middleware('permission:documents.create');
     Route::get('/documents/{document}', [DocumentController::class, 'show'])->name('documents.show');
@@ -44,6 +46,8 @@ Route::middleware(['auth', 'active'])->group(function () {
     Route::post('/documents/{document}/pending', [DocumentController::class, 'pending'])->name('documents.pending');
     Route::post('/documents/{document}/resume', [DocumentController::class, 'resume'])->name('documents.resume');
     Route::post('/documents/{document}/distribute', [DocumentController::class, 'distribute'])->name('documents.distribute');
+    Route::post('/documents/{document}/link', [DocumentController::class, 'linkDocument'])->name('documents.link');
+    Route::delete('/documents/{document}/link/{related}', [DocumentController::class, 'unlinkDocument'])->name('documents.unlink');
     Route::post('/documents/{document}/items/{item}/decision', [DocumentController::class, 'itemDecision'])->name('documents.items.decision');
     Route::post('/documents/{document}/acknowledge', [DocumentController::class, 'acknowledge'])->name('documents.acknowledge');
     Route::post('/documents/{document}/reopen', [DocumentController::class, 'reopen'])->name('documents.reopen');
@@ -61,6 +65,16 @@ Route::middleware(['auth', 'active'])->group(function () {
     /* -------------------- Reports -------------------- */
     Route::get('/reports', [ReportController::class, 'index'])->name('reports.index')->middleware('permission:reports.view');
     Route::get('/reports/generate', [ReportController::class, 'generate'])->name('reports.generate')->middleware('permission:reports.view');
+
+    /* -------------------- Messaging (chat) -------------------- */
+    Route::get('/messages', [\App\Http\Controllers\MessageController::class, 'index'])->name('messages.index');
+    Route::get('/messages/unread-count', [\App\Http\Controllers\MessageController::class, 'unreadCount'])->name('messages.unreadCount');
+    Route::get('/messages/conversations', [\App\Http\Controllers\MessageController::class, 'conversations'])->name('messages.conversations');
+    Route::get('/messages/people', [\App\Http\Controllers\MessageController::class, 'people'])->name('messages.people');
+    Route::post('/messages/start', [\App\Http\Controllers\MessageController::class, 'start'])->name('messages.start');
+    Route::get('/messages/{conversation}', [\App\Http\Controllers\MessageController::class, 'show'])->name('messages.show');
+    Route::get('/messages/{conversation}/poll', [\App\Http\Controllers\MessageController::class, 'poll'])->name('messages.poll');
+    Route::post('/messages/{conversation}', [\App\Http\Controllers\MessageController::class, 'store'])->name('messages.store');
 
     /* -------------------- Notifications -------------------- */
     Route::get('/notifications', [\App\Http\Controllers\NotificationController::class, 'index'])->name('notifications.index');

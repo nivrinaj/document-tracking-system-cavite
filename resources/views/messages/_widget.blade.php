@@ -1,0 +1,184 @@
+{{-- Floating Messenger-style chat widget, available on every page when messaging is on. --}}
+<div x-data="chatWidget()" x-init="init()" class="print:hidden">
+
+    {{-- Launcher bubble --}}
+    <button @click="toggle()" x-show="!open" x-transition
+            class="fixed bottom-5 right-5 z-40 w-14 h-14 rounded-full shadow-lg text-white grid place-items-center hover:brightness-110 active:scale-95 transition"
+            style="background: var(--color-primary)" title="Messages">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.86 9.86 0 01-4-.8L3 20l1.3-3.5C3.5 15.3 3 13.7 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+        <span id="msgBubbleBadge" class="absolute -top-1 -right-1 text-[10px] leading-none rounded-full px-1.5 py-1 bg-red-500 text-white hidden"></span>
+    </button>
+
+    {{-- Panel --}}
+    <div x-show="open" x-cloak x-transition
+         class="fixed z-50 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-2xl flex flex-col
+                inset-x-0 bottom-0 top-16 rounded-t-2xl
+                sm:inset-x-auto sm:top-auto sm:bottom-5 sm:right-5 sm:w-[22rem] sm:h-[32rem] sm:rounded-2xl overflow-hidden">
+
+        {{-- Header --}}
+        <div class="flex items-center gap-2 px-3 py-2.5 text-white shrink-0" style="background: var(--color-primary)">
+            <button x-show="view === 'thread'" @click="backToList()" class="p-1 -ml-1 hover:bg-white/20 rounded">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+            </button>
+            <span class="font-semibold text-sm truncate flex-1" x-text="view === 'thread' ? title : (view === 'new' ? 'New message' : 'Messages')"></span>
+            <button x-show="view === 'list'" @click="view = 'new'; loadPeople()" class="p-1 hover:bg-white/20 rounded" title="New chat">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+            </button>
+            <a href="{{ route('messages.index') }}" class="p-1 hover:bg-white/20 rounded" title="Open full page">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/></svg>
+            </a>
+            <button @click="toggle()" class="p-1 hover:bg-white/20 rounded"><svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg></button>
+        </div>
+
+        {{-- LIST --}}
+        <div x-show="view === 'list'" class="flex-1 overflow-y-auto">
+            <template x-if="!conversations.length">
+                <p class="px-4 py-10 text-center text-sm text-gray-400">No conversations yet. Tap ＋ to start one.</p>
+            </template>
+            <template x-for="c in conversations" :key="c.id">
+                <button @click="openConversation(c.id, c.title)" class="w-full flex items-center gap-3 px-3 py-2.5 text-left hover:bg-gray-50 dark:hover:bg-gray-700/40 border-b border-gray-50 dark:border-gray-700/50">
+                    <template x-if="c.avatar"><img :src="c.avatar" class="w-9 h-9 rounded-full shrink-0"></template>
+                    <template x-if="!c.avatar"><span class="w-9 h-9 rounded-full grid place-items-center bg-[color:var(--color-primary)]/10 text-[color:var(--color-primary)] shrink-0 text-sm font-semibold" x-text="c.title.charAt(0)"></span></template>
+                    <span class="min-w-0 flex-1">
+                        <span class="flex items-center justify-between gap-2">
+                            <span class="font-medium text-sm truncate" x-text="c.title"></span>
+                            <span class="text-[10px] text-gray-400 shrink-0" x-text="c.ago"></span>
+                        </span>
+                        <span class="flex items-center justify-between gap-2">
+                            <span class="text-xs text-gray-400 truncate" :class="c.unread ? 'font-semibold text-gray-600 dark:text-gray-200' : ''" x-text="c.last"></span>
+                            <span x-show="c.unread" class="shrink-0 text-[10px] text-white rounded-full px-1.5 py-0.5" style="background: var(--color-primary)" x-text="c.unread"></span>
+                        </span>
+                    </span>
+                </button>
+            </template>
+        </div>
+
+        {{-- NEW CHAT --}}
+        <div x-show="view === 'new'" class="flex-1 overflow-y-auto p-3">
+            <input type="text" x-model="search" class="input mb-2" placeholder="Search colleague…">
+            <template x-for="p in filteredPeople" :key="p.id">
+                <button @click="startWith(p.id)" class="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-left text-sm hover:bg-gray-50 dark:hover:bg-gray-700/40">
+                    <img :src="p.avatar" class="w-7 h-7 rounded-full shrink-0">
+                    <span class="min-w-0"><span class="block truncate" x-text="p.name"></span><span class="block text-[11px] text-gray-400 truncate" x-text="p.office"></span></span>
+                </button>
+            </template>
+            <p x-show="!filteredPeople.length" class="text-center text-sm text-gray-400 py-6">No colleagues match.</p>
+        </div>
+
+        {{-- THREAD --}}
+        <div x-show="view === 'thread'" class="flex-1 flex flex-col min-h-0">
+            <div x-ref="scroll" class="flex-1 overflow-y-auto p-3 space-y-2 bg-gray-50/50 dark:bg-gray-900/20">
+                <template x-for="m in messages" :key="m.id">
+                    <div :class="m.mine ? 'flex justify-end' : 'flex justify-start'">
+                        <div class="max-w-[80%]">
+                            <div :class="m.mine ? 'text-white' : 'bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border border-gray-100 dark:border-gray-600'"
+                                 :style="m.mine ? 'background: var(--color-primary)' : ''"
+                                 class="px-3 py-2 rounded-2xl text-sm whitespace-pre-wrap break-words">
+                                <span x-show="!m.mine" class="block text-[10px] font-semibold opacity-70" x-text="m.sender"></span>
+                                <span x-text="m.body"></span>
+                            </div>
+                            <div class="text-[10px] text-gray-400 mt-0.5" :class="m.mine ? 'text-right' : ''" x-text="m.time"></div>
+                        </div>
+                    </div>
+                </template>
+            </div>
+            <form @submit.prevent="send()" class="flex items-end gap-2 p-2 border-t border-gray-100 dark:border-gray-700 shrink-0">
+                <textarea x-model="body" rows="1" @keydown.enter.prevent="send()" class="input resize-none max-h-24 text-sm" placeholder="Type a message…"></textarea>
+                <button type="submit" class="shrink-0 w-9 h-9 grid place-items-center rounded-full text-white" style="background: var(--color-primary)" :disabled="!body.trim()">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+@push('scripts')
+<script>
+    function chatWidget() {
+        return {
+            open: false, view: 'list',
+            conversations: [], people: [], search: '',
+            activeId: null, title: '', messages: [], body: '', lastId: 0, poller: null,
+            csrf: document.querySelector('meta[name="csrf-token"]').content,
+            base: '{{ url('messages') }}',
+            init() {
+                // Keep the bubble badge in sync with the global unread poller.
+                window.addEventListener('msg-unread', () => {});
+            },
+            toggle() {
+                this.open = !this.open;
+                if (this.open) { this.view = 'list'; this.loadConversations(); }
+                else { clearInterval(this.poller); }
+            },
+            async loadConversations() {
+                const r = await fetch(`${this.base}/conversations`, { headers: { 'Accept': 'application/json' } });
+                if (r.ok) this.conversations = (await r.json()).conversations;
+            },
+            async loadPeople() {
+                if (this.people.length) return;
+                const r = await fetch(`${this.base}/people`, { headers: { 'Accept': 'application/json' } });
+                if (r.ok) this.people = (await r.json()).people;
+            },
+            get filteredPeople() {
+                const q = this.search.toLowerCase().trim();
+                return this.people.filter(p => !q || p.name.toLowerCase().includes(q));
+            },
+            async startWith(userId) {
+                const r = await fetch(`${this.base}/start`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': this.csrf, 'Accept': 'application/json' },
+                    body: JSON.stringify({ user_id: userId })
+                });
+                if (!r.ok) return;
+                const d = await r.json();
+                this.search = '';
+                this.openConversation(d.id, '');
+            },
+            async openConversation(id, title) {
+                this.activeId = id; this.title = title; this.view = 'thread'; this.messages = [];
+                const r = await fetch(`${this.base}/${id}`, { headers: { 'Accept': 'application/json' } });
+                if (!r.ok) { this.view = 'list'; return; }
+                const d = await r.json();
+                this.title = d.title; this.messages = d.messages;
+                this.lastId = this.messages.length ? this.messages[this.messages.length - 1].id : 0;
+                this.$nextTick(() => this.scrollBottom());
+                this.startPolling();
+                if (window.__refreshMsgBadge) window.__refreshMsgBadge();
+            },
+            backToList() { this.view = 'list'; this.activeId = null; clearInterval(this.poller); this.loadConversations(); if (window.__refreshMsgBadge) window.__refreshMsgBadge(); },
+            startPolling() {
+                clearInterval(this.poller);
+                this.poller = setInterval(async () => {
+                    if (!this.activeId || !this.open || document.hidden) return;
+                    const r = await fetch(`${this.base}/${this.activeId}/poll?after=${this.lastId}`, { headers: { 'Accept': 'application/json' } });
+                    if (!r.ok) return;
+                    const d = await r.json();
+                    if (d.messages.length) {
+                        const near = this.isNearBottom();
+                        this.messages.push(...d.messages);
+                        this.lastId = d.messages[d.messages.length - 1].id;
+                        if (near) this.$nextTick(() => this.scrollBottom());
+                        if (window.__refreshMsgBadge) window.__refreshMsgBadge();
+                    }
+                }, 4000);
+            },
+            async send() {
+                const text = this.body.trim();
+                if (!text || !this.activeId) return;
+                this.body = '';
+                const r = await fetch(`${this.base}/${this.activeId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': this.csrf, 'Accept': 'application/json' },
+                    body: JSON.stringify({ body: text })
+                });
+                if (!r.ok) return;
+                const d = await r.json();
+                this.messages.push(d.message); this.lastId = d.message.id;
+                this.$nextTick(() => this.scrollBottom());
+            },
+            isNearBottom() { const el = this.$refs.scroll; return el ? (el.scrollHeight - el.scrollTop - el.clientHeight < 80) : true; },
+            scrollBottom() { const el = this.$refs.scroll; if (el) el.scrollTop = el.scrollHeight; },
+        };
+    }
+</script>
+@endpush

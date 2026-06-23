@@ -11,13 +11,32 @@
             </div>
         @endif
 
-        {{-- Greeting --}}
-        <div>
-            <h1 class="text-xl font-semibold">Welcome back, {{ auth()->user()->name }} 👋</h1>
-            <p class="text-sm text-gray-500 dark:text-gray-400">
-                {{ auth()->user()->division?->name ?? 'No division' }} ·
-                {{ auth()->user()->getRoleNames()->join(', ') }}
-            </p>
+        {{-- Greeting + quick actions --}}
+        <div class="flex flex-wrap items-start justify-between gap-3">
+            <div>
+                <h1 class="text-xl font-semibold">Welcome back, {{ auth()->user()->name }} 👋</h1>
+                <p class="text-sm text-gray-500 dark:text-gray-400">
+                    {{ auth()->user()->division?->name ?? 'No division' }} ·
+                    {{ auth()->user()->getRoleNames()->join(', ') }}
+                </p>
+            </div>
+            <div class="flex flex-wrap gap-2">
+                @if(auth()->user()->canEncode())
+                    <x-btn :href="route('documents.create')">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                        Encode
+                    </x-btn>
+                @endif
+                @if(\App\Models\Document::batchReceiveEnabled())
+                @can('documents.receive')
+                    <x-btn :href="route('documents.batchReceive')" variant="secondary">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"/></svg>
+                        Batch receive
+                    </x-btn>
+                @endcan
+                @endif
+                <x-btn :href="route('documents.index')" variant="secondary">All documents</x-btn>
+            </div>
         </div>
 
         {{-- Stat cards — one per workflow stage --}}
@@ -36,159 +55,91 @@
             </x-stat-card>
         </div>
 
-        {{-- Charts row --}}
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <x-card class="lg:col-span-2">
-                <h2 class="font-semibold mb-3">Incoming documents — last 14 days</h2>
-                <div class="h-56"><canvas id="trendChart"></canvas></div>
-            </x-card>
-            <x-card>
-                <h2 class="font-semibold mb-3">By status</h2>
-                <div class="h-56"><canvas id="statusChart"></canvas></div>
-            </x-card>
-        </div>
-
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-            {{-- Action queues (left) --}}
-            <div class="lg:col-span-2 space-y-6">
-                @php $nothingPending = $toReceive->isEmpty() && $toAction->isEmpty() && $toRelease->isEmpty() && $toClaim->isEmpty() && $toAcknowledge->isEmpty(); @endphp
-
-                @if($nothingPending)
-                    <x-card padding="p-10">
-                        <div class="text-center">
-                            <div class="mx-auto w-14 h-14 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center mb-3">
-                                <svg class="w-7 h-7 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-                            </div>
-                            <h2 class="font-semibold">You're all caught up 🎉</h2>
-                            <p class="text-sm text-gray-400 mt-1">No documents are waiting for your action right now.</p>
-                            @can('documents.create')
-                                <div class="mt-4"><x-btn :href="route('documents.create')">Encode a document</x-btn></div>
-                            @endcan
-                        </div>
-                    </x-card>
-                @else
-                    @if($toClaim->isNotEmpty())
-                    <x-card>
-                        <div class="flex items-center justify-between mb-3">
-                            <h2 class="font-semibold">📥 Transferred to your office — to claim</h2>
-                            <span class="text-xs text-gray-400">{{ $toClaim->count() }} item(s)</span>
-                        </div>
-                        @foreach($toClaim as $doc)
-                            <a href="{{ route('documents.show', $doc) }}" class="flex items-center justify-between gap-3 p-3 -mx-1 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                                <div class="min-w-0">
-                                    <div class="font-medium text-sm truncate">{{ $doc->title }}</div>
-                                    <div class="text-xs text-gray-400">{{ $doc->tracking_code }} · from {{ $doc->creator?->name }} · ⏱ {{ $doc->updated_at->diffForHumans(null, true) }} waiting</div>
-                                </div>
-                                <x-badge color="amber">Claim</x-badge>
-                            </a>
-                        @endforeach
-                    </x-card>
-                    @endif
-
-                    @if($toAcknowledge->isNotEmpty())
-                    <x-card>
-                        <div class="flex items-center justify-between mb-3">
-                            <h2 class="font-semibold">🔔 Waiting for your acknowledgement</h2>
-                            <span class="text-xs text-gray-400">{{ $toAcknowledge->count() }} item(s)</span>
-                        </div>
-                        @foreach($toAcknowledge as $doc)
-                            <a href="{{ route('documents.show', $doc) }}" class="flex items-center justify-between gap-3 p-3 -mx-1 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                                <div class="min-w-0">
-                                    <div class="font-medium text-sm truncate">{{ $doc->title }}</div>
-                                    <div class="text-xs text-gray-400">{{ $doc->tracking_code }} · from {{ $doc->creator?->name }} · ⏱ waiting {{ $doc->updated_at->diffForHumans(null, true) }}</div>
-                                </div>
-                                <x-badge color="blue">Acknowledge</x-badge>
-                            </a>
-                        @endforeach
-                    </x-card>
-                    @endif
-
-                    @if($toReceive->isNotEmpty())
-                    <x-card>
-                        <div class="flex items-center justify-between mb-3">
-                            <h2 class="font-semibold">📥 Waiting for you to receive</h2>
-                            <span class="text-xs text-gray-400">{{ $toReceive->count() }} item(s)</span>
-                        </div>
-                        @foreach($toReceive as $doc)
-                            <a href="{{ route('documents.show', $doc) }}" class="flex items-center justify-between gap-3 p-3 -mx-1 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                                <div class="min-w-0">
-                                    <div class="font-medium text-sm truncate">{{ $doc->title }}</div>
-                                    <div class="text-xs text-gray-400">{{ $doc->tracking_code }} · from {{ $doc->creator?->name }} · ⏱ waiting {{ $doc->updated_at->diffForHumans(null, true) }}</div>
-                                </div>
-                                <div class="flex items-center gap-2 shrink-0">
-                                    <x-priority-badge :priority="$doc->priority" />
-                                    <x-status-badge :status="$doc->status" />
-                                </div>
-                            </a>
-                        @endforeach
-                    </x-card>
-                    @endif
-
-                    @if($toAction->isNotEmpty())
-                    <x-card>
-                        <div class="flex items-center justify-between mb-3">
-                            <h2 class="font-semibold">⚡ In your hands (forward or archive)</h2>
-                            <span class="text-xs text-gray-400">{{ $toAction->count() }} item(s)</span>
-                        </div>
-                        @foreach($toAction as $doc)
-                            <a href="{{ route('documents.show', $doc) }}" class="flex items-center justify-between gap-3 p-3 -mx-1 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                                <div class="min-w-0">
-                                    <div class="font-medium text-sm truncate">{{ $doc->title }}</div>
-                                    <div class="text-xs text-gray-400">{{ $doc->tracking_code }} · ⏱ {{ $doc->updated_at->diffForHumans(null, true) }} in your hands</div>
-                                </div>
-                                <x-priority-badge :priority="$doc->priority" />
-                            </a>
-                        @endforeach
-                    </x-card>
-                    @endif
-
-                    @if($toRelease->isNotEmpty())
-                    <x-card>
-                        <div class="flex items-center justify-between mb-3">
-                            <h2 class="font-semibold">🚀 Drafts ready to release</h2>
-                            <span class="text-xs text-gray-400">{{ $toRelease->count() }} item(s)</span>
-                        </div>
-                        @foreach($toRelease as $doc)
-                            <a href="{{ route('documents.show', $doc) }}" class="flex items-center justify-between gap-3 p-3 -mx-1 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                                <div class="min-w-0">
-                                    <div class="font-medium text-sm truncate">{{ $doc->title }}</div>
-                                    <div class="text-xs text-gray-400">{{ $doc->tracking_code }} · assigned to {{ $doc->currentHolder?->name }}</div>
-                                </div>
-                                <x-badge color="amber">Draft</x-badge>
-                            </a>
-                        @endforeach
-                    </x-card>
-                    @endif
-                @endif
+        {{-- ════════ Needs your action (front and center) ════════ --}}
+        @php
+            $nothingPending = $toReceive->isEmpty() && $toAction->isEmpty() && $toRelease->isEmpty() && $toClaim->isEmpty() && $toAcknowledge->isEmpty();
+            $pendingTotal = $toReceive->count() + $toAction->count() + $toRelease->count() + $toClaim->count() + $toAcknowledge->count();
+        @endphp
+        <div>
+            <div class="flex items-center gap-2 mb-3">
+                <h2 class="font-semibold text-lg">Needs your action</h2>
+                @unless($nothingPending)<span class="text-xs px-2 py-0.5 rounded-full bg-[color:var(--color-primary)]/10 text-[color:var(--color-primary)] font-medium">{{ $pendingTotal }}</span>@endunless
             </div>
 
-            {{-- Right widgets --}}
-            <div class="space-y-6">
-                @can('documents.create')
-                <x-card>
-                    <h2 class="font-semibold mb-3">Quick actions</h2>
-                    <div class="space-y-2">
-                        <x-btn :href="route('documents.create')" class="w-full">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-                            Encode new document
-                        </x-btn>
-                        <x-btn :href="route('documents.index')" variant="secondary" class="w-full">View all documents</x-btn>
+            @if($nothingPending)
+                <x-card padding="p-10">
+                    <div class="text-center">
+                        <div class="mx-auto w-14 h-14 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center mb-3">
+                            <svg class="w-7 h-7 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                        </div>
+                        <h2 class="font-semibold">You're all caught up 🎉</h2>
+                        <p class="text-sm text-gray-400 mt-1">No documents are waiting for your action right now.</p>
+                        @if(auth()->user()->canEncode())
+                            <div class="mt-4"><x-btn :href="route('documents.create')">Encode a document</x-btn></div>
+                        @endif
                     </div>
                 </x-card>
-                @endcan
+            @else
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
+                    @php
+                        $queues = [
+                            ['items' => $toClaim,       'title' => '📥 Transferred to your office — to claim', 'badge' => ['Claim', 'amber']],
+                            ['items' => $toAcknowledge, 'title' => '🔔 Waiting for your acknowledgement',       'badge' => ['Acknowledge', 'blue']],
+                            ['items' => $toReceive,     'title' => '📥 Waiting for you to receive',             'badge' => ['Receive', 'blue']],
+                            ['items' => $toAction,      'title' => '⚡ In your hands (forward or archive)',      'badge' => ['Act', 'indigo']],
+                            ['items' => $toRelease,     'title' => '🚀 Drafts ready to release',                'badge' => ['Release', 'amber']],
+                        ];
+                    @endphp
+                    @foreach($queues as $queue)
+                        @continue($queue['items']->isEmpty())
+                        <x-card>
+                            <div class="flex items-center justify-between mb-2">
+                                <h3 class="font-semibold text-sm">{{ $queue['title'] }}</h3>
+                                <span class="text-xs text-gray-400">{{ $queue['items']->count() }}</span>
+                            </div>
+                            <div class="-mx-1 divide-y divide-gray-50 dark:divide-gray-700/50">
+                                @foreach($queue['items'] as $doc)
+                                    <a href="{{ route('documents.show', $doc) }}" class="flex items-center justify-between gap-3 px-1 py-2.5 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                                        <div class="min-w-0">
+                                            <div class="font-medium text-sm truncate">{{ $doc->title }}</div>
+                                            <div class="text-xs text-gray-400 truncate">{{ $doc->tracking_code }} · ⏱ {{ $doc->updated_at->diffForHumans(null, true) }}</div>
+                                        </div>
+                                        <x-badge :color="$queue['badge'][1]">{{ $queue['badge'][0] }}</x-badge>
+                                    </a>
+                                @endforeach
+                            </div>
+                        </x-card>
+                    @endforeach
+                </div>
+            @endif
+        </div>
 
-                @if(\App\Models\Document::priorityEnabled())
-                <x-card>
-                    <h2 class="font-semibold mb-3">By priority</h2>
-                    @if(array_sum($priorityBreakdown) > 0)
-                        <div class="h-48"><canvas id="priorityChart"></canvas></div>
-                        <p class="text-[11px] text-gray-400 text-center mt-2">Tip: click a slice to filter documents.</p>
-                    @else
-                        <p class="text-sm text-gray-400">No data yet.</p>
-                    @endif
+        {{-- ════════ Insights (charts) ════════ --}}
+        <div>
+            <h2 class="font-semibold text-lg mb-3">Insights</h2>
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <x-card class="lg:col-span-2">
+                    <h3 class="font-semibold text-sm mb-3">Incoming documents — last 14 days</h3>
+                    <div class="h-56"><canvas id="trendChart"></canvas></div>
                 </x-card>
-                @endif
+                <x-card>
+                    <h3 class="font-semibold text-sm mb-3">By status</h3>
+                    <div class="h-56"><canvas id="statusChart"></canvas></div>
+                </x-card>
             </div>
+            @if(\App\Models\Document::priorityEnabled())
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
+                    <x-card>
+                        <h3 class="font-semibold text-sm mb-3">By priority</h3>
+                        @if(array_sum($priorityBreakdown) > 0)
+                            <div class="h-48"><canvas id="priorityChart"></canvas></div>
+                            <p class="text-[11px] text-gray-400 text-center mt-2">Tip: click a slice to filter documents.</p>
+                        @else
+                            <p class="text-sm text-gray-400">No data yet.</p>
+                        @endif
+                    </x-card>
+                </div>
+            @endif
         </div>
 
         {{-- Recent activity (full-width rows, capped height) --}}

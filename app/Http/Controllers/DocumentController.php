@@ -209,6 +209,7 @@ class DocumentController extends Controller
             'logs.fromUser',
             'possessions',
             'items.decider',
+            'relatedDocuments.currentHolder',
         ]);
 
         $user = Auth::user();
@@ -458,6 +459,105 @@ class DocumentController extends Controller
         $service->decideItem($item, $user, $data['status'], $data['remarks'] ?? null);
 
         return back()->with('success', $data['status'] === 'cleared' ? 'Item marked as cleared.' : 'Item rejected and flagged for return to origin.');
+    }
+
+    /* -------------------- Related documents -------------------- */
+
+    public function linkDocument(Request $request, Document $document)
+    {
+        abort_unless(Document::linkingEnabled(), 404);
+        $this->authorize('view', $document);
+
+        $data = $request->validate(['tracking_code' => ['required', 'string', 'max:100']]);
+        $target = Document::where('tracking_code', trim($data['tracking_code']))->first();
+
+        if (! $target) {
+            return back()->with('error', 'No document found with that tracking code.');
+        }
+        if ($target->id === $document->id) {
+            return back()->with('error', 'A document cannot be linked to itself.');
+        }
+        // Relationship guard: you can only link documents you have access to
+        // (your own office, or ones that already concern you).
+        if ($request->user()->cannot('view', $target)) {
+            return back()->with('error', 'You can only link documents you have access to (your office, or ones that concern you).');
+        }
+
+        $document->relatedDocuments()->syncWithoutDetaching([$target->id]);
+        $target->relatedDocuments()->syncWithoutDetaching([$document->id]);
+
+        return back()->with('success', "Linked to {$target->tracking_code}.");
+    }
+
+    public function unlinkDocument(Request $request, Document $document, Document $related)
+    {
+        $this->authorize('view', $document);
+
+        $document->relatedDocuments()->detach($related->id);
+        $related->relatedDocuments()->detach($document->id);
+
+        return back()->with('success', 'Link removed.');
+    }
+
+    /* -------------------- Batch receive -------------------- */
+
+    /**
+     * A page for receiving many documents at once — handy when a desk gets a stack
+     * of QR-tagged documents from several offices. Scan each (or tick it), then
+     * receive them all in one go.
+     */
+    public function batchReceive(Request $request)
+    {
+        abort_unless(Document::batchReceiveEnabled(), 404);
+        $user = $request->user();
+        abort_unless($user->can('documents.receive'), 403);
+
+        // Documents released/forwarded directly to me, awaiting my receipt.
+        $direct = Document::with(['creator', 'department'])
+            ->where('current_holder_id', $user->id)
+            ->whereIn('status', ['released', 'forwarded'])
+            ->where('is_pending', false)
+            ->latest('updated_at')->get()
+            ->each->setAttribute('receive_kind', 'receive');
+
+        // Unclaimed transfers in my office (if I'm allowed to claim).
+        $pool = collect();
+        if ($user->can('documents.claim') && $user->department_id) {
+            $pool = Document::with(['creator', 'department'])
+                ->whereNull('current_holder_id')
+                ->where('status', 'released')
+                ->where('is_broadcast', false)
+                ->where('department_id', $user->department_id)
+                ->latest('updated_at')->get()
+                ->each->setAttribute('receive_kind', 'claim');
+        }
+
+        return view('documents.batch-receive', ['docs' => $direct->concat($pool)]);
+    }
+
+    public function batchReceiveStore(Request $request, DocumentService $service)
+    {
+        abort_unless(Document::batchReceiveEnabled(), 404);
+        abort_unless($request->user()->can('documents.receive'), 403);
+
+        $data = $request->validate([
+            'document_ids' => ['required', 'array'],
+            'document_ids.*' => ['integer', 'exists:documents,id'],
+        ]);
+
+        $received = 0;
+        $skipped = 0;
+        foreach (Document::whereIn('id', $data['document_ids'])->get() as $doc) {
+            if ($request->user()->can('receive', $doc)) {
+                $service->receive($doc, $request->user());
+                $received++;
+            } else {
+                $skipped++;
+            }
+        }
+
+        return redirect()->route('documents.batchReceive')
+            ->with('success', "Received {$received} document(s).".($skipped ? " {$skipped} could not be received (no longer yours)." : ''));
     }
 
     /* -------------------- QR + print -------------------- */
