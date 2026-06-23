@@ -23,12 +23,43 @@
                 <div><dt class="text-gray-400 text-xs">Released</dt><dd>{{ $document->released_at ? $document->released_at->diffForHumans() : '—' }}</dd></div>
                 <div><dt class="text-gray-400 text-xs">Last action</dt><dd>{{ $document->elapsedSinceLastAction() }} ago</dd></div>
             </dl>
+
+            {{-- Most recent movement: who last handled it + their note --}}
+            @php $last = $document->logs->first(); @endphp
+            @if($last)
+                <div class="mt-4 p-3 rounded-lg bg-gray-50 dark:bg-gray-700/40 border border-gray-100 dark:border-gray-700 text-left">
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <x-badge :color="$last->actionColor()">{{ $last->actionLabel() }}</x-badge>
+                        <span class="text-xs text-gray-400">{{ $last->created_at->diffForHumans() }}</span>
+                    </div>
+                    <p class="text-sm mt-1">
+                        <span class="text-gray-500 dark:text-gray-400">Last handled by</span>
+                        <span class="font-medium">{{ $last->actor?->name ?? 'System' }}</span>
+                        @if($last->actor)<span class="text-xs text-gray-400">· {{ $last->actor->orgShort() }}</span>@endif
+                        @if($last->toUser)
+                            <span class="text-gray-400">→</span> <span class="font-medium">{{ $last->toUser->name }}</span>
+                        @endif
+                    </p>
+                    @if($last->remarks)
+                        <p class="text-sm text-gray-600 dark:text-gray-300 mt-1">“{{ $last->remarks }}”</p>
+                    @endif
+                </div>
+            @endif
         </x-card>
 
         {{-- Primary action --}}
         <x-card>
             <h2 class="font-semibold mb-3">What would you like to do?</h2>
             <div class="space-y-3">
+                @can('acknowledge', $document)
+                    <form method="POST" action="{{ route('documents.acknowledge', $document) }}" class="space-y-2 p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20"
+                          data-confirm="Acknowledge that you have received this document?">
+                        @csrf
+                        <p class="text-sm text-blue-700 dark:text-blue-300">🔔 This document was <strong>distributed to you</strong>. Acknowledge that you have received it.</p>
+                        <x-btn type="submit" class="w-full">✅ Acknowledge receipt</x-btn>
+                    </form>
+                @endcan
+
                 @can('receive', $document)
                     @php $isClaim = $document->current_holder_id === null; @endphp
                     <form method="POST" action="{{ route('documents.receive', $document) }}" class="space-y-2 p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20"

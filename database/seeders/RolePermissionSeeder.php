@@ -57,21 +57,25 @@ class RolePermissionSeeder extends Seeder
         // but we also sync all permissions so the UI reflects it.
         $superAdmin->syncPermissions(Permission::all());
 
+        // NOTE: "documents.create" (encode) is now granted PER USER on the user
+        // edit screen, not by role (see migration make_encode_per_user). So it is
+        // intentionally omitted from the role lists below.
+
         // Heads: full visibility + logs + reports + can act on documents.
         $headPerms = [
             'dashboard.view',
             'documents.view', 'documents.viewAny',
-            'documents.create', 'documents.assign', 'documents.release',
+            'documents.assign', 'documents.release',
             'documents.receive', 'documents.claim', 'documents.forward', 'documents.archive',
             'reports.view', 'logs.view', 'documentation.view',
         ];
         $head->syncPermissions($headPerms);
         $asstHead->syncPermissions($headPerms);
 
-        // Receiving staff: the encoding/QR/release workflow.
+        // Receiving staff: the QR/release workflow.
         $receiving->syncPermissions([
             'dashboard.view',
-            'documents.view', 'documents.create', 'documents.assign',
+            'documents.view', 'documents.assign',
             'documents.release', 'documents.receive', 'documents.claim', 'documents.forward',
             'documents.archive', 'reports.view', 'documentation.view',
         ]);
@@ -87,7 +91,7 @@ class RolePermissionSeeder extends Seeder
         $divisionHead = Role::firstOrCreate(['name' => 'Division Head', 'guard_name' => 'web']);
         $divisionHead->syncPermissions([
             'dashboard.view',
-            'documents.view', 'documents.create', 'documents.assign', 'documents.release',
+            'documents.view', 'documents.assign', 'documents.release',
             'documents.receive', 'documents.claim', 'documents.forward', 'documents.archive',
             'reports.view', 'documentation.view',
         ]);
@@ -109,7 +113,7 @@ class RolePermissionSeeder extends Seeder
         }
 
         // Chiefs of Staff: run their office workflow + org-wide visibility.
-        $chiefPerms = array_merge($execPerms, ['documents.create', 'documents.assign', 'documents.release', 'documents.claim']);
+        $chiefPerms = array_merge($execPerms, ['documents.assign', 'documents.release', 'documents.claim']);
         foreach (['Chief of Staff (OPG)', 'Chief of Staff (OPVG)'] as $chiefName) {
             Role::firstOrCreate(['name' => $chiefName, 'guard_name' => 'web'])->syncPermissions($chiefPerms);
         }

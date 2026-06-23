@@ -6,6 +6,19 @@ reviewed or rolled back. Format based on [Keep a Changelog](https://keepachangel
 
 ---
 
+## v2.8.2 — 2026-06-23
+**Acknowledgement flow, strict possession rules, encode-per-account & fixes**
+- **Critical fix — actions only appear once you physically hold a document.** Previously a Department Head saw Assign/Release/Forward/Archive on a document merely *assigned* to them. Now **everyone** (heads included) can only act after they've **received** it by scanning the QR. Override is limited to **Super Admin**. *Release* is now strictly the encoder's action.
+- **Acknowledgement now works for distributed documents.** Recipients can acknowledge by **scanning the QR** (mobile); desktop acknowledgement is blocked unless “desktop receive” is enabled — matching how physical receipt works. The dashboard now lists **“Waiting for your acknowledgement.”**
+- **Encode permission is now per-account.** A Super-Admin toggle on each user (“Can encode documents”) controls who may add documents — independent of role. Existing encoders keep their access automatically.
+- **New: receiving staff can distribute a document for acknowledgement** — to selected people (across divisions), a whole division, or the entire department — even after it has already passed through several people.
+- **Per-recipient acknowledgement timing** — the Concerned-staff panel shows how long each person took to acknowledge, or how long they've been waited on.
+- **“Send to selected people” limited to your own office** (across its divisions).
+- **Fixed: editing a user showed Division as “None”** even when one was set — the division now preselects reliably.
+- **Searchable dropdowns** for the assignee and source-office pickers on the encode form (handles many users/offices).
+- **Mobile QR view now shows the last handler and their note**, plus the latest action.
+- Wording: “broadcast memo” → “distributed to multiple people” (documents aren't always memos).
+
 ## v2.8.1 — 2026-06-22
 **Route-slip items, clearer reports, action icons & fixes**
 - **New: Route-slip multi-document tracking** (Super-Admin toggle in **Settings → Workflow**, off by default). One document/QR can list several individual documents; the holder marks each **Cleared** (good to go) or **Rejected** (returned to origin), so partial outcomes — e.g. 4 cleared, 1 rejected — are tracked, with reasons and an audit trail. Add the list on the encode form; decide per item on the document page.

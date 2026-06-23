@@ -101,6 +101,20 @@ class User extends Authenticatable
         return $this->can('documents.viewAll');
     }
 
+    /** May this user encode (create) new documents? Per-account, plus Super Admin. */
+    public function canEncode(): bool
+    {
+        if ($this->hasRole('Super Admin')) {
+            return true;
+        }
+
+        try {
+            return $this->hasPermissionTo('documents.create');
+        } catch (\Throwable $e) {
+            return false; // permission not registered yet (e.g. before seeding)
+        }
+    }
+
     /** Documents this user encoded (as receiving staff). */
     public function encodedDocuments(): HasMany
     {

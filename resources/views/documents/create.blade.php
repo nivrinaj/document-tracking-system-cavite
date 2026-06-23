@@ -17,14 +17,21 @@
                   recipientSearch: '',
                   recipients: [],
                   routeItems: [''],
+                  srcOfficeOpen: false, srcOfficeSearch: '',
+                  assigneeId: '{{ old('assignee_id') }}', assigneeOpen: false, assigneeSearch: '',
                   divisions: @js($divisions->map(fn($d) => ['id' => $d->id, 'name' => $d->code.' — '.$d->name, 'department_id' => $d->department_id])),
                   users: @js($users->map(fn($u) => ['id' => $u->id, 'name' => $u->name, 'department_id' => $u->department_id, 'division_id' => $u->division_id, 'division' => $u->division?->code ?? 'Head'])),
                   allUsers: @js($allUsers->map(fn($u) => ['id' => $u->id, 'name' => $u->name, 'office' => $u->department?->code ?? '—', 'division' => $u->division?->code ?? 'Head'])),
+                  offices: @js($departments->map(fn($d) => ['id' => $d->id, 'label' => $d->code.' — '.$d->name, 'mine' => $d->id == $ownDeptId])),
                   get srcDivs() { return this.divisions.filter(d => this.srcOffice && String(d.department_id) === String(this.srcOffice)); },
                   get ownDivs() { return this.divisions.filter(d => String(d.department_id) === String(this.ownDept)); },
                   get ownStaff() { return this.users.filter(u => !this.div || String(u.division_id) === String(this.div)); },
                   get filteredRecipients() { const q = this.recipientSearch.toLowerCase().trim(); return this.allUsers.filter(u => !q || u.name.toLowerCase().includes(q) || u.office.toLowerCase().includes(q)); },
                   toggleRecipient(id) { const i = this.recipients.indexOf(id); if (i === -1) this.recipients.push(id); else this.recipients.splice(i, 1); },
+                  get filteredOffices() { const q = this.srcOfficeSearch.toLowerCase().trim(); return this.offices.filter(o => !q || o.label.toLowerCase().includes(q)); },
+                  get srcOfficeLabel() { if (this.srcOffice === '') return '— Select office —'; if (this.srcOffice === 'external') return 'Other / External client'; const o = this.offices.find(x => String(x.id) === String(this.srcOffice)); return o ? o.label + (o.mine ? ' (mine)' : '') : '— Select office —'; },
+                  get filteredStaff() { const q = this.assigneeSearch.toLowerCase().trim(); return this.ownStaff.filter(u => !q || u.name.toLowerCase().includes(q)); },
+                  get assigneeLabel() { if (!this.assigneeId) return '— Assign later —'; const u = this.users.find(x => String(x.id) === String(this.assigneeId)); return u ? u.name + ' — ' + u.division : '— Assign later —'; },
               }">
             @csrf
 
@@ -132,13 +139,26 @@
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                         <label class="label">Office</label>
-                        <select name="source_department_id" x-model="srcOffice" @change="srcDiv=''" class="input">
-                            <option value="">— Select office —</option>
-                            @foreach($departments as $dept)
-                                <option value="{{ $dept->id }}">{{ $dept->code }} — {{ $dept->name }}@if($dept->id == $ownDeptId) (mine)@endif</option>
-                            @endforeach
-                            <option value="external">Other / External client</option>
-                        </select>
+                        <div class="relative" @click.outside="srcOfficeOpen = false">
+                            <input type="hidden" name="source_department_id" :value="srcOffice">
+                            <button type="button" @click="srcOfficeOpen = !srcOfficeOpen; srcOfficeSearch = ''"
+                                    class="input flex items-center justify-between text-left">
+                                <span class="truncate" :class="srcOffice === '' ? 'text-gray-400' : ''" x-text="srcOfficeLabel"></span>
+                                <svg class="w-4 h-4 text-gray-400 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+                            </button>
+                            <div x-show="srcOfficeOpen" x-cloak x-transition.opacity class="absolute z-30 mt-1 w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-lg">
+                                <div class="p-2 border-b border-gray-100 dark:border-gray-700">
+                                    <input type="text" x-model="srcOfficeSearch" @click.stop class="input py-1.5 text-sm" placeholder="Search office…">
+                                </div>
+                                <div class="max-h-56 overflow-y-auto py-1 text-sm">
+                                    <button type="button" @click="srcOffice = ''; srcDiv = ''; srcOfficeOpen = false" class="w-full text-left px-3 py-1.5 text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700/50">— Select office —</button>
+                                    <template x-for="o in filteredOffices" :key="o.id">
+                                        <button type="button" @click="srcOffice = String(o.id); srcDiv = ''; srcOfficeOpen = false" class="w-full text-left px-3 py-1.5 hover:bg-gray-50 dark:hover:bg-gray-700/50" x-text="o.label + (o.mine ? ' (mine)' : '')"></button>
+                                    </template>
+                                    <button type="button" @click="srcOffice = 'external'; srcDiv = ''; srcOfficeOpen = false" class="w-full text-left px-3 py-1.5 hover:bg-gray-50 dark:hover:bg-gray-700/50 border-t border-gray-100 dark:border-gray-700">Other / External client</button>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                     <div>
                         <template x-if="srcOffice === 'external'">
@@ -190,19 +210,32 @@
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div>
                             <label class="label">Division</label>
-                            <select x-model="div" class="input">
+                            <select x-model="div" @change="assigneeId = ''" class="input">
                                 <option value="">All divisions</option>
                                 <template x-for="d in ownDivs" :key="d.id"><option :value="d.id" x-text="d.name"></option></template>
                             </select>
                         </div>
                         <div>
                             <label class="label">Assignee</label>
-                            <select name="assignee_id" class="input">
-                                <option value="">— Assign later —</option>
-                                <template x-for="u in ownStaff" :key="u.id">
-                                    <option :value="u.id" x-text="u.name + ' — ' + u.division"></option>
-                                </template>
-                            </select>
+                            <div class="relative" @click.outside="assigneeOpen = false">
+                                <input type="hidden" name="assignee_id" :value="assigneeId">
+                                <button type="button" @click="assigneeOpen = !assigneeOpen; assigneeSearch = ''" class="input flex items-center justify-between text-left">
+                                    <span class="truncate" :class="!assigneeId ? 'text-gray-400' : ''" x-text="assigneeLabel"></span>
+                                    <svg class="w-4 h-4 text-gray-400 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+                                </button>
+                                <div x-show="assigneeOpen" x-cloak x-transition.opacity class="absolute z-30 mt-1 w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-lg">
+                                    <div class="p-2 border-b border-gray-100 dark:border-gray-700">
+                                        <input type="text" x-model="assigneeSearch" @click.stop class="input py-1.5 text-sm" placeholder="Search staff…">
+                                    </div>
+                                    <div class="max-h-56 overflow-y-auto py-1 text-sm">
+                                        <button type="button" @click="assigneeId = ''; assigneeOpen = false" class="w-full text-left px-3 py-1.5 text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700/50">— Assign later —</button>
+                                        <template x-for="u in filteredStaff" :key="u.id">
+                                            <button type="button" @click="assigneeId = String(u.id); assigneeOpen = false" class="w-full text-left px-3 py-1.5 hover:bg-gray-50 dark:hover:bg-gray-700/50" x-text="u.name + ' — ' + u.division"></button>
+                                        </template>
+                                        <p x-show="!filteredStaff.length" class="px-3 py-2 text-gray-400">No staff match.</p>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>

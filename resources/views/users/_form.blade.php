@@ -1,7 +1,17 @@
 @php $current = $user?->roles->first()?->name; @endphp
 
 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4"
-     x-data="{ dept: '{{ old('department_id', $user?->department_id) }}', divId: '{{ old('division_id', $user?->division_id) }}', divisions: @js($divisions->map(fn($d)=>['id'=>$d->id,'name'=>$d->code.' — '.$d->name,'department_id'=>$d->department_id])) }">
+     x-data="{
+        dept: '{{ old('department_id', $user?->department_id) }}',
+        divId: '',
+        divisions: @js($divisions->map(fn($d)=>['id'=>$d->id,'name'=>$d->code.' — '.$d->name,'department_id'=>$d->department_id])),
+        get visibleDivs() { return this.divisions.filter(d => (!this.dept || String(d.department_id) === String(this.dept)) || String(d.id) === String(this.divId)); },
+        init() {
+            // Set the current division AFTER the options render so the select preselects it
+            // reliably (x-model on x-for options doesn't preselect on first paint).
+            this.$nextTick(() => { this.divId = '{{ old('division_id', $user?->division_id) }}'; });
+        }
+     }">
     <div>
         <label class="label">Full Name <span class="text-red-500">*</span></label>
         <input type="text" name="name" value="{{ old('name', $user?->name) }}" class="input" required>
@@ -26,7 +36,7 @@
         <label class="label">Division <span class="text-gray-400 text-xs">(heads can leave blank)</span></label>
         <select name="division_id" x-model="divId" class="input">
             <option value="">— None —</option>
-            <template x-for="d in divisions.filter(x => !dept || String(x.department_id) === String(dept))" :key="d.id">
+            <template x-for="d in visibleDivs" :key="d.id">
                 <option :value="d.id" x-text="d.name"></option>
             </template>
         </select>
@@ -56,8 +66,19 @@
     </div>
 </div>
 
-<label class="flex items-center gap-2 text-sm mt-2">
-    <input type="hidden" name="is_active" value="0">
-    <input type="checkbox" name="is_active" value="1" class="rounded text-[color:var(--color-primary)]" @checked(old('is_active', $user?->is_active ?? true))>
-    Account is active (can log in)
-</label>
+<div class="mt-3 space-y-2 border-t border-gray-100 dark:border-gray-700 pt-3">
+    <label class="flex items-center gap-2 text-sm">
+        <input type="hidden" name="is_active" value="0">
+        <input type="checkbox" name="is_active" value="1" class="rounded text-[color:var(--color-primary)]" @checked(old('is_active', $user?->is_active ?? true))>
+        Account is active (can log in)
+    </label>
+    <label class="flex items-start gap-2 text-sm">
+        <input type="hidden" name="can_encode" value="0">
+        <input type="checkbox" name="can_encode" value="1" class="mt-0.5 rounded text-[color:var(--color-primary)]"
+               @checked(old('can_encode', $user?->canEncode() ?? false))>
+        <span>
+            Can encode (create) documents
+            <span class="block text-xs text-gray-400">Turn this on for any account that needs to add new documents — regardless of role. Super Admins can always encode.</span>
+        </span>
+    </label>
+</div>

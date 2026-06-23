@@ -219,6 +219,9 @@ class DocumentController extends Controller
             'trackUrl' => route('track.show', $document->tracking_code),
             'crossDept' => \App\Models\Setting::get('allow_cross_department', '0') === '1',
             'departments' => \App\Models\Department::orderByRaw('id = ? desc', [$user->department_id ?? 0])->orderBy('name')->get(),
+            'ownDivisions' => Division::where('is_active', true)
+                ->when($user->department_id, fn ($q) => $q->where('department_id', $user->department_id))
+                ->orderBy('name')->get(),
         ]);
     }
 
@@ -411,6 +414,30 @@ class DocumentController extends Controller
         $service->archive($document, $request->user(), $data['remarks'], (bool) ($data['completed'] ?? false));
 
         return back()->with('success', 'Document archived.');
+    }
+
+    public function distribute(Request $request, Document $document, DocumentService $service)
+    {
+        $this->authorize('distribute', $document);
+
+        $data = $request->validate([
+            'scope' => ['required', 'in:selected,division,department'],
+            'recipient_ids' => ['nullable', 'required_if:scope,selected', 'array'],
+            'recipient_ids.*' => ['integer', 'exists:users,id'],
+            'division_id' => ['nullable', 'required_if:scope,division', 'exists:divisions,id'],
+            'remarks' => ['nullable', 'string', 'max:500'],
+        ]);
+
+        $service->distribute(
+            $document,
+            $request->user(),
+            $data['scope'],
+            $data['recipient_ids'] ?? [],
+            $data['division_id'] ?? null,
+            $data['remarks'] ?? null,
+        );
+
+        return back()->with('success', 'Document distributed for acknowledgement.');
     }
 
     public function itemDecision(Request $request, Document $document, \App\Models\DocumentItem $item, DocumentService $service)

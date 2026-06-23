@@ -393,6 +393,36 @@ class DocumentService
     }
 
     /**
+     * Distribute an EXISTING document to many people for acknowledgement — even
+     * after it has already passed through several hands. Scope can be a hand-picked
+     * list, a whole division, or the entire department (all within the actor's office).
+     * The current holder keeps the physical document; recipients just acknowledge.
+     */
+    public function distribute(Document $document, User $actor, string $scope, array $userIds = [], ?int $divisionId = null, ?string $remarks = null): Document
+    {
+        return DB::transaction(function () use ($document, $actor, $scope, $userIds, $divisionId, $remarks) {
+            $recipients = User::where('is_active', true)
+                ->where('id', '!=', $actor->id)
+                ->when($actor->department_id, fn ($q) => $q->where('department_id', $actor->department_id))
+                ->when($scope === 'selected', fn ($q) => $q->whereIn('id', $userIds))
+                ->when($scope === 'division', fn ($q) => $q->where('division_id', $divisionId))
+                ->get();
+
+            // Turn on acknowledgement tracking and attach the recipients.
+            $document->update(['is_broadcast' => true]);
+            foreach ($recipients as $r) {
+                $this->addAssignee($document, $r->id);
+                $r->notify(new \App\Notifications\DocumentRouted($document, 'broadcast', $actor->name, $remarks));
+            }
+
+            $this->log($document, 'distributed', $actor,
+                remarks: 'Distributed to '.$recipients->count().' recipient(s) for acknowledgement.'.($remarks ? " — {$remarks}" : ''));
+
+            return $document->refresh();
+        });
+    }
+
+    /**
      * Decide a single route-slip item: cleared (good to go) or rejected (returned
      * to origin). Logged on the parent document so it shows in the trail.
      */

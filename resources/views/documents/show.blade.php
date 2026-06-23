@@ -38,8 +38,8 @@
                             <div class="text-[11px] uppercase tracking-wider text-gray-400 mb-1">Currently with</div>
                             @php $h = $document->currentHolder; @endphp
                             @if($document->is_broadcast)
-                                <div class="font-semibold">📣 Broadcast memo</div>
-                                <div class="text-xs text-gray-500 dark:text-gray-400">Sent to multiple recipients</div>
+                                <div class="font-semibold">📣 Distributed to multiple people</div>
+                                <div class="text-xs text-gray-500 dark:text-gray-400">Each recipient acknowledges receipt individually</div>
                             @elseif($h && $document->status === 'draft')
                                 {{-- Assigned but not released — the encoder still physically holds it. --}}
                                 <div class="font-semibold text-amber-600 dark:text-amber-400">Pending release</div>
@@ -220,6 +220,8 @@
                     </div>
                     @unless($document->is_broadcast)
                         <p class="text-xs text-gray-400 mb-3 -mt-1">Time shown is how long each person has physically held the document.</p>
+                    @else
+                        <p class="text-xs text-gray-400 mb-3 -mt-1">Time shown is how long it took each person to acknowledge (or how long they've been waited on).</p>
                     @endunless
 
                     @if($ackedCount !== null && $concernedCount)
@@ -246,13 +248,20 @@
                                             @endif
                                         </span>
                                         <span class="block text-[11px] text-gray-400">{{ $person->orgUnit() }}</span>
-                                        @unless($document->is_broadcast)
+                                        @if($document->is_broadcast)
+                                            @php $sentAt = $person->pivot->created_at ?? $document->released_at ?? $document->created_at; @endphp
+                                            @if($person->pivot->acknowledged_at)
+                                                <span class="block text-[11px] text-green-600 dark:text-green-400">✓ acknowledged in {{ \App\Models\Document::humanDuration((int) $sentAt->diffInSeconds($person->pivot->acknowledged_at)) }}</span>
+                                            @else
+                                                <span class="block text-[11px] text-amber-600 dark:text-amber-400">⏱ waiting {{ \App\Models\Document::humanDuration((int) $sentAt->diffInSeconds(now())) }}</span>
+                                            @endif
+                                        @else
                                             @if(isset($heldSeconds[$person->id]))
                                                 <span class="block text-[11px] {{ $document->current_holder_id === $person->id && !$document->is_pending && !$document->isClosed() ? 'text-[color:var(--color-primary)] font-medium' : 'text-gray-400' }}">
                                                     ⏱ {{ \App\Models\Document::humanDuration($heldSeconds[$person->id]) }}{{ $document->current_holder_id === $person->id && !$document->is_pending && !$document->isClosed() ? ' (holding now)' : '' }}
                                                 </span>
                                             @endif
-                                        @endunless
+                                        @endif
                                     </span>
                                 </span>
                             @endforeach
@@ -314,19 +323,27 @@
                     $canAct = $u->can('assign', $document) || $u->can('release', $document) || $u->can('receive', $document)
                         || $u->can('forward', $document) || $u->can('transfer', $document) || $u->can('archive', $document)
                         || $u->can('pending', $document) || $u->can('resume', $document) || $u->can('delete', $document)
-                        || $u->can('acknowledge', $document) || $u->can('reopen', $document);
+                        || $u->can('distribute', $document) || $u->can('acknowledge', $document) || $u->can('reopen', $document);
                 @endphp
                 @if($canAct || $document->isClosed())
                 <x-card title="Actions">
                     <div class="space-y-3">
 
                         @can('acknowledge', $document)
-                            <form method="POST" action="{{ route('documents.acknowledge', $document) }}" class="space-y-2 p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20"
-                                  data-confirm="Acknowledge that you received this memo?">
-                                @csrf
-                                <p class="text-xs text-blue-700 dark:text-blue-300">📣 This is a memo broadcast to your {{ $document->division?->name ? 'division' : 'department' }}. Please acknowledge receipt.</p>
-                                <x-btn type="submit" class="w-full">✅ Acknowledge receipt</x-btn>
-                            </form>
+                            @php $desktopAck = ($settings['allow_desktop_receive'] ?? '0') === '1'; @endphp
+                            @if($desktopAck)
+                                <form method="POST" action="{{ route('documents.acknowledge', $document) }}" class="space-y-2 p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20"
+                                      data-confirm="Acknowledge that you have received this document?">
+                                    @csrf
+                                    <p class="text-xs text-blue-700 dark:text-blue-300">🔔 This document was <strong>distributed to you</strong>. Please acknowledge receipt.</p>
+                                    <x-btn type="submit" class="w-full">✅ Acknowledge receipt</x-btn>
+                                </form>
+                            @else
+                                <div class="p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20 text-center space-y-1">
+                                    <p class="text-xs text-blue-700 dark:text-blue-300">🔔 This document was <strong>distributed to you</strong> for acknowledgement.</p>
+                                    <p class="text-xs font-medium text-blue-800 dark:text-blue-200">📱 Scan the QR code on the physical document to acknowledge it.</p>
+                                </div>
+                            @endif
                         @endcan
 
                         @can('assign', $document)
@@ -480,6 +497,66 @@
                                 <textarea name="remarks" rows="2" class="input" placeholder="What changed / why resume now? (required)" required></textarea>
                                 <x-btn type="submit" variant="primary" class="w-full">▶ Resume work</x-btn>
                             </form>
+                        @endcan
+
+                        @can('distribute', $document)
+                            <button @click="panel = panel === 'distribute' ? null : 'distribute'" class="w-full flex items-center gap-2.5 px-4 py-2.5 rounded-lg bg-sky-50 dark:bg-sky-900/30 text-sky-700 dark:text-sky-300 text-sm font-medium hover:opacity-90 transition">
+                                <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 8a3 3 0 10-2.977-2.63l-4.94 2.47a3 3 0 100 4.319l4.94 2.47a3 3 0 10.895-1.789l-4.94-2.47a3.027 3.027 0 000-.74l4.94-2.47C13.456 7.68 14.19 8 15 8z"/></svg>
+                                Distribute for acknowledgement
+                            </button>
+                            <div x-show="panel === 'distribute'" x-cloak class="p-3 rounded-lg bg-gray-50 dark:bg-gray-700/40"
+                                 x-data="{
+                                    scope: 'selected',
+                                    search: '',
+                                    picked: [],
+                                    people: @js($users->map(fn($p) => ['id' => $p->id, 'name' => $p->name, 'division' => $p->division?->code ?? 'Head'])),
+                                    get filtered() { const q = this.search.toLowerCase().trim(); return this.people.filter(p => !q || p.name.toLowerCase().includes(q)); },
+                                    toggle(id) { const i = this.picked.indexOf(id); if (i === -1) this.picked.push(id); else this.picked.splice(i,1); },
+                                 }">
+                                <form method="POST" action="{{ route('documents.distribute', $document) }}" class="space-y-2"
+                                      data-confirm="Distribute this document to the selected recipients for acknowledgement?">
+                                    @csrf
+                                    <p class="text-xs text-gray-500 dark:text-gray-400">Send this document to people in <strong>your office</strong> to acknowledge — selected staff (across divisions), a whole division, or the entire department. You still keep the physical document.</p>
+                                    <select name="scope" x-model="scope" class="input">
+                                        <option value="selected">Selected people</option>
+                                        <option value="division">Everyone in a division</option>
+                                        <option value="department">Entire department</option>
+                                    </select>
+
+                                    {{-- division picker --}}
+                                    <select name="division_id" x-show="scope === 'division'" x-cloak class="input" x-bind:required="scope === 'division'">
+                                        <option value="">— Select division —</option>
+                                        @foreach($ownDivisions as $dv)
+                                            <option value="{{ $dv->id }}">{{ $dv->code }} — {{ $dv->name }}</option>
+                                        @endforeach
+                                    </select>
+
+                                    {{-- selected people picker --}}
+                                    <div x-show="scope === 'selected'" x-cloak>
+                                        <div class="flex flex-wrap gap-1 mb-1.5" x-show="picked.length">
+                                            <template x-for="id in picked" :key="id">
+                                                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[color:var(--color-primary)]/10 text-[color:var(--color-primary)] text-[11px]">
+                                                    <span x-text="(people.find(p=>p.id===id)||{}).name"></span>
+                                                    <button type="button" @click="toggle(id)">&times;</button>
+                                                </span>
+                                            </template>
+                                        </div>
+                                        <input type="text" x-model="search" class="input mb-1.5" placeholder="Search staff…">
+                                        <div class="max-h-40 overflow-y-auto rounded-lg border border-gray-200 dark:border-gray-600 divide-y divide-gray-100 dark:divide-gray-700">
+                                            <template x-for="p in filtered" :key="p.id">
+                                                <label class="flex items-center gap-2 px-2.5 py-1.5 text-sm cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/40">
+                                                    <input type="checkbox" :checked="picked.includes(p.id)" @change="toggle(p.id)" class="rounded text-[color:var(--color-primary)]">
+                                                    <span x-text="p.name + ' — ' + p.division"></span>
+                                                </label>
+                                            </template>
+                                        </div>
+                                        <template x-for="id in picked" :key="'h'+id"><input type="hidden" name="recipient_ids[]" :value="id"></template>
+                                    </div>
+
+                                    <input type="text" name="remarks" class="input" placeholder="Note to recipients (optional)">
+                                    <x-btn type="submit" class="w-full">Distribute</x-btn>
+                                </form>
+                            </div>
                         @endcan
 
                         @can('archive', $document)

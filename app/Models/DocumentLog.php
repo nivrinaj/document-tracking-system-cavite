@@ -52,6 +52,7 @@ class DocumentLog extends Model
             'resumed' => 'Resumed',
             'item_cleared' => 'Item cleared',
             'item_rejected' => 'Item rejected',
+            'distributed' => 'Distributed',
             'reopened' => 'Reopened',
             'archived' => 'Archived',
             'completed' => 'Completed',
@@ -71,6 +72,7 @@ class DocumentLog extends Model
             'resumed' => 'blue',
             'item_cleared' => 'green',
             'item_rejected' => 'red',
+            'distributed' => 'indigo',
             'archived', 'completed' => 'green',
             default => 'gray',
         };

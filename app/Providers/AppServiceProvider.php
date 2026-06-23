@@ -41,7 +41,7 @@ class AppServiceProvider extends ServiceProvider
             if (! $user->hasRole('Super Admin')) {
                 return null;
             }
-            $documentAbilities = ['view', 'receive', 'forward', 'transfer', 'pending', 'resume', 'archive', 'release', 'assign', 'update', 'delete', 'reopen', 'acknowledge'];
+            $documentAbilities = ['view', 'receive', 'forward', 'transfer', 'pending', 'resume', 'distribute', 'archive', 'release', 'assign', 'update', 'delete', 'reopen', 'acknowledge'];
 
             return in_array($ability, $documentAbilities, true) ? null : true;
         });

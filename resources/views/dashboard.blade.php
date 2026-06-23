@@ -51,7 +51,7 @@
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
             {{-- Action queues (left) --}}
             <div class="lg:col-span-2 space-y-6">
-                @php $nothingPending = $toReceive->isEmpty() && $toAction->isEmpty() && $toRelease->isEmpty() && $toClaim->isEmpty(); @endphp
+                @php $nothingPending = $toReceive->isEmpty() && $toAction->isEmpty() && $toRelease->isEmpty() && $toClaim->isEmpty() && $toAcknowledge->isEmpty(); @endphp
 
                 @if($nothingPending)
                     <x-card padding="p-10">
@@ -80,6 +80,24 @@
                                     <div class="text-xs text-gray-400">{{ $doc->tracking_code }} · from {{ $doc->creator?->name }} · ⏱ {{ $doc->updated_at->diffForHumans(null, true) }} waiting</div>
                                 </div>
                                 <x-badge color="amber">Claim</x-badge>
+                            </a>
+                        @endforeach
+                    </x-card>
+                    @endif
+
+                    @if($toAcknowledge->isNotEmpty())
+                    <x-card>
+                        <div class="flex items-center justify-between mb-3">
+                            <h2 class="font-semibold">🔔 Waiting for your acknowledgement</h2>
+                            <span class="text-xs text-gray-400">{{ $toAcknowledge->count() }} item(s)</span>
+                        </div>
+                        @foreach($toAcknowledge as $doc)
+                            <a href="{{ route('documents.show', $doc) }}" class="flex items-center justify-between gap-3 p-3 -mx-1 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                                <div class="min-w-0">
+                                    <div class="font-medium text-sm truncate">{{ $doc->title }}</div>
+                                    <div class="text-xs text-gray-400">{{ $doc->tracking_code }} · from {{ $doc->creator?->name }} · ⏱ waiting {{ $doc->updated_at->diffForHumans(null, true) }}</div>
+                                </div>
+                                <x-badge color="blue">Acknowledge</x-badge>
                             </a>
                         @endforeach
                     </x-card>

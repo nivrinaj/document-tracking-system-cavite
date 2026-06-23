@@ -78,6 +78,7 @@ class UserController extends Controller
         ]);
 
         $user->syncRoles([$data['role']]);
+        $this->syncEncodePermission($user, $request->boolean('can_encode'));
 
         return redirect()->route('users.index')->with('success', 'User created.');
     }
@@ -123,8 +124,25 @@ class UserController extends Controller
         }
 
         $user->syncRoles([$data['role']]);
+        $this->syncEncodePermission($user, $request->boolean('can_encode'));
 
         return redirect()->route('users.index')->with('success', 'User updated.');
+    }
+
+    /** Grant/revoke the per-account encode (documents.create) permission. */
+    private function syncEncodePermission(User $user, bool $canEncode): void
+    {
+        $perm = \Spatie\Permission\Models\Permission::firstOrCreate(
+            ['name' => 'documents.create', 'guard_name' => 'web']
+        );
+
+        if ($canEncode) {
+            if (! $user->hasDirectPermission('documents.create')) {
+                $user->givePermissionTo($perm);
+            }
+        } elseif ($user->hasDirectPermission('documents.create')) {
+            $user->revokePermissionTo($perm);
+        }
     }
 
     public function destroy(Request $request, User $user)

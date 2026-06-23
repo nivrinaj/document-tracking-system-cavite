@@ -19,13 +19,15 @@ class DocumentPolicy
     }
 
     /**
-     * Override authority — may act on a document even when not the current holder
-     * or out of the normal flow. Limited to Super Admin and Department Head.
-     * (Assistant Department Head can VIEW everything but cannot override actions.)
+     * Override authority — may act on a document even when not the current holder.
+     * Restricted to Super Admin ONLY. Everyone else (including Department Heads)
+     * can only act on a document once they PHYSICALLY hold it — i.e. after they
+     * have received it by scanning the QR. This prevents action buttons from
+     * showing to people a document was merely assigned/released to.
      */
     protected function canOverride(User $user): bool
     {
-        return $user->hasAnyRole(['Super Admin', 'Department Head']);
+        return $user->hasRole('Super Admin');
     }
 
     /**
@@ -125,6 +127,21 @@ class DocumentPolicy
     public function pending(User $user, Document $document): bool
     {
         if ($document->isClosed() || $document->is_pending) {
+            return false;
+        }
+
+        return ($document->current_holder_id === $user->id && $document->status === 'received')
+            || $this->canOverride($user);
+    }
+
+    /**
+     * Distribute an existing document to several people for acknowledgement
+     * (selected staff, a division, or the whole department). Available to the
+     * current holder once they've received it — even after it has passed others.
+     */
+    public function distribute(User $user, Document $document): bool
+    {
+        if ($document->isClosed()) {
             return false;
         }
 

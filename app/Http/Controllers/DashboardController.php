@@ -52,6 +52,13 @@ class DashboardController extends Controller
             ->where('status', 'received')
             ->latest('updated_at')->take(8)->get();
 
+        // Documents distributed to me for acknowledgement that I haven't acknowledged yet.
+        $toAcknowledge = Document::with('creator')
+            ->where('is_broadcast', true)
+            ->whereNotIn('status', ['archived', 'completed'])
+            ->whereHas('assignees', fn ($a) => $a->where('users.id', $user->id)->whereNull('document_assignees.acknowledged_at'))
+            ->latest('updated_at')->take(8)->get();
+
         $toRelease = collect();
         if ($user->can('documents.release')) {
             $toRelease = Document::with(['currentHolder', 'division'])
@@ -87,7 +94,7 @@ class DashboardController extends Controller
         }
 
         return view('dashboard', compact(
-            'stats', 'toReceive', 'toClaim', 'toAction', 'toRelease', 'activity',
+            'stats', 'toReceive', 'toClaim', 'toAction', 'toRelease', 'toAcknowledge', 'activity',
             'statusBreakdown', 'priorityBreakdown', 'trend', 'isHead'
         ));
     }
