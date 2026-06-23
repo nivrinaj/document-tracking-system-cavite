@@ -6,6 +6,12 @@ Format based on [Keep a Changelog](https://keepachangelog.com).
 
 ---
 
+## 1.0.3 — 2026-06-23
+**Chat bubble sizing — definitive fix, group name polish**
+- **Chat bubbles now shrink to their text for real.** Bubbles use `width: fit-content` via an inline style (immune to CSS purge/flex stretch), so a one-word message like “test” is a small bubble — fixed on the Messages page and the floating widget.
+- **Message bodies are trimmed** (leading/trailing spaces & stray newlines), and existing messages were cleaned up, so old oversized bubbles collapse to the right size.
+- **Group sender names are clearer** — readable size in the office theme colour (not faint), and in a **department group** each sender shows as **“Name · DIVISION”** so you can tell who's from where; one-to-one chats stay name-free.
+
 ## 1.0.2 — 2026-06-23
 **Chat bubble sizing, scope/role controls & group chats**
 - **Fixed chat bubble sizing** — short messages (e.g. “test”) no longer balloon into a large box; bubbles now shrink to fit their text on both the Messages page and the floating widget.

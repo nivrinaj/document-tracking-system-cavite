@@ -117,14 +117,15 @@
                     {{-- messages --}}
                     <div x-ref="scroll" class="flex-1 overflow-y-auto px-4 py-4 space-y-1.5 bg-gray-50 dark:bg-gray-900/30">
                         <template x-for="m in messages" :key="m.id">
-                            <div :class="m.mine ? 'text-right' : 'text-left'">
-                                <div class="inline-block text-left max-w-[75%] px-3 py-2 rounded-2xl text-sm leading-snug whitespace-pre-wrap break-words shadow-sm"
+                            <div class="flex flex-col" :class="m.mine ? 'items-end' : 'items-start'">
+                                <div class="px-3 py-1.5 rounded-2xl text-sm leading-snug shadow-sm"
                                      :class="m.mine ? 'text-white rounded-br-md' : 'bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 rounded-bl-md'"
-                                     :style="m.mine ? 'background: var(--color-primary)' : ''">
-                                    <span x-show="group && !m.mine" class="block text-[11px] font-semibold opacity-60 mb-0.5" x-text="m.sender"></span>
-                                    <span x-text="m.body"></span>
+                                     :style="(m.mine ? 'background: var(--color-primary); ' : '') + 'max-width: 75%; width: fit-content;'">
+                                    <span x-show="group && !m.mine" class="block text-[11px] font-semibold mb-0.5" style="color: var(--color-primary)"
+                                          x-text="m.sender + (deptGroup && m.div ? ' · ' + m.div : '')"></span>
+                                    <span class="whitespace-pre-line break-words" x-text="m.body"></span>
                                 </div>
-                                <div class="text-[10px] text-gray-400 mt-0.5 px-1" x-text="m.time"></div>
+                                <span class="text-[10px] text-gray-400 mt-0.5 px-1" x-text="m.time"></span>
                             </div>
                         </template>
                     </div>
@@ -147,7 +148,7 @@
         function chat() {
             return {
                 activeId: @js($openId),
-                title: '', group: false, messages: [], body: '', lastId: 0,
+                title: '', group: false, deptGroup: false, messages: [], body: '', lastId: 0,
                 timer: null, idle: 0,
                 newChatOpen: false, search: '',
                 csrf: document.querySelector('meta[name="csrf-token"]').content,
@@ -158,7 +159,7 @@
                     const res = await fetch(`{{ url('messages') }}/${id}`, { headers: { 'Accept': 'application/json' } });
                     if (!res.ok) { this.activeId = null; return; }
                     const data = await res.json();
-                    this.title = data.title; this.group = data.group; this.messages = data.messages;
+                    this.title = data.title; this.group = data.group; this.deptGroup = data.dept_group; this.messages = data.messages;
                     this.lastId = this.messages.length ? this.messages[this.messages.length - 1].id : 0;
                     this.$nextTick(() => this.scrollBottom());
                     this.schedule(2000); // start fast

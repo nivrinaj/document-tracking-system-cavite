@@ -137,7 +137,7 @@ class MessageController extends Controller
         $this->guard();
         $this->authorizeParticipant($conversation);
 
-        $messages = $conversation->messages()->with('sender:id,name')->get()
+        $messages = $conversation->messages()->with(['sender:id,name,division_id', 'sender.division:id,code'])->get()
             ->map(fn (Message $m) => $this->present($m, $request->user()));
 
         $conversation->participants()->updateExistingPivot($request->user()->id, ['last_read_at' => now()]);
@@ -145,6 +145,8 @@ class MessageController extends Controller
         return response()->json([
             'title' => $conversation->titleFor($request->user()),
             'group' => $conversation->is_group,
+            // A department group spans divisions, so show each sender's division there.
+            'dept_group' => $conversation->is_group && ! $conversation->division_id && $conversation->department_id,
             'messages' => $messages,
         ]);
     }
@@ -156,7 +158,7 @@ class MessageController extends Controller
         $this->authorizeParticipant($conversation);
 
         $after = (int) $request->query('after', 0);
-        $messages = $conversation->messages()->with('sender:id,name')
+        $messages = $conversation->messages()->with(['sender:id,name,division_id', 'sender.division:id,code'])
             ->where('id', '>', $after)->get()
             ->map(fn (Message $m) => $this->present($m, $request->user()));
 
@@ -174,21 +176,23 @@ class MessageController extends Controller
         $this->authorizeParticipant($conversation);
 
         $data = $request->validate(['body' => ['required', 'string', 'max:5000']]);
+        $body = trim($data['body']);
+        abort_if($body === '', 422, 'Empty message.');
 
         $message = $conversation->messages()->create([
             'user_id' => $request->user()->id,
-            'body' => $data['body'],
+            'body' => $body,
         ]);
         $conversation->update(['last_message_at' => now()]);
         $conversation->participants()->updateExistingPivot($request->user()->id, ['last_read_at' => now()]);
 
-        return response()->json(['message' => $this->present($message->load('sender:id,name'), $request->user())]);
+        return response()->json(['message' => $this->present($message->load(['sender:id,name,division_id', 'sender.division:id,code']), $request->user())]);
     }
 
     /** JSON: total unread messages across all conversations (navbar badge). */
     public function unreadCount(Request $request)
     {
-        if (! Conversation::enabled()) {
+        if (! $request->user()?->canUseChat()) {
             return response()->json(['count' => 0]);
         }
         $user = $request->user();
@@ -211,9 +215,10 @@ class MessageController extends Controller
     {
         return [
             'id' => $m->id,
-            'body' => $m->body,
+            'body' => trim((string) $m->body),
             'mine' => $m->user_id === $viewer->id,
             'sender' => $m->sender?->name ?? 'Unknown',
+            'div' => $m->sender?->division?->code,
             'time' => $m->created_at->format('M d, g:i A'),
             'ago' => $m->created_at->diffForHumans(),
         ];
