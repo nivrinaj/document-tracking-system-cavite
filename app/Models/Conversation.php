@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Conversation extends Model
 {
-    protected $fillable = ['is_group', 'title', 'created_by', 'last_message_at'];
+    protected $fillable = ['is_group', 'title', 'division_id', 'department_id', 'created_by', 'last_message_at'];
 
     protected $casts = [
         'is_group' => 'boolean',
@@ -20,6 +20,81 @@ class Conversation extends Model
     public static function enabled(): bool
     {
         return \App\Models\Setting::get('enable_messaging', '0') === '1';
+    }
+
+    /** 'all' = chat anyone; 'office' = only within your own department. */
+    public static function scope(): string
+    {
+        return \App\Models\Setting::get('messaging_scope', 'all') === 'office' ? 'office' : 'all';
+    }
+
+    /** Role names barred from chat entirely (e.g. Governor, Vice Governor). */
+    public static function excludedRoles(): array
+    {
+        return json_decode((string) \App\Models\Setting::get('messaging_excluded_roles', '[]'), true) ?: [];
+    }
+
+    /**
+     * A query of users the given actor is allowed to chat with — honouring the
+     * office scope and excluded roles, and never including the actor themselves.
+     */
+    public static function chattableUsers(User $actor)
+    {
+        $excluded = self::excludedRoles();
+
+        return User::where('is_active', true)
+            ->where('id', '!=', $actor->id)
+            ->when(self::scope() === 'office' && $actor->department_id, fn ($q) => $q->where('department_id', $actor->department_id))
+            ->when(! empty($excluded), fn ($q) => $q->whereDoesntHave('roles', fn ($r) => $r->whereIn('name', $excluded)));
+    }
+
+    /**
+     * Find (or create) the group chat for the actor's division or department,
+     * syncing in all current members of that unit (minus excluded roles).
+     * Returns null if the actor has no such unit.
+     */
+    public static function findOrCreateGroup(User $actor, string $scope): ?self
+    {
+        $excluded = self::excludedRoles();
+        $memberQuery = User::where('is_active', true)
+            ->when(! empty($excluded), fn ($q) => $q->whereDoesntHave('roles', fn ($r) => $r->whereIn('name', $excluded)));
+
+        if ($scope === 'division') {
+            if (! $actor->division_id) {
+                return null;
+            }
+            $conv = self::where('is_group', true)->where('division_id', $actor->division_id)->first();
+            $title = ($actor->division?->name ?? 'Division').' (Division)';
+            $memberQuery->where('division_id', $actor->division_id);
+            $deptId = $actor->department_id;
+            $divId = $actor->division_id;
+        } else { // department
+            if (! $actor->department_id) {
+                return null;
+            }
+            $conv = self::where('is_group', true)->whereNull('division_id')->where('department_id', $actor->department_id)->first();
+            $title = ($actor->department?->name ?? 'Department').' (Department)';
+            $memberQuery->where('department_id', $actor->department_id);
+            $deptId = $actor->department_id;
+            $divId = null;
+        }
+
+        if (! $conv) {
+            $conv = self::create([
+                'is_group' => true,
+                'title' => $title,
+                'division_id' => $divId,
+                'department_id' => $deptId,
+                'created_by' => $actor->id,
+                'last_message_at' => now(),
+            ]);
+        }
+
+        // Add any members not already in the group (don't remove anyone).
+        $memberIds = $memberQuery->pluck('id')->push($actor->id)->unique()->all();
+        $conv->participants()->syncWithoutDetaching($memberIds);
+
+        return $conv;
     }
 
     public function participants(): BelongsToMany

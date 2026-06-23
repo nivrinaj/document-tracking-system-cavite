@@ -25,6 +25,8 @@ class SettingSeeder extends Seeder
             'enable_batch_receive' => '1',  // batch-receive page
             'enable_document_linking' => '1', // link related documents
             'enable_messaging' => '0',      // in-app chat (off by default)
+            'messaging_scope' => 'all',     // 'all' (any office) or 'office' (own department only)
+            'messaging_excluded_roles' => '[]', // role names barred from chat (JSON array)
             'tracking_prefix' => 'PGC',     // prefix for tracking codes: {PREFIX}-2026-XXXXX
             'records_per_page' => '12',      // pagination size for tables
             'support_contact' => '',         // e.g. "ISDA Help Desk · local 1234" shown in footer

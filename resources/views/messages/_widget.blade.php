@@ -55,6 +55,16 @@
 
         {{-- NEW CHAT --}}
         <div x-show="view === 'new'" class="flex-1 overflow-y-auto p-3">
+            <div class="flex gap-2 mb-2" x-show="canDiv || canDept">
+                <button x-show="canDiv" @click="startGroup('division')" class="flex-1 inline-flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-lg bg-[color:var(--color-primary)]/10 text-[color:var(--color-primary)] text-xs font-medium hover:opacity-90">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m6-3.13a4 4 0 10-4-4 4 4 0 004 4z"/></svg>
+                    My Division
+                </button>
+                <button x-show="canDept" @click="startGroup('department')" class="flex-1 inline-flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-lg bg-[color:var(--color-primary)]/10 text-[color:var(--color-primary)] text-xs font-medium hover:opacity-90">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0H5m14 0h2M5 21H3m4-14h2m-2 4h2m6-4h2m-2 4h2"/></svg>
+                    My Department
+                </button>
+            </div>
             <input type="text" x-model="search" class="input mb-2" placeholder="Search colleague…">
             <template x-for="p in filteredPeople" :key="p.id">
                 <button @click="startWith(p.id)" class="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-left text-sm hover:bg-gray-50 dark:hover:bg-gray-700/40">
@@ -69,16 +79,14 @@
         <div x-show="view === 'thread'" class="flex-1 flex flex-col min-h-0">
             <div x-ref="scroll" class="flex-1 overflow-y-auto p-3 space-y-1.5 bg-gray-50 dark:bg-gray-900/30">
                 <template x-for="m in messages" :key="m.id">
-                    <div class="flex" :class="m.mine ? 'justify-end' : 'justify-start'">
-                        <div class="flex flex-col max-w-[78%]" :class="m.mine ? 'items-end' : 'items-start'">
-                            <div class="px-3 py-2 rounded-2xl text-sm text-left leading-snug whitespace-pre-wrap break-words shadow-sm"
-                                 :class="m.mine ? 'text-white rounded-br-md' : 'bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 rounded-bl-md'"
-                                 :style="m.mine ? 'background: var(--color-primary)' : ''">
-                                <span x-show="group && !m.mine" class="block text-[11px] font-semibold opacity-60 mb-0.5" x-text="m.sender"></span>
-                                <span x-text="m.body"></span>
-                            </div>
-                            <span class="text-[10px] text-gray-400 mt-0.5 px-1" x-text="m.time"></span>
+                    <div :class="m.mine ? 'text-right' : 'text-left'">
+                        <div class="inline-block text-left max-w-[80%] px-3 py-2 rounded-2xl text-sm leading-snug whitespace-pre-wrap break-words shadow-sm"
+                             :class="m.mine ? 'text-white rounded-br-md' : 'bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 rounded-bl-md'"
+                             :style="m.mine ? 'background: var(--color-primary)' : ''">
+                            <span x-show="group && !m.mine" class="block text-[11px] font-semibold opacity-60 mb-0.5" x-text="m.sender"></span>
+                            <span x-text="m.body"></span>
                         </div>
+                        <div class="text-[10px] text-gray-400 mt-0.5 px-1" x-text="m.time"></div>
                     </div>
                 </template>
             </div>
@@ -97,7 +105,7 @@
     function chatWidget() {
         return {
             open: false, view: 'list',
-            conversations: [], people: [], search: '',
+            conversations: [], people: [], search: '', canDiv: false, canDept: false,
             activeId: null, title: '', group: false, messages: [], body: '', lastId: 0,
             timer: null, idle: 0,
             csrf: document.querySelector('meta[name="csrf-token"]').content,
@@ -116,9 +124,22 @@
                 if (r.ok) this.conversations = (await r.json()).conversations;
             },
             async loadPeople() {
-                if (this.people.length) return;
                 const r = await fetch(`${this.base}/people`, { headers: { 'Accept': 'application/json' } });
-                if (r.ok) this.people = (await r.json()).people;
+                if (r.ok) {
+                    const d = await r.json();
+                    this.people = d.people;
+                    this.canDiv = d.canDivisionGroup; this.canDept = d.canDepartmentGroup;
+                }
+            },
+            async startGroup(scope) {
+                const r = await fetch(`${this.base}/group`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': this.csrf, 'Accept': 'application/json' },
+                    body: JSON.stringify({ scope })
+                });
+                if (!r.ok) return;
+                const d = await r.json();
+                if (d.id) { this.search = ''; this.openConversation(d.id, ''); this.loadConversations(); }
             },
             get filteredPeople() {
                 const q = this.search.toLowerCase().trim();

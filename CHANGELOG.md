@@ -6,6 +6,13 @@ Format based on [Keep a Changelog](https://keepachangelog.com).
 
 ---
 
+## 1.0.2 — 2026-06-23
+**Chat bubble sizing, scope/role controls & group chats**
+- **Fixed chat bubble sizing** — short messages (e.g. “test”) no longer balloon into a large box; bubbles now shrink to fit their text on both the Messages page and the floating widget.
+- **Chat scope control** (Super Admin → Settings → Workflow) — choose whether staff can message **anyone across offices** or **only within their own office**.
+- **Exclude roles from chat** — bar specific roles (e.g. Governor, Vice Governor, Chiefs of Staff) from messaging entirely; they can't chat and don't appear as someone to message.
+- **Group chats** — start a **Division** or **Department** group from the New-chat menu (page and widget). Membership is auto-filled from that unit (excluded roles skipped) and re-used rather than duplicated.
+
 ## 1.0.1 — 2026-06-23
 **Chat layout fix & faster delivery**
 - **Fixed message alignment** — received messages now align cleanly on the left (they were rendering right-aligned), with proper bubble “tail” corners and tidy timestamps.

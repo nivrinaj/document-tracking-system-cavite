@@ -219,6 +219,32 @@
                             </span>
                         </span>
                     </label>
+
+                    {{-- Messaging options (only meaningful when chat is on) --}}
+                    @php $excludedRoles = json_decode($settings['messaging_excluded_roles'] ?? '[]', true) ?: []; @endphp
+                    <div class="ml-7 pl-1 border-l-2 border-gray-100 dark:border-gray-700 space-y-4">
+                        <div>
+                            <label class="label">Who can staff chat with?</label>
+                            <select name="messaging_scope" class="input max-w-sm">
+                                <option value="all" @selected(($settings['messaging_scope'] ?? 'all') === 'all')>Anyone — staff from any office</option>
+                                <option value="office" @selected(($settings['messaging_scope'] ?? 'all') === 'office')>Their own office only</option>
+                            </select>
+                        </div>
+                        <div>
+                            <span class="label">Exclude these roles from chat</span>
+                            <p class="text-xs text-gray-400 -mt-1 mb-2">Selected roles can't use chat and won't appear as someone to message (e.g. Governor, Vice Governor, Chiefs of Staff).</p>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1.5 max-h-56 overflow-y-auto pr-1">
+                                @foreach($roles as $roleName)
+                                    @continue($roleName === 'Super Admin')
+                                    <label class="flex items-center gap-2 text-sm">
+                                        <input type="checkbox" name="messaging_excluded_roles[]" value="{{ $roleName }}"
+                                               class="rounded text-[color:var(--color-primary)]" @checked(in_array($roleName, $excludedRoles))>
+                                        {{ $roleName }}
+                                    </label>
+                                @endforeach
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </x-card>
 

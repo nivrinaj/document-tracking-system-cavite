@@ -9,10 +9,10 @@ use Illuminate\Http\Request;
 
 class MessageController extends Controller
 {
-    /** Block everything when the chat feature is off. */
+    /** Block everything when the chat feature is off or this user's role is barred. */
     private function guard(): void
     {
-        abort_unless(Conversation::enabled(), 404);
+        abort_unless(auth()->user()?->canUseChat(), 404);
     }
 
     private function authorizeParticipant(Conversation $conversation): void
@@ -32,17 +32,15 @@ class MessageController extends Controller
             ->orderByDesc('updated_at')
             ->get();
 
-        // Colleagues you can start a chat with.
-        $people = User::where('is_active', true)
-            ->where('id', '!=', $user->id)
-            ->with('department')
-            ->orderBy('name')
-            ->get(['id', 'name', 'department_id']);
+        // Colleagues you can start a chat with (scoped + excluded roles applied).
+        $people = Conversation::chattableUsers($user)->with('department')->orderBy('name')->get();
 
         return view('messages.index', [
             'conversations' => $conversations,
             'people' => $people,
             'openId' => $request->integer('c') ?: null,
+            'canDivisionGroup' => (bool) $user->division_id,
+            'canDepartmentGroup' => (bool) $user->department_id,
         ]);
     }
 
@@ -52,7 +50,33 @@ class MessageController extends Controller
         $this->guard();
         $data = $request->validate(['user_id' => ['required', 'exists:users,id', 'different:'.$request->user()->id]]);
 
+        // Enforce scope + excluded roles: you can only start a chat with someone you're allowed to.
+        $allowed = Conversation::chattableUsers($request->user())->where('users.id', (int) $data['user_id'])->exists();
+        abort_unless($allowed, 403);
+
         $conversation = Conversation::findOrCreateDirect($request->user(), (int) $data['user_id']);
+
+        if ($request->wantsJson()) {
+            return response()->json(['id' => $conversation->id]);
+        }
+
+        return redirect()->route('messages.index', ['c' => $conversation->id]);
+    }
+
+    /** Start (or open) the division/department group chat for the current user. */
+    public function group(Request $request)
+    {
+        $this->guard();
+        $data = $request->validate(['scope' => ['required', 'in:division,department']]);
+
+        $conversation = Conversation::findOrCreateGroup($request->user(), $data['scope']);
+        if (! $conversation) {
+            $msg = 'You are not assigned to a '.$data['scope'].', so that group is unavailable.';
+
+            return $request->wantsJson()
+                ? response()->json(['error' => $msg], 422)
+                : back()->with('error', $msg);
+        }
 
         if ($request->wantsJson()) {
             return response()->json(['id' => $conversation->id]);
@@ -89,8 +113,7 @@ class MessageController extends Controller
         $this->guard();
         $user = $request->user();
 
-        $people = User::where('is_active', true)
-            ->where('id', '!=', $user->id)
+        $people = Conversation::chattableUsers($user)
             ->with('department')
             ->orderBy('name')
             ->get()
@@ -101,7 +124,11 @@ class MessageController extends Controller
                 'avatar' => $p->avatar_url,
             ]);
 
-        return response()->json(['people' => $people]);
+        return response()->json([
+            'people' => $people,
+            'canDivisionGroup' => (bool) $user->division_id,
+            'canDepartmentGroup' => (bool) $user->department_id,
+        ]);
     }
 
     /** JSON: messages in a conversation (marks it read). */

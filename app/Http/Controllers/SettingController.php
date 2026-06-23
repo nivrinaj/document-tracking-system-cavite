@@ -11,7 +11,9 @@ class SettingController extends Controller
 {
     public function edit()
     {
-        return view('settings.edit');
+        return view('settings.edit', [
+            'roles' => \Spatie\Permission\Models\Role::orderBy('name')->pluck('name'),
+        ]);
     }
 
     public function update(Request $request)
@@ -35,6 +37,9 @@ class SettingController extends Controller
             'enable_batch_receive' => ['nullable', 'boolean'],
             'enable_document_linking' => ['nullable', 'boolean'],
             'enable_messaging' => ['nullable', 'boolean'],
+            'messaging_scope' => ['nullable', 'in:all,office'],
+            'messaging_excluded_roles' => ['nullable', 'array'],
+            'messaging_excluded_roles.*' => ['string'],
             'tracking_prefix' => ['required', 'string', 'max:10', 'alpha_dash'],
             'records_per_page' => ['required', 'integer', 'min:5', 'max:100'],
             'support_contact' => ['nullable', 'string', 'max:255'],
@@ -53,6 +58,8 @@ class SettingController extends Controller
         Setting::put('enable_batch_receive', $request->boolean('enable_batch_receive') ? '1' : '0');
         Setting::put('enable_document_linking', $request->boolean('enable_document_linking') ? '1' : '0');
         Setting::put('enable_messaging', $request->boolean('enable_messaging') ? '1' : '0');
+        Setting::put('messaging_scope', $request->input('messaging_scope') === 'office' ? 'office' : 'all');
+        Setting::put('messaging_excluded_roles', json_encode(array_values($request->input('messaging_excluded_roles', []))));
 
         // Image fields: [setting key => [form field, remove field]]
         $images = [

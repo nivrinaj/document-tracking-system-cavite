@@ -134,6 +134,17 @@ class User extends Authenticatable
             ->withPivot('last_read_at')->withTimestamps();
     }
 
+    /** May this user use in-app chat? (Feature on, and their role isn't excluded.) */
+    public function canUseChat(): bool
+    {
+        if (! \App\Models\Conversation::enabled()) {
+            return false;
+        }
+        $excluded = \App\Models\Conversation::excludedRoles();
+
+        return empty($excluded) || ! $this->hasAnyRole($excluded);
+    }
+
     /* ----------------------------------------------------------------
      | Helpers
      * ---------------------------------------------------------------- */

@@ -20,6 +20,28 @@
 
             {{-- New chat picker --}}
             <div x-show="newChatOpen" x-cloak class="p-3 border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/30">
+                @if($canDivisionGroup || $canDepartmentGroup)
+                    <div class="flex gap-2 mb-2">
+                        @if($canDivisionGroup)
+                            <form method="POST" action="{{ route('messages.group') }}" class="flex-1">
+                                @csrf <input type="hidden" name="scope" value="division">
+                                <button type="submit" class="w-full inline-flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-lg bg-[color:var(--color-primary)]/10 text-[color:var(--color-primary)] text-xs font-medium hover:opacity-90">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m6-3.13a4 4 0 10-4-4 4 4 0 004 4z"/></svg>
+                                    My Division
+                                </button>
+                            </form>
+                        @endif
+                        @if($canDepartmentGroup)
+                            <form method="POST" action="{{ route('messages.group') }}" class="flex-1">
+                                @csrf <input type="hidden" name="scope" value="department">
+                                <button type="submit" class="w-full inline-flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-lg bg-[color:var(--color-primary)]/10 text-[color:var(--color-primary)] text-xs font-medium hover:opacity-90">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0H5m14 0h2M5 21H3m4-14h2m-2 4h2m6-4h2m-2 4h2"/></svg>
+                                    My Department
+                                </button>
+                            </form>
+                        @endif
+                    </div>
+                @endif
                 <input type="text" x-model="search" class="input mb-2" placeholder="Search colleague…">
                 <div class="max-h-60 overflow-y-auto space-y-1">
                     @foreach($people as $p)
@@ -95,16 +117,14 @@
                     {{-- messages --}}
                     <div x-ref="scroll" class="flex-1 overflow-y-auto px-4 py-4 space-y-1.5 bg-gray-50 dark:bg-gray-900/30">
                         <template x-for="m in messages" :key="m.id">
-                            <div class="flex" :class="m.mine ? 'justify-end' : 'justify-start'">
-                                <div class="flex flex-col max-w-[72%]" :class="m.mine ? 'items-end' : 'items-start'">
-                                    <div class="px-3.5 py-2 rounded-2xl text-sm text-left leading-snug whitespace-pre-wrap break-words shadow-sm"
-                                         :class="m.mine ? 'text-white rounded-br-md' : 'bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 rounded-bl-md'"
-                                         :style="m.mine ? 'background: var(--color-primary)' : ''">
-                                        <span x-show="group && !m.mine" class="block text-[11px] font-semibold opacity-60 mb-0.5" x-text="m.sender"></span>
-                                        <span x-text="m.body"></span>
-                                    </div>
-                                    <span class="text-[10px] text-gray-400 mt-0.5 px-1" x-text="m.time"></span>
+                            <div :class="m.mine ? 'text-right' : 'text-left'">
+                                <div class="inline-block text-left max-w-[75%] px-3 py-2 rounded-2xl text-sm leading-snug whitespace-pre-wrap break-words shadow-sm"
+                                     :class="m.mine ? 'text-white rounded-br-md' : 'bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 rounded-bl-md'"
+                                     :style="m.mine ? 'background: var(--color-primary)' : ''">
+                                    <span x-show="group && !m.mine" class="block text-[11px] font-semibold opacity-60 mb-0.5" x-text="m.sender"></span>
+                                    <span x-text="m.body"></span>
                                 </div>
+                                <div class="text-[10px] text-gray-400 mt-0.5 px-1" x-text="m.time"></div>
                             </div>
                         </template>
                     </div>

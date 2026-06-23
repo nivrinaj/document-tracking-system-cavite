@@ -72,6 +72,7 @@ Route::middleware(['auth', 'active'])->group(function () {
     Route::get('/messages/conversations', [\App\Http\Controllers\MessageController::class, 'conversations'])->name('messages.conversations');
     Route::get('/messages/people', [\App\Http\Controllers\MessageController::class, 'people'])->name('messages.people');
     Route::post('/messages/start', [\App\Http\Controllers\MessageController::class, 'start'])->name('messages.start');
+    Route::post('/messages/group', [\App\Http\Controllers\MessageController::class, 'group'])->name('messages.group');
     Route::get('/messages/{conversation}', [\App\Http\Controllers\MessageController::class, 'show'])->name('messages.show');
     Route::get('/messages/{conversation}/poll', [\App\Http\Controllers\MessageController::class, 'poll'])->name('messages.poll');
     Route::post('/messages/{conversation}', [\App\Http\Controllers\MessageController::class, 'store'])->name('messages.store');
