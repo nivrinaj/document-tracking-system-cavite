@@ -6,6 +6,13 @@ Format based on [Keep a Changelog](https://keepachangelog.com).
 
 ---
 
+## 1.0.1 — 2026-06-23
+**Chat layout fix & faster delivery**
+- **Fixed message alignment** — received messages now align cleanly on the left (they were rendering right-aligned), with proper bubble “tail” corners and tidy timestamps.
+- **Sender names hidden in one-to-one chats** (shown only in group chats), removing clutter.
+- **Faster, lighter delivery** — replaced the fixed 4-second refresh with **adaptive polling**: new messages arrive in about **2 seconds** while you're actively chatting and ease back to ~6 seconds when idle (snappier when it matters, lighter when quiet). Polling still pauses when the tab/widget is closed.
+- Applied to both the full **Messages** page and the floating chat bubble.
+
 ## 1.0.0 — Initial Release (2026-06-23)
 
 The first official release of the **PGC Document Tracking System**. Everything below

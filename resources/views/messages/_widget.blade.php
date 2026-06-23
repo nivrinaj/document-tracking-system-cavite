@@ -67,17 +67,17 @@
 
         {{-- THREAD --}}
         <div x-show="view === 'thread'" class="flex-1 flex flex-col min-h-0">
-            <div x-ref="scroll" class="flex-1 overflow-y-auto p-3 space-y-2 bg-gray-50/50 dark:bg-gray-900/20">
+            <div x-ref="scroll" class="flex-1 overflow-y-auto p-3 space-y-1.5 bg-gray-50 dark:bg-gray-900/30">
                 <template x-for="m in messages" :key="m.id">
-                    <div :class="m.mine ? 'flex justify-end' : 'flex justify-start'">
-                        <div class="max-w-[80%]">
-                            <div :class="m.mine ? 'text-white' : 'bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border border-gray-100 dark:border-gray-600'"
-                                 :style="m.mine ? 'background: var(--color-primary)' : ''"
-                                 class="px-3 py-2 rounded-2xl text-sm whitespace-pre-wrap break-words">
-                                <span x-show="!m.mine" class="block text-[10px] font-semibold opacity-70" x-text="m.sender"></span>
+                    <div class="flex" :class="m.mine ? 'justify-end' : 'justify-start'">
+                        <div class="flex flex-col max-w-[78%]" :class="m.mine ? 'items-end' : 'items-start'">
+                            <div class="px-3 py-2 rounded-2xl text-sm text-left leading-snug whitespace-pre-wrap break-words shadow-sm"
+                                 :class="m.mine ? 'text-white rounded-br-md' : 'bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 rounded-bl-md'"
+                                 :style="m.mine ? 'background: var(--color-primary)' : ''">
+                                <span x-show="group && !m.mine" class="block text-[11px] font-semibold opacity-60 mb-0.5" x-text="m.sender"></span>
                                 <span x-text="m.body"></span>
                             </div>
-                            <div class="text-[10px] text-gray-400 mt-0.5" :class="m.mine ? 'text-right' : ''" x-text="m.time"></div>
+                            <span class="text-[10px] text-gray-400 mt-0.5 px-1" x-text="m.time"></span>
                         </div>
                     </div>
                 </template>
@@ -98,7 +98,8 @@
         return {
             open: false, view: 'list',
             conversations: [], people: [], search: '',
-            activeId: null, title: '', messages: [], body: '', lastId: 0, poller: null,
+            activeId: null, title: '', group: false, messages: [], body: '', lastId: 0,
+            timer: null, idle: 0,
             csrf: document.querySelector('meta[name="csrf-token"]').content,
             base: '{{ url('messages') }}',
             init() {
@@ -108,7 +109,7 @@
             toggle() {
                 this.open = !this.open;
                 if (this.open) { this.view = 'list'; this.loadConversations(); }
-                else { clearInterval(this.poller); }
+                else { clearTimeout(this.timer); }
             },
             async loadConversations() {
                 const r = await fetch(`${this.base}/conversations`, { headers: { 'Accept': 'application/json' } });
@@ -139,28 +140,33 @@
                 const r = await fetch(`${this.base}/${id}`, { headers: { 'Accept': 'application/json' } });
                 if (!r.ok) { this.view = 'list'; return; }
                 const d = await r.json();
-                this.title = d.title; this.messages = d.messages;
+                this.title = d.title; this.group = d.group; this.messages = d.messages;
                 this.lastId = this.messages.length ? this.messages[this.messages.length - 1].id : 0;
                 this.$nextTick(() => this.scrollBottom());
-                this.startPolling();
+                this.schedule(2000);
                 if (window.__refreshMsgBadge) window.__refreshMsgBadge();
             },
-            backToList() { this.view = 'list'; this.activeId = null; clearInterval(this.poller); this.loadConversations(); if (window.__refreshMsgBadge) window.__refreshMsgBadge(); },
-            startPolling() {
-                clearInterval(this.poller);
-                this.poller = setInterval(async () => {
-                    if (!this.activeId || !this.open || document.hidden) return;
-                    const r = await fetch(`${this.base}/${this.activeId}/poll?after=${this.lastId}`, { headers: { 'Accept': 'application/json' } });
-                    if (!r.ok) return;
-                    const d = await r.json();
-                    if (d.messages.length) {
-                        const near = this.isNearBottom();
-                        this.messages.push(...d.messages);
-                        this.lastId = d.messages[d.messages.length - 1].id;
-                        if (near) this.$nextTick(() => this.scrollBottom());
-                        if (window.__refreshMsgBadge) window.__refreshMsgBadge();
-                    }
-                }, 4000);
+            backToList() { this.view = 'list'; this.activeId = null; clearTimeout(this.timer); this.loadConversations(); if (window.__refreshMsgBadge) window.__refreshMsgBadge(); },
+            // Adaptive polling: 2s right after activity, easing to 6s when idle.
+            schedule(delay) { clearTimeout(this.timer); this.timer = setTimeout(() => this.tick(), delay); },
+            async tick() {
+                if (this.activeId && this.open && !document.hidden) {
+                    try {
+                        const r = await fetch(`${this.base}/${this.activeId}/poll?after=${this.lastId}`, { headers: { 'Accept': 'application/json' } });
+                        if (r.ok) {
+                            const d = await r.json();
+                            if (d.messages.length) {
+                                const near = this.isNearBottom();
+                                this.messages.push(...d.messages);
+                                this.lastId = d.messages[d.messages.length - 1].id;
+                                if (near) this.$nextTick(() => this.scrollBottom());
+                                if (window.__refreshMsgBadge) window.__refreshMsgBadge();
+                                this.idle = 0;
+                            } else { this.idle++; }
+                        }
+                    } catch (e) { /* ignore */ }
+                }
+                this.schedule(Math.min(6000, 2000 + this.idle * 1000));
             },
             async send() {
                 const text = this.body.trim();
@@ -174,6 +180,7 @@
                 if (!r.ok) return;
                 const d = await r.json();
                 this.messages.push(d.message); this.lastId = d.message.id;
+                this.idle = 0; this.schedule(2000);
                 this.$nextTick(() => this.scrollBottom());
             },
             isNearBottom() { const el = this.$refs.scroll; return el ? (el.scrollHeight - el.scrollTop - el.clientHeight < 80) : true; },

@@ -117,6 +117,7 @@ class MessageController extends Controller
 
         return response()->json([
             'title' => $conversation->titleFor($request->user()),
+            'group' => $conversation->is_group,
             'messages' => $messages,
         ]);
     }
