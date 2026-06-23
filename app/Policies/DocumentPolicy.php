@@ -53,14 +53,22 @@ class DocumentPolicy
         return $user->hasRole('Super Admin') && $document->isClosed();
     }
 
-    /** A recipient of a broadcast memo can acknowledge receipt once. */
+    /**
+     * A user who was ASKED to acknowledge (ack_requested_at set) can acknowledge
+     * once, until they have. This is independent of whether the document is a
+     * broadcast — distributing a held document also asks specific people to ack.
+     */
     public function acknowledge(User $user, Document $document): bool
     {
-        return $document->is_broadcast
-            && $document->assignees()
-                ->where('users.id', $user->id)
-                ->wherePivotNull('acknowledged_at')
-                ->exists();
+        if ($document->isClosed()) {
+            return false;
+        }
+
+        return $document->assignees()
+            ->where('users.id', $user->id)
+            ->wherePivotNotNull('ack_requested_at')
+            ->wherePivotNull('acknowledged_at')
+            ->exists();
     }
 
     /**

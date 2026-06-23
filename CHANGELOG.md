@@ -6,6 +6,15 @@ reviewed or rolled back. Format based on [Keep a Changelog](https://keepachangel
 
 ---
 
+## v2.8.3 — 2026-06-23
+**Acknowledgement targeting fix, combobox styling, archive vs complete clarity**
+- **Fixed: distributing a document no longer makes everyone an "acknowledger."** Previously distributing flipped the whole document into a broadcast, so every prior holder (and even the distributor) showed “waiting to acknowledge.” Now only the **specifically chosen recipients** are asked — tracked via a new “acknowledgement requested” marker. The distributor and earlier handlers are unaffected.
+- **Pausing (pending) now freezes acknowledgement timers too** — for the holder and all distribution recipients.
+- **Fixed the search dropdowns' appearance** — the Office and Assignee pickers now have a proper border/background (they were rendering borderless/“floating”).
+- **Archive vs Complete is now explicit.** Closing a document offers two clearly described choices: **✅ Completed** (the task is fully done) or **🗄 Archived** (closed without completion — cancelled, duplicate, no longer needed). The closed banner and history say which one applies.
+- **Mobile QR view:** the confusing **“From”** field is now **“Origin (encoded by)”**, distinct from the “last handled by” line.
+- Acknowledgement wording is now generic (“document”, not “memo”), since distributed items aren't always memos.
+
 ## v2.8.2 — 2026-06-23
 **Acknowledgement flow, strict possession rules, encode-per-account & fixes**
 - **Critical fix — actions only appear once you physically hold a document.** Previously a Department Head saw Assign/Release/Forward/Archive on a document merely *assigned* to them. Now **everyone** (heads included) can only act after they've **received** it by scanning the QR. Override is limited to **Super Admin**. *Release* is now strictly the encoder's action.

@@ -18,7 +18,7 @@
             <dl class="grid grid-cols-2 gap-3 text-sm mt-5 border-t border-gray-100 dark:border-gray-700 pt-4">
                 <div><dt class="text-gray-400 text-xs">Type</dt><dd>{{ $document->document_type }}</dd></div>
                 <div><dt class="text-gray-400 text-xs">Current Holder</dt><dd class="font-medium">{{ $document->currentHolder?->name ?? 'Unassigned' }}<span class="block text-[11px] text-gray-400 font-normal">{{ $document->currentHolder?->orgUnit() }}</span></dd></div>
-                <div><dt class="text-gray-400 text-xs">From</dt><dd>{{ $document->creator?->name ?? '—' }}<span class="block text-[11px] text-gray-400">{{ $document->creator?->orgUnit() }}</span></dd></div>
+                <div><dt class="text-gray-400 text-xs">Origin (encoded by)</dt><dd>{{ $document->creator?->name ?? '—' }}<span class="block text-[11px] text-gray-400">{{ $document->creator?->orgUnit() }}</span></dd></div>
                 <div><dt class="text-gray-400 text-xs">Reference</dt><dd>{{ $document->voucher_number ?? $document->reference_no ?? '—' }}</dd></div>
                 <div><dt class="text-gray-400 text-xs">Released</dt><dd>{{ $document->released_at ? $document->released_at->diffForHumans() : '—' }}</dd></div>
                 <div><dt class="text-gray-400 text-xs">Last action</dt><dd>{{ $document->elapsedSinceLastAction() }} ago</dd></div>
@@ -119,14 +119,22 @@
                 @endcan
 
                 @can('archive', $document)
-                    <button @click="panel = panel === 'archive' ? null : 'archive'" class="w-full text-left px-4 py-2 rounded-lg bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-300 text-sm font-medium">Archive / Complete</button>
-                    <div x-show="panel === 'archive'" x-cloak class="p-3 rounded-lg bg-gray-50 dark:bg-gray-700/40">
+                    <button @click="panel = panel === 'archive' ? null : 'archive'" class="w-full text-left px-4 py-2 rounded-lg bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-300 text-sm font-medium">Close document (complete or archive)</button>
+                    <div x-show="panel === 'archive'" x-cloak class="p-3 rounded-lg bg-gray-50 dark:bg-gray-700/40" x-data="{ outcome: '1' }">
                         <form method="POST" action="{{ route('documents.archive', $document) }}" class="space-y-2"
-                              data-confirm="Archive/close this document? This ends its active tracking.">
+                              data-confirm="Close this document? This ends its active tracking.">
                             @csrf
-                            <label class="flex items-center gap-2 text-sm"><input type="checkbox" name="completed" value="1" class="rounded"> Mark as fully completed</label>
-                            <textarea name="remarks" rows="2" class="input" placeholder="Completion details (required)" required></textarea>
-                            <x-btn type="submit" variant="success" class="w-full">Archive</x-btn>
+                            <p class="text-xs text-gray-500 dark:text-gray-400">How is this document being closed?</p>
+                            <label class="flex items-start gap-2 text-sm p-2 rounded-lg border" :class="outcome === '1' ? 'border-green-300 bg-green-50/60 dark:border-green-800 dark:bg-green-900/20' : 'border-gray-200 dark:border-gray-600'">
+                                <input type="radio" name="completed" value="1" x-model="outcome" class="mt-0.5 text-green-600">
+                                <span><span class="font-medium">✅ Completed</span><span class="block text-xs text-gray-500 dark:text-gray-400">The task/request is fully done and resolved.</span></span>
+                            </label>
+                            <label class="flex items-start gap-2 text-sm p-2 rounded-lg border" :class="outcome === '0' ? 'border-gray-400 bg-gray-100 dark:border-gray-500 dark:bg-gray-700/60' : 'border-gray-200 dark:border-gray-600'">
+                                <input type="radio" name="completed" value="0" x-model="outcome" class="mt-0.5">
+                                <span><span class="font-medium">🗄 Archived</span><span class="block text-xs text-gray-500 dark:text-gray-400">Closed without completion (cancelled, duplicate, no longer needed).</span></span>
+                            </label>
+                            <textarea name="remarks" rows="2" class="input" placeholder="Reason / details (required)" required></textarea>
+                            <x-btn type="submit" variant="success" class="w-full"><span x-text="outcome === '1' ? 'Mark as Completed' : 'Archive document'"></span></x-btn>
                         </form>
                     </div>
                 @endcan

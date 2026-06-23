@@ -176,7 +176,7 @@ class Document extends Model
     /** All staff who have ever been assigned/held this document. */
     public function assignees(): BelongsToMany
     {
-        return $this->belongsToMany(User::class, 'document_assignees')->withPivot('acknowledged_at')->withTimestamps();
+        return $this->belongsToMany(User::class, 'document_assignees')->withPivot('acknowledged_at', 'ack_requested_at')->withTimestamps();
     }
 
     /** Possession ledger — every period the document sat with a holder / office pool. */

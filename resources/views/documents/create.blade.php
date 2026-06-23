@@ -142,7 +142,7 @@
                         <div class="relative" @click.outside="srcOfficeOpen = false">
                             <input type="hidden" name="source_department_id" :value="srcOffice">
                             <button type="button" @click="srcOfficeOpen = !srcOfficeOpen; srcOfficeSearch = ''"
-                                    class="input flex items-center justify-between text-left">
+                                    class="input-btn flex items-center justify-between text-left">
                                 <span class="truncate" :class="srcOffice === '' ? 'text-gray-400' : ''" x-text="srcOfficeLabel"></span>
                                 <svg class="w-4 h-4 text-gray-400 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
                             </button>
@@ -219,7 +219,7 @@
                             <label class="label">Assignee</label>
                             <div class="relative" @click.outside="assigneeOpen = false">
                                 <input type="hidden" name="assignee_id" :value="assigneeId">
-                                <button type="button" @click="assigneeOpen = !assigneeOpen; assigneeSearch = ''" class="input flex items-center justify-between text-left">
+                                <button type="button" @click="assigneeOpen = !assigneeOpen; assigneeSearch = ''" class="input-btn flex items-center justify-between text-left">
                                     <span class="truncate" :class="!assigneeId ? 'text-gray-400' : ''" x-text="assigneeLabel"></span>
                                     <svg class="w-4 h-4 text-gray-400 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
                                 </button>

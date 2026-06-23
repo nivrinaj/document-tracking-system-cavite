@@ -79,7 +79,7 @@ class DocumentService
                 ->get();
 
             foreach ($recipients as $r) {
-                $this->addAssignee($document, $r->id);
+                $this->addAcknowledger($document, $r->id);
                 $r->notify(new \App\Notifications\DocumentRouted($document, 'broadcast', $actor->name, $data['assign_remarks'] ?? null));
             }
 
@@ -107,7 +107,7 @@ class DocumentService
     public function acknowledge(Document $document, User $user): void
     {
         $document->assignees()->updateExistingPivot($user->id, ['acknowledged_at' => now()]);
-        $this->log($document, 'received', $user, remarks: 'Acknowledged receipt of the memo.');
+        $this->log($document, 'received', $user, remarks: 'Acknowledged receipt of the document.');
     }
 
     private function divisionOf(int $userId): ?int
@@ -172,6 +172,17 @@ class DocumentService
         if ($userId) {
             $document->assignees()->syncWithoutDetaching([$userId]);
         }
+    }
+
+    /**
+     * Ask a user to ACKNOWLEDGE the document (also makes them a concerned party).
+     * Only people with ack_requested_at set are prompted to acknowledge.
+     */
+    public function addAcknowledger(Document $document, int $userId): void
+    {
+        $document->assignees()->syncWithoutDetaching([
+            $userId => ['ack_requested_at' => now()],
+        ]);
     }
 
     /**
@@ -408,10 +419,11 @@ class DocumentService
                 ->when($scope === 'division', fn ($q) => $q->where('division_id', $divisionId))
                 ->get();
 
-            // Turn on acknowledgement tracking and attach the recipients.
-            $document->update(['is_broadcast' => true]);
+            // Request acknowledgement from each recipient. The document keeps its
+            // current holder (it is NOT turned into a broadcast) — only the people
+            // explicitly chosen here are asked to acknowledge.
             foreach ($recipients as $r) {
-                $this->addAssignee($document, $r->id);
+                $this->addAcknowledger($document, $r->id);
                 $r->notify(new \App\Notifications\DocumentRouted($document, 'broadcast', $actor->name, $remarks));
             }
 
@@ -471,7 +483,7 @@ class DocumentService
                 ->get();
 
             foreach ($recipients as $r) {
-                $this->addAssignee($document, $r->id);
+                $this->addAcknowledger($document, $r->id);
                 $r->notify(new \App\Notifications\DocumentRouted($document, 'broadcast', $actor->name, $data['assign_remarks'] ?? null));
             }
 

@@ -202,7 +202,12 @@
                 {{-- Concerned staff --}}
                 @php
                     $concernedCount = $document->assignees->count();
-                    $ackedCount = $document->is_broadcast ? $document->assignees->filter(fn ($p) => $p->pivot->acknowledged_at)->count() : null;
+                    // Only people explicitly asked to acknowledge are counted/tracked for acks.
+                    $requested = $document->assignees->filter(fn ($p) => $p->pivot->ack_requested_at);
+                    $ackRequestedCount = $requested->count();
+                    $ackedCount = $ackRequestedCount ? $requested->filter(fn ($p) => $p->pivot->acknowledged_at)->count() : null;
+                    // The instant timers stop when the document is paused (pending).
+                    $clockUntil = ($document->is_pending && $document->pending_at) ? $document->pending_at : now();
                     // Total possession time per holder (from the ledger).
                     $heldSeconds = [];
                     foreach ($document->possessions as $seg) {
@@ -215,18 +220,14 @@
                     <div class="flex items-center justify-between mb-3">
                         <h2 class="font-semibold">Concerned staff <span class="text-gray-400 font-normal text-sm">(can track this document)</span></h2>
                         <span class="text-xs text-gray-400 shrink-0">
-                            {{ $concernedCount }} {{ \Illuminate\Support\Str::plural('person', $concernedCount) }}@if($ackedCount !== null) · {{ $ackedCount }}/{{ $concernedCount }} acknowledged @endif
+                            {{ $concernedCount }} {{ \Illuminate\Support\Str::plural('person', $concernedCount) }}@if($ackedCount !== null) · {{ $ackedCount }}/{{ $ackRequestedCount }} acknowledged @endif
                         </span>
                     </div>
-                    @unless($document->is_broadcast)
-                        <p class="text-xs text-gray-400 mb-3 -mt-1">Time shown is how long each person has physically held the document.</p>
-                    @else
-                        <p class="text-xs text-gray-400 mb-3 -mt-1">Time shown is how long it took each person to acknowledge (or how long they've been waited on).</p>
-                    @endunless
+                    <p class="text-xs text-gray-400 mb-3 -mt-1">Time held is how long each person physically had the document; for people asked to acknowledge, it's how long until they did (or how long they've been waited on).@if($document->is_pending) <span class="text-amber-600 dark:text-amber-400">Timers are paused while this document is pending.</span>@endif</p>
 
-                    @if($ackedCount !== null && $concernedCount)
+                    @if($ackedCount !== null && $ackRequestedCount)
                         <div class="h-1.5 rounded-full bg-gray-100 dark:bg-gray-700 overflow-hidden mb-3">
-                            <div class="h-full rounded-full bg-green-500" style="width: {{ round($ackedCount / $concernedCount * 100) }}%"></div>
+                            <div class="h-full rounded-full bg-green-500" style="width: {{ round($ackedCount / $ackRequestedCount * 100) }}%"></div>
                         </div>
                     @endif
 
@@ -239,28 +240,26 @@
                                     <span class="leading-tight">
                                         <span class="flex items-center gap-1 text-xs font-medium">
                                             {{ $person->name }}
-                                            @if($document->is_broadcast)
+                                            @if($person->pivot->ack_requested_at)
                                                 @if($person->pivot->acknowledged_at)
                                                     <span class="text-green-500" title="Acknowledged">✓</span>
                                                 @else
-                                                    <span class="text-amber-500 text-[10px]" title="Not yet acknowledged">●</span>
+                                                    <span class="text-amber-500 text-[10px]" title="Asked to acknowledge — not yet">●</span>
                                                 @endif
                                             @endif
                                         </span>
                                         <span class="block text-[11px] text-gray-400">{{ $person->orgUnit() }}</span>
-                                        @if($document->is_broadcast)
-                                            @php $sentAt = $person->pivot->created_at ?? $document->released_at ?? $document->created_at; @endphp
+                                        @if($person->pivot->ack_requested_at)
+                                            @php $sentAt = \Illuminate\Support\Carbon::parse($person->pivot->ack_requested_at); @endphp
                                             @if($person->pivot->acknowledged_at)
                                                 <span class="block text-[11px] text-green-600 dark:text-green-400">✓ acknowledged in {{ \App\Models\Document::humanDuration((int) $sentAt->diffInSeconds($person->pivot->acknowledged_at)) }}</span>
                                             @else
-                                                <span class="block text-[11px] text-amber-600 dark:text-amber-400">⏱ waiting {{ \App\Models\Document::humanDuration((int) $sentAt->diffInSeconds(now())) }}</span>
+                                                <span class="block text-[11px] text-amber-600 dark:text-amber-400">⏱ waiting {{ \App\Models\Document::humanDuration((int) $sentAt->diffInSeconds($clockUntil)) }}{{ $document->is_pending ? ' (paused)' : '' }}</span>
                                             @endif
-                                        @else
-                                            @if(isset($heldSeconds[$person->id]))
-                                                <span class="block text-[11px] {{ $document->current_holder_id === $person->id && !$document->is_pending && !$document->isClosed() ? 'text-[color:var(--color-primary)] font-medium' : 'text-gray-400' }}">
-                                                    ⏱ {{ \App\Models\Document::humanDuration($heldSeconds[$person->id]) }}{{ $document->current_holder_id === $person->id && !$document->is_pending && !$document->isClosed() ? ' (holding now)' : '' }}
-                                                </span>
-                                            @endif
+                                        @elseif(isset($heldSeconds[$person->id]))
+                                            <span class="block text-[11px] {{ $document->current_holder_id === $person->id && !$document->is_pending && !$document->isClosed() ? 'text-[color:var(--color-primary)] font-medium' : 'text-gray-400' }}">
+                                                ⏱ {{ \App\Models\Document::humanDuration($heldSeconds[$person->id]) }}{{ $document->current_holder_id === $person->id && !$document->is_pending && !$document->isClosed() ? ' (holding now)' : '' }}
+                                            </span>
                                         @endif
                                     </span>
                                 </span>
@@ -562,23 +561,35 @@
                         @can('archive', $document)
                             <button @click="panel = panel === 'archive' ? null : 'archive'" class="w-full flex items-center gap-2.5 px-4 py-2.5 rounded-lg bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-300 text-sm font-medium hover:opacity-90 transition">
                                 <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"/></svg>
-                                Archive / Complete
+                                Close document (complete or archive)
                             </button>
-                            <div x-show="panel === 'archive'" x-cloak class="p-3 rounded-lg bg-gray-50 dark:bg-gray-700/40">
+                            <div x-show="panel === 'archive'" x-cloak class="p-3 rounded-lg bg-gray-50 dark:bg-gray-700/40" x-data="{ outcome: '1' }">
                                 <form method="POST" action="{{ route('documents.archive', $document) }}" class="space-y-2"
-                                      data-confirm="Archive/close this document? This ends its active tracking.">
+                                      data-confirm="Close this document? This ends its active tracking.">
                                     @csrf
-                                    <label class="flex items-center gap-2 text-sm">
-                                        <input type="checkbox" name="completed" value="1" class="rounded text-[color:var(--color-primary)]"> Mark as fully completed
+                                    <p class="text-xs text-gray-500 dark:text-gray-400">How is this document being closed?</p>
+                                    <label class="flex items-start gap-2 text-sm p-2 rounded-lg border cursor-pointer" :class="outcome === '1' ? 'border-green-300 bg-green-50/60 dark:border-green-800 dark:bg-green-900/20' : 'border-gray-200 dark:border-gray-600'">
+                                        <input type="radio" name="completed" value="1" x-model="outcome" class="mt-0.5 text-green-600">
+                                        <span><span class="font-medium">✅ Completed</span><span class="block text-xs text-gray-500 dark:text-gray-400">The task/request is fully done and resolved. Use this when the work is finished.</span></span>
                                     </label>
-                                    <textarea name="remarks" rows="2" class="input" placeholder="Completion details (required)" required></textarea>
-                                    <x-btn type="submit" variant="success" class="w-full">Archive Document</x-btn>
+                                    <label class="flex items-start gap-2 text-sm p-2 rounded-lg border cursor-pointer" :class="outcome === '0' ? 'border-gray-400 bg-gray-100 dark:border-gray-500 dark:bg-gray-700/60' : 'border-gray-200 dark:border-gray-600'">
+                                        <input type="radio" name="completed" value="0" x-model="outcome" class="mt-0.5">
+                                        <span><span class="font-medium">🗄 Archived</span><span class="block text-xs text-gray-500 dark:text-gray-400">Closed and filed away <em>without</em> being completed — e.g. cancelled, withdrawn, a duplicate, or no longer needed.</span></span>
+                                    </label>
+                                    <textarea name="remarks" rows="2" class="input" placeholder="Reason / details (required)" required></textarea>
+                                    <x-btn type="submit" variant="success" class="w-full"><span x-text="outcome === '1' ? 'Mark as Completed' : 'Archive document'"></span></x-btn>
                                 </form>
                             </div>
                         @endcan
 
                         @if($document->isClosed())
-                            <div class="text-center text-sm text-green-600 dark:text-green-400 py-2">✔ This document is {{ $document->status }}.</div>
+                            <div class="text-center text-sm py-2 {{ $document->status === 'completed' ? 'text-green-600 dark:text-green-400' : 'text-gray-500 dark:text-gray-400' }}">
+                                @if($document->status === 'completed')
+                                    ✅ <strong>Completed</strong> — the task is fully done and resolved.
+                                @else
+                                    🗄 <strong>Archived</strong> — closed and filed without completion.
+                                @endif
+                            </div>
                             @can('reopen', $document)
                                 <form method="POST" action="{{ route('documents.reopen', $document) }}" class="p-3 rounded-lg bg-gray-50 dark:bg-gray-700/40"
                                       data-confirm="Reopen this document and set it back to active?">

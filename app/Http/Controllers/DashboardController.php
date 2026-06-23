@@ -52,11 +52,12 @@ class DashboardController extends Controller
             ->where('status', 'received')
             ->latest('updated_at')->take(8)->get();
 
-        // Documents distributed to me for acknowledgement that I haven't acknowledged yet.
+        // Documents I've been asked to acknowledge but haven't yet.
         $toAcknowledge = Document::with('creator')
-            ->where('is_broadcast', true)
             ->whereNotIn('status', ['archived', 'completed'])
-            ->whereHas('assignees', fn ($a) => $a->where('users.id', $user->id)->whereNull('document_assignees.acknowledged_at'))
+            ->whereHas('assignees', fn ($a) => $a->where('users.id', $user->id)
+                ->whereNotNull('document_assignees.ack_requested_at')
+                ->whereNull('document_assignees.acknowledged_at'))
             ->latest('updated_at')->take(8)->get();
 
         $toRelease = collect();
