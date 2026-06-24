@@ -342,6 +342,11 @@ class DocumentController extends Controller
         if (! Document::attachmentsEnabled() || $document->attachments->isEmpty()) {
             return null;
         }
+        // A rejected document being received back by the sender skips the checklist —
+        // they knowingly accept it incomplete to sort out the missing item internally.
+        if (optional($document->logs()->latest('id')->first())->action === 'rejected') {
+            return null;
+        }
         $required = $document->attachments->pluck('id')->map(fn ($id) => 'att_'.$id)->push('main')->all();
         $present = (array) $request->input('present', []);
         if (array_diff($required, $present)) {

@@ -28,26 +28,19 @@
         .header .sub { font-size: 9px; text-transform: uppercase; letter-spacing: .12em; opacity: .85; margin-top: 3px; }
         .header .slip-label { display: inline-block; font-size: 11px; font-weight: 700; margin-top: 8px; letter-spacing: .03em; text-transform: uppercase; background: rgba(255,255,255,.18); padding: 3px 12px; border-radius: 999px; }
         .body { padding: 18px; }
-        .code-row { text-align: center; margin-bottom: 12px; }
+        .code-row { text-align: center; margin-bottom: 10px; }
+        .code-label { font-size: 9px; text-transform: uppercase; letter-spacing: .12em; color: #9ca3af; margin-bottom: 1px; }
         .code { font-family: 'Consolas', monospace; font-size: 18px; font-weight: 700; letter-spacing: .03em; color: #111; }
         .prio { display: inline-block; margin-left: 6px; font-size: 10px; font-weight: 700; text-transform: uppercase; color: #fff; background: {{ $prioColor }}; padding: 2px 8px; border-radius: 999px; vertical-align: middle; }
-        .qr-wrap { text-align: center; margin: 6px 0 14px; }
-        .qr { display: inline-block; padding: 10px; background: #fff; border: 1px solid #e5e7eb; border-radius: 10px; }
-        .qr svg { width: 200px; height: 200px; display: block; }
-        .title { font-size: 15px; font-weight: 700; text-align: center; line-height: 1.3; margin-bottom: 14px; }
-        .meta { font-size: 12px; border-top: 1px dashed #d1d5db; padding-top: 12px; }
-        .meta-row { display: flex; justify-content: space-between; gap: 10px; padding: 3px 0; }
-        .meta-row .k { color: #6b7280; flex-shrink: 0; }
-        .meta-row .v { font-weight: 600; text-align: right; color: #111; }
-        .route { display: flex; align-items: center; justify-content: center; gap: 8px; margin: 12px 0; padding: 10px; background: #f9fafb; border-radius: 10px; font-size: 12px; }
-        .route .box { text-align: center; flex: 1; }
-        .route .box .lbl { font-size: 9px; text-transform: uppercase; letter-spacing: .08em; color: #9ca3af; }
-        .route .box .val { font-weight: 700; margin-top: 1px; }
-        .route .box .asof { font-size: 8px; color: #9ca3af; margin-top: 2px; }
-        .route .arrow { color: {{ $primary }}; font-size: 18px; font-weight: 700; }
-        .hint { font-size: 11px; color: #4b5563; text-align: center; margin-top: 14px; line-height: 1.45; }
-        .hint strong { color: #111; }
-        .url { font-family: monospace; font-size: 9px; color: #9ca3af; word-break: break-all; text-align: center; margin-top: 6px; }
+        .qr-wrap { text-align: center; margin: 4px 0 10px; }
+        .qr { display: inline-block; padding: 8px; background: #fff; border: 1px solid #e5e7eb; border-radius: 10px; }
+        .qr svg { width: 140px; height: 140px; display: block; }
+        .title { font-size: 14px; font-weight: 700; text-align: center; line-height: 1.3; margin-bottom: 10px; }
+        .info { background: #f3f4f6; border-radius: 10px; padding: 9px 12px; border-bottom: 2px solid #d1d5db; }
+        .info .row { display: flex; justify-content: space-between; gap: 10px; padding: 2px 0; font-size: 11px; }
+        .info .row .k { color: #6b7280; flex-shrink: 0; }
+        .info .row .v { font-weight: 600; text-align: right; color: #111; }
+        .powered { text-align: center; font-size: 10px; color: #9ca3af; margin-top: 10px; letter-spacing: .05em; }
         .btn { margin: 18px auto 0; text-align: center; }
         .btn button { padding: 9px 18px; border: none; border-radius: 8px; background: {{ $primary }}; color: #fff; cursor: pointer; font-size: 14px; }
         @media print {
@@ -70,6 +63,7 @@
         </div>
         <div class="body">
             <div class="code-row">
+                <div class="code-label">Document Code</div>
                 <span class="code">{{ $document->tracking_code }}</span>
                 @if(\App\Models\Document::priorityEnabled())<span class="prio">{{ $prio }}</span>@endif
             </div>
@@ -80,31 +74,24 @@
 
             <div class="title">{{ $document->title }}</div>
 
-            {{-- Origin only (permanent). Current location lives on the QR, never on paper. --}}
-            <div class="route">
-                <div class="box" style="flex: 1;">
-                    <div class="lbl">Origin Office</div>
-                    <div class="val">{{ $originDept }}</div>
-                </div>
-            </div>
-
-            <div class="meta">
-                <div class="meta-row"><span class="k">Type</span><span class="v">{{ $document->document_type }}</span></div>
+            @php
+                $sourceCombined = ($originDept && $originDept !== '—')
+                    ? $originDept.' - '.$originName
+                    : $originName;
+            @endphp
+            <div class="info">
+                <div class="row"><span class="k">Type</span><span class="v">{{ $document->document_type }}</span></div>
                 @if($document->voucher_number)
-                    <div class="meta-row"><span class="k">Voucher No.</span><span class="v">{{ $document->voucher_number }}</span></div>
+                    <div class="row"><span class="k">Voucher No.</span><span class="v">{{ $document->voucher_number }}</span></div>
                 @endif
                 @if($document->reference_no)
-                    <div class="meta-row"><span class="k">Reference No.</span><span class="v">{{ $document->reference_no }}</span></div>
+                    <div class="row"><span class="k">Reference No.</span><span class="v">{{ $document->reference_no }}</span></div>
                 @endif
-                <div class="meta-row"><span class="k">Source / Origin</span><span class="v">{{ $originName }}</span></div>
-                <div class="meta-row"><span class="k">Encoded</span><span class="v">{{ $document->created_at->format('M d, Y g:i A') }}</span></div>
+                <div class="row"><span class="k">Source / Origin</span><span class="v">{{ $sourceCombined }}</span></div>
+                <div class="row"><span class="k">Encoded</span><span class="v">{{ $document->created_at->format('M d, Y g:i A') }}</span></div>
             </div>
 
-            <div class="hint">
-                📱 <strong>Scan this QR</strong> to see the <strong>live current holder, office &amp; full history</strong>, then tap <strong>Receive / Claim</strong>.<br>
-                <span style="color:#9ca3af;">Print once — this slip stays valid for the document's entire life, no matter how many offices it passes through.</span>
-            </div>
-            <div class="url">{{ $trackUrl }}</div>
+            <div class="powered">Powered by PICTO</div>
         </div>
     </div>
     <div class="btn">

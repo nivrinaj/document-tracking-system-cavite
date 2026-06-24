@@ -49,7 +49,10 @@
 
         {{-- Attachments --}}
         @if(\App\Models\Document::attachmentsEnabled())
-            @php $canAttach = ! $document->isClosed() && (auth()->id() === $document->current_holder_id || auth()->id() === $document->created_by || auth()->user()->hasRole('Super Admin')); @endphp
+            @php $canAttach = ! $document->isClosed() && (
+                ($document->status === 'draft' && auth()->id() === $document->created_by)
+                || ($document->status === 'received' && auth()->id() === $document->current_holder_id)
+            ); @endphp
             <x-card>
                 <h2 class="font-semibold mb-3">Attachments <span class="text-gray-400 font-normal text-sm">({{ $document->attachments->count() }})</span></h2>
                 @forelse($document->attachments as $att)
@@ -101,19 +104,29 @@
                 @can('receive', $document)
                     @php
                         $isClaim = $document->current_holder_id === null;
-                        $hasAttR = \App\Models\Document::attachmentsEnabled() && $document->attachments->isNotEmpty();
+                        $latestLog = $document->logs->first();
+                        $isReturned = $latestLog && $latestLog->action === 'rejected';
+                        $hasAttR = \App\Models\Document::attachmentsEnabled() && $document->attachments->isNotEmpty() && ! $isReturned;
                         $reqR = $hasAttR ? $document->attachments->count() + 1 : 0;
                     @endphp
-                    <div class="p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20 space-y-2" x-data="{ present: [] }">
-                        <p class="text-sm text-blue-700 dark:text-blue-300">
-                            @if($isClaim)
-                                📥 Transferred to <strong>your office</strong>. Claiming makes you its holder.
-                            @elseif($hasAttR)
-                                Physically check each item, then tick it. Accept only if everything is present — otherwise reject.
-                            @else
-                                This document is assigned to you. Confirm you have it physically.
-                            @endif
-                        </p>
+                    <div class="p-3 rounded-lg {{ $isReturned ? 'bg-red-50 dark:bg-red-900/20' : 'bg-blue-50 dark:bg-blue-900/20' }} space-y-2" x-data="{ present: [] }">
+                        @if($isReturned)
+                            <div class="text-sm text-red-700 dark:text-red-300">
+                                ✗ This document was <strong>rejected and returned to you</strong>@if($latestLog->actor) by {{ $latestLog->actor->name }}@endif.
+                                @if($latestLog->remarks)<span class="block mt-0.5">Reason: “{{ $latestLog->remarks }}”</span>@endif
+                                <span class="block mt-1 text-xs text-red-600 dark:text-red-400">Receiving it back acknowledges the rejection so you can handle the missing/incorrect item internally.</span>
+                            </div>
+                        @else
+                            <p class="text-sm text-blue-700 dark:text-blue-300">
+                                @if($isClaim)
+                                    📥 Transferred to <strong>your office</strong>. Claiming makes you its holder.
+                                @elseif($hasAttR)
+                                    Physically check each item, then tick it. Accept only if everything is present — otherwise reject.
+                                @else
+                                    This document is assigned to you. Confirm you have it physically.
+                                @endif
+                            </p>
+                        @endif
                         @if($hasAttR)
                             @include('documents._checklist')
                         @endif
@@ -122,7 +135,7 @@
                             @csrf
                             <template x-for="id in present" :key="id"><input type="hidden" name="present[]" :value="id"></template>
                             <input type="text" name="remarks" class="input" placeholder="Remarks (optional)">
-                            <x-btn type="submit" class="w-full" x-bind:disabled="present.length < {{ $reqR }}" ::class="present.length < {{ $reqR }} ? 'opacity-50 pointer-events-none' : ''">{{ $isClaim ? '📥 Claim & Receive' : '✅ Accept & Receive' }}</x-btn>
+                            <x-btn type="submit" class="w-full" x-bind:disabled="present.length < {{ $reqR }}" ::class="present.length < {{ $reqR }} ? 'opacity-50 pointer-events-none' : ''">{{ $isClaim ? '📥 Claim & Receive' : ($isReturned ? '✅ Receive back (acknowledge rejection)' : '✅ Accept & Receive') }}</x-btn>
                         </form>
                         @if($hasAttR)
                             <form method="POST" action="{{ route('documents.reject', $document) }}" class="space-y-2 pt-2 border-t border-blue-100 dark:border-blue-900/40"

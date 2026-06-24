@@ -6,6 +6,13 @@ Format based on [Keep a Changelog](https://keepachangelog.com).
 
 ---
 
+## 1.1.1 — 2026-06-24
+**Attachment-possession fixes, rejection-return flow, slip redesign**
+- **Attaching now requires real possession.** Only the encoder *while drafting* or the person who has actually **received** the document can attach files. **Nobody can attach while it's in transit** (released/forwarded) or before clicking **Accept & Receive** — fixes cases where the sender or a not-yet-received recipient could attach.
+- **“Holding now” timing fixed.** While a document is in transit, the running clock is correctly attributed to **whoever sent/forwarded it** (it's their duty until the recipient receives) — not the recipient. Once the recipient accepts, the clock moves to them.
+- **Rejection return flow.** When a document is rejected for a missing item, it returns to the sender; the sender re-scans and sees the **rejection reason**, and can **receive it back even incomplete** (acknowledging the rejection) to handle it internally. The full history + possession ledger show who last held the missing item for accountability.
+- **QR slip redesigned (shorter & clearer):** “Document Tracking Slip” stays in the header panel; below it a **“Document Code”** label sits above the code; the **QR is 30% smaller**; the gray panel now holds **Type, Source/Origin (e.g. “PICTO - Provincial Information and Communications Technology Office”), and Encoded date/time** with a bottom border; and the long scan blurb/URL is replaced with a simple **“Powered by PICTO.”**
+
 ## 1.1.0 — 2026-06-24
 **Document attachments & physical handover verification + QOL**
 - **New: document attachments** (Super-Admin toggle, off by default). The holder can attach scanned files with a **title** each:

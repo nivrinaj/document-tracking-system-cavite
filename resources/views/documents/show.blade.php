@@ -215,6 +215,9 @@
                             $heldSeconds[$seg->holder_id] = ($heldSeconds[$seg->holder_id] ?? 0) + $seg->seconds();
                         }
                     }
+                    // Who physically holds it right now (open ledger segment). During transit
+                    // this is the sender — it's their duty until the recipient receives.
+                    $possessorId = optional($document->possessions->firstWhere('ended_at', null))->holder_id;
                 @endphp
                 <x-card>
                     <div class="flex items-center justify-between mb-3">
@@ -257,8 +260,9 @@
                                                 <span class="block text-[11px] text-amber-600 dark:text-amber-400">⏱ waiting {{ \App\Models\Document::humanDuration((int) $sentAt->diffInSeconds($clockUntil)) }}{{ $document->is_pending ? ' (paused)' : '' }}</span>
                                             @endif
                                         @elseif(isset($heldSeconds[$person->id]))
-                                            <span class="block text-[11px] {{ $document->current_holder_id === $person->id && !$document->is_pending && !$document->isClosed() ? 'text-[color:var(--color-primary)] font-medium' : 'text-gray-400' }}">
-                                                ⏱ {{ \App\Models\Document::humanDuration($heldSeconds[$person->id]) }}{{ $document->current_holder_id === $person->id && !$document->is_pending && !$document->isClosed() ? ' (holding now)' : '' }}
+                                            @php $isHoldingNow = $possessorId === $person->id && !$document->is_pending && !$document->isClosed(); @endphp
+                                            <span class="block text-[11px] {{ $isHoldingNow ? 'text-[color:var(--color-primary)] font-medium' : 'text-gray-400' }}">
+                                                ⏱ {{ \App\Models\Document::humanDuration($heldSeconds[$person->id]) }}{{ $isHoldingNow ? ' (holding now)' : '' }}
                                             </span>
                                         @endif
                                     </span>
@@ -275,7 +279,10 @@
                 {{-- Attachments --}}
                 @if(\App\Models\Document::attachmentsEnabled())
                     @php
-                        $canAttach = ! $document->isClosed() && (auth()->id() === $document->current_holder_id || auth()->id() === $document->created_by || auth()->user()->hasRole('Super Admin'));
+                        $canAttach = ! $document->isClosed() && (
+                            ($document->status === 'draft' && auth()->id() === $document->created_by)
+                            || ($document->status === 'received' && auth()->id() === $document->current_holder_id)
+                        );
                     @endphp
                     <x-card>
                         <div class="flex items-center justify-between mb-3">
@@ -477,19 +484,32 @@
 
                         @can('receive', $document)
                             @php $desktopReceive = ($settings['allow_desktop_receive'] ?? '0') === '1'; $isClaim = $document->current_holder_id === null; @endphp
-                            @php $hasAttR = \App\Models\Document::attachmentsEnabled() && $document->attachments->isNotEmpty(); $reqR = $hasAttR ? $document->attachments->count() + 1 : 0; @endphp
+                            @php
+                                $latestLog = $document->logs->first();
+                                $isReturned = $latestLog && $latestLog->action === 'rejected';
+                                $hasAttR = \App\Models\Document::attachmentsEnabled() && $document->attachments->isNotEmpty() && ! $isReturned;
+                                $reqR = $hasAttR ? $document->attachments->count() + 1 : 0;
+                            @endphp
                             @if($desktopReceive)
                                 {{-- Desktop receive/claim explicitly enabled in settings --}}
-                                <div class="p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20 space-y-2" x-data="{ present: [] }">
-                                    <p class="text-xs text-blue-700 dark:text-blue-300">
-                                        @if($isClaim)
-                                            📥 This document was <strong>transferred to your office</strong>. Claim it to take responsibility.
-                                        @elseif($hasAttR)
-                                            Physically check each item below, then tick it. Accept only if everything is present; otherwise reject.
-                                        @else
-                                            Confirm you physically received this document.
-                                        @endif
-                                    </p>
+                                <div class="p-3 rounded-lg {{ $isReturned ? 'bg-red-50 dark:bg-red-900/20' : 'bg-blue-50 dark:bg-blue-900/20' }} space-y-2" x-data="{ present: [] }">
+                                    @if($isReturned)
+                                        <div class="text-xs text-red-700 dark:text-red-300">
+                                            ✗ <strong>Rejected and returned to you</strong>@if($latestLog->actor) by {{ $latestLog->actor->name }}@endif.
+                                            @if($latestLog->remarks)<span class="block mt-0.5">Reason: “{{ $latestLog->remarks }}”</span>@endif
+                                            <span class="block mt-1 text-red-600 dark:text-red-400">Receiving it back acknowledges the rejection so you can handle the issue internally.</span>
+                                        </div>
+                                    @else
+                                        <p class="text-xs text-blue-700 dark:text-blue-300">
+                                            @if($isClaim)
+                                                📥 This document was <strong>transferred to your office</strong>. Claim it to take responsibility.
+                                            @elseif($hasAttR)
+                                                Physically check each item below, then tick it. Accept only if everything is present; otherwise reject.
+                                            @else
+                                                Confirm you physically received this document.
+                                            @endif
+                                        </p>
+                                    @endif
                                     @if($hasAttR)
                                         @include('documents._checklist')
                                     @endif
@@ -498,7 +518,7 @@
                                         @csrf
                                         <template x-for="id in present" :key="id"><input type="hidden" name="present[]" :value="id"></template>
                                         <input type="text" name="remarks" class="input" placeholder="Remarks (optional)">
-                                        <x-btn type="submit" variant="primary" class="w-full" x-bind:disabled="present.length < {{ $reqR }}" ::class="present.length < {{ $reqR }} ? 'opacity-50 pointer-events-none' : ''">{{ $isClaim ? '📥 Claim & Receive' : '✅ Accept & Receive' }}</x-btn>
+                                        <x-btn type="submit" variant="primary" class="w-full" x-bind:disabled="present.length < {{ $reqR }}" ::class="present.length < {{ $reqR }} ? 'opacity-50 pointer-events-none' : ''">{{ $isClaim ? '📥 Claim & Receive' : ($isReturned ? '✅ Receive back' : '✅ Accept & Receive') }}</x-btn>
                                     </form>
                                     @if($hasAttR)
                                         <form method="POST" action="{{ route('documents.reject', $document) }}" class="space-y-2 pt-2 border-t border-blue-100 dark:border-blue-900/40"

@@ -16,17 +16,23 @@ class AttachmentController extends Controller
         abort_unless(Document::attachmentsEnabled(), 404);
     }
 
-    /** Only someone who currently holds the document (or its encoder / an admin) may attach. */
+    /**
+     * Attaching requires PHYSICAL possession:
+     *  - the encoder while it's still a draft (preparing it before release), or
+     *  - the person who has actually RECEIVED it (status = received and is the holder).
+     * Nobody can attach while it's in transit (released/forwarded) or in a claim pool.
+     */
     private function canManage(Document $document): bool
     {
         $user = auth()->user();
         if ($document->isClosed()) {
             return false;
         }
+        if ($document->status === 'draft' && $document->created_by === $user->id) {
+            return true;
+        }
 
-        return $document->current_holder_id === $user->id
-            || $document->created_by === $user->id
-            || $user->hasRole('Super Admin');
+        return $document->status === 'received' && $document->current_holder_id === $user->id;
     }
 
     public function store(Request $request, Document $document)
