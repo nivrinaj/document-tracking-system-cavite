@@ -28,6 +28,9 @@
         .header .sub { font-size: 9px; text-transform: uppercase; letter-spacing: .12em; opacity: .85; margin-top: 3px; }
         .header .slip-label { display: inline-block; font-size: 11px; font-weight: 700; margin-top: 8px; letter-spacing: .03em; text-transform: uppercase; background: rgba(255,255,255,.18); padding: 3px 12px; border-radius: 999px; }
         .body { padding: 18px; }
+        .slip-badge-wrap { text-align: center; margin-bottom: 10px; }
+        .slip-badge { display: inline-block; background: {{ $primary }}; color: #fff; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; padding: 5px 16px; border-radius: 999px; }
+        .url { font-family: monospace; font-size: 8.5px; color: #9ca3af; word-break: break-all; text-align: center; margin-top: 10px; }
         .code-row { text-align: center; margin-bottom: 10px; }
         .code-label { font-size: 9px; text-transform: uppercase; letter-spacing: .12em; color: #9ca3af; margin-bottom: 1px; }
         .code { font-family: 'Consolas', monospace; font-size: 18px; font-weight: 700; letter-spacing: .03em; color: #111; }
@@ -59,9 +62,9 @@
             @endif
             <div class="org">{{ $settings['organization'] ?: 'Provincial Government of Cavite' }}</div>
             @if(!empty($settings['app_name']))<div class="sub">{{ $settings['app_name'] }}</div>@endif
-            <div class="slip-label">Document Tracking Slip</div>
         </div>
         <div class="body">
+            <div class="slip-badge-wrap"><span class="slip-badge">Document Tracking Slip</span></div>
             <div class="code-row">
                 <div class="code-label">Document Code</div>
                 <span class="code">{{ $document->tracking_code }}</span>
@@ -91,6 +94,7 @@
                 <div class="row"><span class="k">Encoded</span><span class="v">{{ $document->created_at->format('M d, Y g:i A') }}</span></div>
             </div>
 
+            <div class="url">{{ $trackUrl }}</div>
             <div class="powered">Powered by PICTO</div>
         </div>
     </div>

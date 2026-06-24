@@ -49,6 +49,7 @@ Route::middleware(['auth', 'active'])->group(function () {
 
     // Attachments
     Route::post('/documents/{document}/attachments', [\App\Http\Controllers\AttachmentController::class, 'store'])->name('attachments.store');
+    Route::post('/documents/{document}/digital-copy', [\App\Http\Controllers\AttachmentController::class, 'storeDigitalCopy'])->name('attachments.digitalCopy');
     Route::get('/attachments/{attachment}', [\App\Http\Controllers\AttachmentController::class, 'download'])->name('attachments.download');
     Route::delete('/attachments/{attachment}', [\App\Http\Controllers\AttachmentController::class, 'destroy'])->name('attachments.destroy');
     Route::post('/documents/{document}/distribute', [DocumentController::class, 'distribute'])->name('documents.distribute');

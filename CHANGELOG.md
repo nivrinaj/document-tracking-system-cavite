@@ -6,6 +6,18 @@ Format based on [Keep a Changelog](https://keepachangelog.com).
 
 ---
 
+## 1.2.0 — 2026-06-24
+**Digital Copy + Supporting Documents, possession-on-transit fix, paused total, real-time chat, slip & UI polish**
+- **Transit timing fixed (again, properly).** The running “holding now” clock always follows whoever **physically has the document**. When a document is rejected and is on its way back, the clock is on the **rejecter** until the sender receives it; during any forward/release it's on the **sender** until the recipient accepts. No more “holding now” on someone who hasn't received it.
+- **“Attachments” split into two clear features (each a Super-Admin toggle):**
+  - **Supporting Documents** — a **required title** with an **optional** PDF or captured pages; add as many as you like. Every item (file or not) must be **ticked on hand-over** by the sender, and by the receiver to accept (or reject).
+  - **Digital Copy** — the **encoder's** single digitized original (PDF or camera→PDF, 2 MB). Everyone concerned can view it; it does **not** affect receiving/rejecting.
+- **Total paused time** now shows on the document details (overall time the document sat pending), alongside age and turnaround.
+- **Real-time-ish chat while idle** — the unread badge (top bar + chat bubble) refreshes every ~10s and instantly when you return to the tab; the open chat list refreshes itself, so new direct/group messages show up without reopening. Still poll-based and lightweight.
+- **Modern file pickers** everywhere (drag-style, shows the chosen filename), and **“Upload PDF” renamed to “Browse PDF File.”**
+- **Dark mode:** the holder's timer text is now clearly readable (was washed out).
+- **QR slip:** “Document Tracking Slip” is now a blue pill **above the Document Code** (out of the header), and the **scan URL is back** just above “Powered by PICTO.”
+
 ## 1.1.1 — 2026-06-24
 **Attachment-possession fixes, rejection-return flow, slip redesign**
 - **Attaching now requires real possession.** Only the encoder *while drafting* or the person who has actually **received** the document can attach files. **Nobody can attach while it's in transit** (released/forwarded) or before clicking **Accept & Receive** — fixes cases where the sender or a not-yet-received recipient could attach.

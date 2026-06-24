@@ -5,11 +5,11 @@
         <input type="checkbox" name="present[]" value="main" x-model="present" class="rounded text-[color:var(--color-primary)]">
         <span><span class="font-medium">Main document</span> <span class="text-xs text-gray-400">— {{ $document->document_type }}</span></span>
     </label>
-    @foreach($document->attachments as $att)
+    @foreach($document->supportingDocuments as $att)
         <label class="flex items-center gap-2 px-3 py-2 text-sm cursor-pointer">
             <input type="checkbox" name="present[]" value="att_{{ $att->id }}" x-model="present" class="rounded text-[color:var(--color-primary)]">
             <span>{{ $att->title }}
-                <a href="{{ route('attachments.download', $att) }}" target="_blank" class="text-[11px] link ml-1" @click.stop>view</a>
+                @if($att->hasFile())<a href="{{ route('attachments.download', $att) }}" target="_blank" class="text-[11px] link ml-1" @click.stop>view</a>@endif
             </span>
         </label>
     @endforeach

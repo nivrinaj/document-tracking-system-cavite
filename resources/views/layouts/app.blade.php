@@ -393,7 +393,10 @@
                 } catch (e) { /* ignore */ }
             };
             window.__refreshMsgBadge();
-            setInterval(() => { if (!document.hidden) window.__refreshMsgBadge(); }, 20000);
+            // Poll the unread badge fairly often so chats feel live even while idle on any page.
+            setInterval(() => { if (!document.hidden) window.__refreshMsgBadge(); }, 10000);
+            // Refresh immediately when returning to the tab.
+            document.addEventListener('visibilitychange', () => { if (!document.hidden) window.__refreshMsgBadge(); });
         })();
     </script>
     @endif

@@ -112,8 +112,11 @@
             csrf: document.querySelector('meta[name="csrf-token"]').content,
             base: '{{ url('messages') }}',
             init() {
-                // Keep the bubble badge in sync with the global unread poller.
-                window.addEventListener('msg-unread', () => {});
+                // While the widget is open on the conversation list, refresh it periodically
+                // so new/updated chats and unread counts appear without reopening.
+                setInterval(() => {
+                    if (this.open && this.view === 'list' && !document.hidden) this.loadConversations();
+                }, 7000);
             },
             toggle() {
                 this.open = !this.open;

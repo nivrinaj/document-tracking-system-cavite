@@ -323,6 +323,9 @@ class DocumentService
                 'is_pending' => false,
                 'pending_at' => null,
             ]);
+            // The rejecter physically holds the document while sending it back — the
+            // running clock is theirs until the sender receives it again.
+            $this->openPossession($document, $actor->id, $actor->department_id);
             $this->log($document, 'rejected', $actor, toUserId: $returnTo, remarks: $remarks);
             $this->notify($returnTo, $actor, $document, 'rejected', $remarks);
 

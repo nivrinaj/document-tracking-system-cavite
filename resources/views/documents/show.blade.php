@@ -111,10 +111,14 @@
                     </dl>
 
                     {{-- Timeline facts --}}
+                    @php $pausedSecs = $document->totalPausedSeconds(); @endphp
                     <dl class="grid grid-cols-2 sm:grid-cols-4 gap-x-6 gap-y-4 text-sm mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
                         <div><dt class="text-[11px] uppercase tracking-wider text-gray-400">Received</dt><dd class="mt-0.5">{{ $document->received_at?->format('M d, Y g:i A') ?? '—' }}</dd></div>
-                        <div><dt class="text-[11px] uppercase tracking-wider text-gray-400">Released</dt><dd class="mt-0.5">{{ $document->released_at?->format('M d, Y g:i A') ?? '—' }}</dd></div>
                         <div><dt class="text-[11px] uppercase tracking-wider text-gray-400">Age</dt><dd class="mt-0.5">{{ $document->age() }}</dd></div>
+                        <div>
+                            <dt class="text-[11px] uppercase tracking-wider text-gray-400">Total paused</dt>
+                            <dd class="mt-0.5 {{ $pausedSecs > 0 ? 'text-amber-600 dark:text-amber-400 font-medium' : '' }}">{{ $pausedSecs > 0 ? \App\Models\Document::humanDuration($pausedSecs) : '—' }}</dd>
+                        </div>
                         <div>
                             <dt class="text-[11px] uppercase tracking-wider text-gray-400">{{ $document->isClosed() ? 'Turnaround' : 'Idle time' }}</dt>
                             <dd class="mt-0.5">
@@ -261,7 +265,7 @@
                                             @endif
                                         @elseif(isset($heldSeconds[$person->id]))
                                             @php $isHoldingNow = $possessorId === $person->id && !$document->is_pending && !$document->isClosed(); @endphp
-                                            <span class="block text-[11px] {{ $isHoldingNow ? 'text-[color:var(--color-primary)] font-medium' : 'text-gray-400' }}">
+                                            <span class="block text-[11px] {{ $isHoldingNow ? 'text-[color:var(--color-primary)] dark:text-[color:var(--color-primary-light)] font-semibold' : 'text-gray-500 dark:text-gray-400' }}">
                                                 ⏱ {{ \App\Models\Document::humanDuration($heldSeconds[$person->id]) }}{{ $isHoldingNow ? ' (holding now)' : '' }}
                                             </span>
                                         @endif
@@ -276,7 +280,53 @@
                     </div>
                 </x-card>
 
-                {{-- Attachments --}}
+                {{-- Digital Copy (the encoder's digitized original) --}}
+                @if(\App\Models\Document::digitalCopyEnabled())
+                    @php $dc = $document->digitalCopy; $canDigital = ! $document->isClosed() && auth()->id() === $document->created_by; @endphp
+                    <x-card>
+                        <div class="flex items-center gap-2 mb-3">
+                            <span class="w-8 h-8 rounded-lg grid place-items-center bg-[color:var(--color-primary)]/10 text-[color:var(--color-primary)]">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.7" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+                            </span>
+                            <div>
+                                <h2 class="font-semibold leading-tight">Digital Copy</h2>
+                                <p class="text-[11px] text-gray-400 leading-tight">The encoder's digitized original</p>
+                            </div>
+                        </div>
+
+                        @if($dc)
+                            <div class="flex items-center gap-3 p-2.5 rounded-lg bg-gray-50 dark:bg-gray-700/40">
+                                <a href="{{ route('attachments.download', $dc) }}" target="_blank" class="min-w-0 flex-1 group flex items-center gap-2">
+                                    <svg class="w-5 h-5 text-red-500 shrink-0" fill="none" stroke="currentColor" stroke-width="1.6" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+                                    <span class="min-w-0"><span class="block text-sm font-medium group-hover:underline">View digital copy</span><span class="block text-[11px] text-gray-400">{{ $dc->humanSize() }} · {{ $dc->created_at->diffForHumans() }}</span></span>
+                                </a>
+                                @if($canDigital)
+                                    <form method="POST" action="{{ route('attachments.destroy', $dc) }}" data-confirm="Remove the digital copy?">
+                                        @csrf @method('DELETE')
+                                        <button class="shrink-0 p-1.5 rounded-lg text-gray-400 hover:text-red-500" title="Remove"><svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg></button>
+                                    </form>
+                                @endif
+                            </div>
+                        @endif
+
+                        @if($canDigital)
+                            <form method="POST" action="{{ route('attachments.digitalCopy', $document) }}" enctype="multipart/form-data" class="space-y-2 {{ $dc ? 'mt-3' : '' }}" x-data="{ mode: 'pdf' }">
+                                @csrf
+                                <div class="flex gap-1 text-xs">
+                                    <button type="button" @click="mode='pdf'" :class="mode==='pdf' ? 'bg-[color:var(--color-primary)] text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'" class="flex-1 px-3 py-1.5 rounded-lg font-medium">Browse PDF File</button>
+                                    <button type="button" @click="mode='camera'" :class="mode==='camera' ? 'bg-[color:var(--color-primary)] text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'" class="flex-1 px-3 py-1.5 rounded-lg font-medium">Capture 📷</button>
+                                </div>
+                                <div x-show="mode==='pdf'"><x-file-drop name="pdf" accept="application/pdf" label="Browse a PDF (max 2 MB)" /></div>
+                                <div x-show="mode==='camera'" x-cloak><x-file-drop name="images[]" accept="image/*" :multiple="true" :capture="true" icon="camera" label="Capture the document" /></div>
+                                <x-btn type="submit" class="w-full">{{ $dc ? 'Replace digital copy' : 'Upload digital copy' }}</x-btn>
+                            </form>
+                        @elseif(! $dc)
+                            <p class="text-sm text-gray-400">No digital copy uploaded.</p>
+                        @endif
+                    </x-card>
+                @endif
+
+                {{-- Supporting Documents (title required; file optional; drive the handover checklist) --}}
                 @if(\App\Models\Document::attachmentsEnabled())
                     @php
                         $canAttach = ! $document->isClosed() && (
@@ -286,21 +336,23 @@
                     @endphp
                     <x-card>
                         <div class="flex items-center justify-between mb-3">
-                            <h2 class="font-semibold">Attachments <span class="text-gray-400 font-normal text-sm">({{ $document->attachments->count() }})</span></h2>
-                            <span class="text-[11px] text-gray-400">PDF · max 2 MB each</span>
+                            <h2 class="font-semibold">Supporting Documents <span class="text-gray-400 font-normal text-sm">({{ $document->supportingDocuments->count() }})</span></h2>
+                            <span class="text-[11px] text-gray-400">ticked on hand-over</span>
                         </div>
 
-                        @forelse($document->attachments as $att)
+                        @forelse($document->supportingDocuments as $att)
                             <div class="flex items-center gap-3 py-2 border-b border-gray-50 dark:border-gray-700/50 last:border-0">
-                                <span class="shrink-0 w-9 h-9 rounded-lg grid place-items-center bg-red-50 dark:bg-red-900/20 text-red-500">
+                                <span class="shrink-0 w-9 h-9 rounded-lg grid place-items-center {{ $att->hasFile() ? 'bg-red-50 dark:bg-red-900/20 text-red-500' : 'bg-gray-100 dark:bg-gray-700 text-gray-400' }}">
                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.6" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
                                 </span>
-                                <a href="{{ route('attachments.download', $att) }}" target="_blank" class="min-w-0 flex-1 group">
-                                    <div class="font-medium text-sm truncate group-hover:underline">{{ $att->title }}</div>
-                                    <div class="text-[11px] text-gray-400">{{ $att->humanSize() }} · by {{ $att->uploader?->name ?? '—' }} · {{ $att->created_at->diffForHumans() }}</div>
-                                </a>
+                                <div class="min-w-0 flex-1">
+                                    <div class="font-medium text-sm truncate">{{ $att->title }}
+                                        @if($att->hasFile())<a href="{{ route('attachments.download', $att) }}" target="_blank" class="text-[11px] link ml-1">view</a>@else<span class="text-[11px] text-gray-400 ml-1">(no file)</span>@endif
+                                    </div>
+                                    <div class="text-[11px] text-gray-400">@if($att->hasFile()){{ $att->humanSize() }} · @endif by {{ $att->uploader?->name ?? '—' }} · {{ $att->created_at->diffForHumans() }}</div>
+                                </div>
                                 @if($canAttach)
-                                    <form method="POST" action="{{ route('attachments.destroy', $att) }}" data-confirm="Remove this attachment?">
+                                    <form method="POST" action="{{ route('attachments.destroy', $att) }}" data-confirm="Remove this supporting document?">
                                         @csrf @method('DELETE')
                                         <button class="shrink-0 p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20" title="Remove">
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
@@ -309,27 +361,23 @@
                                 @endif
                             </div>
                         @empty
-                            <p class="text-sm text-gray-400">No attachments yet.</p>
+                            <p class="text-sm text-gray-400">No supporting documents yet.</p>
                         @endforelse
 
                         @if($canAttach)
-                            <div x-data="{ mode: 'pdf' }" class="mt-4 pt-3 border-t border-gray-100 dark:border-gray-700">
+                            <div x-data="{ mode: 'none' }" class="mt-4 pt-3 border-t border-gray-100 dark:border-gray-700">
                                 <form method="POST" action="{{ route('attachments.store', $document) }}" enctype="multipart/form-data" class="space-y-2">
                                     @csrf
-                                    <input type="text" name="title" class="input" placeholder="Attachment title / document type (required)" required maxlength="150">
+                                    <input type="text" name="title" class="input" placeholder="Supporting document title (required)" required maxlength="150">
                                     <div class="flex gap-1 text-xs">
-                                        <button type="button" @click="mode='pdf'" :class="mode==='pdf' ? 'bg-[color:var(--color-primary)] text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'" class="flex-1 px-3 py-1.5 rounded-lg font-medium">Upload PDF</button>
-                                        <button type="button" @click="mode='camera'" :class="mode==='camera' ? 'bg-[color:var(--color-primary)] text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'" class="flex-1 px-3 py-1.5 rounded-lg font-medium">Capture pages 📷</button>
+                                        <button type="button" @click="mode='none'" :class="mode==='none' ? 'bg-[color:var(--color-primary)] text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'" class="flex-1 px-2 py-1.5 rounded-lg font-medium">Title only</button>
+                                        <button type="button" @click="mode='pdf'" :class="mode==='pdf' ? 'bg-[color:var(--color-primary)] text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'" class="flex-1 px-2 py-1.5 rounded-lg font-medium">Browse PDF File</button>
+                                        <button type="button" @click="mode='camera'" :class="mode==='camera' ? 'bg-[color:var(--color-primary)] text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'" class="flex-1 px-2 py-1.5 rounded-lg font-medium">Capture 📷</button>
                                     </div>
-                                    <div x-show="mode==='pdf'">
-                                        <input type="file" name="pdf" accept="application/pdf" class="text-sm w-full">
-                                        <p class="text-[11px] text-gray-400 mt-1">Select a PDF (max 2 MB).</p>
-                                    </div>
-                                    <div x-show="mode==='camera'" x-cloak>
-                                        <input type="file" name="images[]" accept="image/*" capture="environment" multiple class="text-sm w-full">
-                                        <p class="text-[11px] text-gray-400 mt-1">Capture one or more pages (cover page first). They'll be combined and saved as a compressed PDF.</p>
-                                    </div>
-                                    <x-btn type="submit" class="w-full">Upload attachment</x-btn>
+                                    <div x-show="mode==='pdf'" x-cloak><x-file-drop name="pdf" accept="application/pdf" label="Browse a PDF (max 2 MB)" /></div>
+                                    <div x-show="mode==='camera'" x-cloak><x-file-drop name="images[]" accept="image/*" :multiple="true" :capture="true" icon="camera" label="Capture page(s) — cover first" /></div>
+                                    <p class="text-[11px] text-gray-400" x-show="mode==='none'" x-cloak>A title-only item (no file) — for a physical document not yet scanned.</p>
+                                    <x-btn type="submit" class="w-full">Add supporting document</x-btn>
                                 </form>
                             </div>
                         @endif
@@ -468,7 +516,7 @@
                         @endcan
 
                         @can('release', $document)
-                            @php $hasAtt = \App\Models\Document::attachmentsEnabled() && $document->attachments->isNotEmpty(); $reqN = $hasAtt ? $document->attachments->count() + 1 : 0; @endphp
+                            @php $hasAtt = \App\Models\Document::attachmentsEnabled() && $document->supportingDocuments->isNotEmpty(); $reqN = $hasAtt ? $document->supportingDocuments->count() + 1 : 0; @endphp
                             <form method="POST" action="{{ route('documents.release', $document) }}" class="space-y-2 p-3 rounded-lg bg-amber-50 dark:bg-amber-900/20" x-data="{ present: [] }"
                                   data-confirm="Release this document to {{ $document->currentHolder?->name }}? You will then print and attach the QR.">
                                 @csrf
@@ -487,8 +535,8 @@
                             @php
                                 $latestLog = $document->logs->first();
                                 $isReturned = $latestLog && $latestLog->action === 'rejected';
-                                $hasAttR = \App\Models\Document::attachmentsEnabled() && $document->attachments->isNotEmpty() && ! $isReturned;
-                                $reqR = $hasAttR ? $document->attachments->count() + 1 : 0;
+                                $hasAttR = \App\Models\Document::attachmentsEnabled() && $document->supportingDocuments->isNotEmpty() && ! $isReturned;
+                                $reqR = $hasAttR ? $document->supportingDocuments->count() + 1 : 0;
                             @endphp
                             @if($desktopReceive)
                                 {{-- Desktop receive/claim explicitly enabled in settings --}}
@@ -550,7 +598,7 @@
                                 Forward to another staff
                             </button>
                             <div x-show="panel === 'forward'" x-cloak class="p-3 rounded-lg bg-gray-50 dark:bg-gray-700/40">
-                                @php $hasAttF = \App\Models\Document::attachmentsEnabled() && $document->attachments->isNotEmpty(); $reqF = $hasAttF ? $document->attachments->count() + 1 : 0; @endphp
+                                @php $hasAttF = \App\Models\Document::attachmentsEnabled() && $document->supportingDocuments->isNotEmpty(); $reqF = $hasAttF ? $document->supportingDocuments->count() + 1 : 0; @endphp
                                 <form method="POST" action="{{ route('documents.forward', $document) }}" class="space-y-2" x-data="{ present: [] }"
                                       data-confirm="Forward this document to the selected staff?">
                                     @csrf
@@ -580,7 +628,7 @@
                                     Transfer to another office
                                 </button>
                                 <div x-show="panel === 'transfer'" x-cloak class="p-3 rounded-lg bg-gray-50 dark:bg-gray-700/40">
-                                    @php $hasAttT = \App\Models\Document::attachmentsEnabled() && $document->attachments->isNotEmpty(); $reqT = $hasAttT ? $document->attachments->count() + 1 : 0; @endphp
+                                    @php $hasAttT = \App\Models\Document::attachmentsEnabled() && $document->supportingDocuments->isNotEmpty(); $reqT = $hasAttT ? $document->supportingDocuments->count() + 1 : 0; @endphp
                                     <form method="POST" action="{{ route('documents.transfer', $document) }}" class="space-y-2" x-data="{ present: [] }"
                                           data-confirm="Transfer this document to the selected office? Their receiving staff will be able to claim it.">
                                         @csrf

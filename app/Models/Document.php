@@ -71,10 +71,16 @@ class Document extends Model
         return \App\Models\Setting::get('enable_document_linking', '1') === '1';
     }
 
-    /** Whether document attachments/uploads are enabled system-wide. */
+    /** Whether "Supporting Documents" are enabled system-wide. */
     public static function attachmentsEnabled(): bool
     {
         return \App\Models\Setting::get('enable_attachments', '0') === '1';
+    }
+
+    /** Whether the encoder's "Digital Copy" upload is enabled system-wide. */
+    public static function digitalCopyEnabled(): bool
+    {
+        return \App\Models\Setting::get('enable_digital_copy', '0') === '1';
     }
 
     /** Human-friendly label for a status value (the DB value stays 'draft'). */
@@ -210,10 +216,22 @@ class Document extends Model
         return $this->hasMany(DocumentItem::class)->orderBy('id');
     }
 
-    /** Uploaded attachments (PDFs) for this document. */
+    /** All attachment rows (supporting documents + digital copy). */
     public function attachments(): HasMany
     {
         return $this->hasMany(DocumentAttachment::class)->orderBy('id');
+    }
+
+    /** Supporting documents (title required, file optional) — drive the handover checklist. */
+    public function supportingDocuments(): HasMany
+    {
+        return $this->hasMany(DocumentAttachment::class)->where('kind', 'supporting')->orderBy('id');
+    }
+
+    /** The encoder's single digital copy of the document, if uploaded. */
+    public function digitalCopy(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(DocumentAttachment::class)->where('kind', 'digital_copy')->latest('id');
     }
 
     /** Other documents linked to this one (stored symmetrically). */
@@ -371,6 +389,23 @@ class Document extends Model
     public function totalTime(): string
     {
         return static::humanDuration($this->totalSeconds());
+    }
+
+    /**
+     * Total time the document spent paused/pending. The possession ledger has an
+     * open segment at all times EXCEPT while pending, so the gap between the total
+     * lifetime and the sum of all possession segments is the paused time.
+     */
+    public function totalPausedSeconds(): int
+    {
+        $held = $this->possessions->sum(fn ($s) => $s->seconds());
+
+        return max(0, $this->totalSeconds() - (int) $held);
+    }
+
+    public function totalPausedTime(): string
+    {
+        return static::humanDuration($this->totalPausedSeconds());
     }
 
     /**

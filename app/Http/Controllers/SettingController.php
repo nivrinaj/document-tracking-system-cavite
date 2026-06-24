@@ -37,6 +37,7 @@ class SettingController extends Controller
             'enable_batch_receive' => ['nullable', 'boolean'],
             'enable_document_linking' => ['nullable', 'boolean'],
             'enable_attachments' => ['nullable', 'boolean'],
+            'enable_digital_copy' => ['nullable', 'boolean'],
             'enable_messaging' => ['nullable', 'boolean'],
             'messaging_scope' => ['nullable', 'in:all,office'],
             'messaging_excluded_roles' => ['nullable', 'array'],
@@ -59,6 +60,7 @@ class SettingController extends Controller
         Setting::put('enable_batch_receive', $request->boolean('enable_batch_receive') ? '1' : '0');
         Setting::put('enable_document_linking', $request->boolean('enable_document_linking') ? '1' : '0');
         Setting::put('enable_attachments', $request->boolean('enable_attachments') ? '1' : '0');
+        Setting::put('enable_digital_copy', $request->boolean('enable_digital_copy') ? '1' : '0');
         Setting::put('enable_messaging', $request->boolean('enable_messaging') ? '1' : '0');
         Setting::put('messaging_scope', $request->input('messaging_scope') === 'office' ? 'office' : 'all');
         Setting::put('messaging_excluded_roles', json_encode(array_values($request->input('messaging_excluded_roles', []))));

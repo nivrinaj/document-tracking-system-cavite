@@ -339,7 +339,7 @@ class DocumentController extends Controller
      */
     private function missingChecklist(Document $document, Request $request): ?string
     {
-        if (! Document::attachmentsEnabled() || $document->attachments->isEmpty()) {
+        if (! Document::attachmentsEnabled() || $document->supportingDocuments->isEmpty()) {
             return null;
         }
         // A rejected document being received back by the sender skips the checklist —
@@ -347,7 +347,7 @@ class DocumentController extends Controller
         if (optional($document->logs()->latest('id')->first())->action === 'rejected') {
             return null;
         }
-        $required = $document->attachments->pluck('id')->map(fn ($id) => 'att_'.$id)->push('main')->all();
+        $required = $document->supportingDocuments->pluck('id')->map(fn ($id) => 'att_'.$id)->push('main')->all();
         $present = (array) $request->input('present', []);
         if (array_diff($required, $present)) {
             return 'Please tick the main document and every attachment you physically have — or reject if something is missing.';

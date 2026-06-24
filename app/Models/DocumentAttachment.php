@@ -7,7 +7,12 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class DocumentAttachment extends Model
 {
-    protected $fillable = ['document_id', 'title', 'file_path', 'file_size', 'uploaded_by'];
+    protected $fillable = ['document_id', 'kind', 'title', 'file_path', 'file_size', 'uploaded_by'];
+
+    public function hasFile(): bool
+    {
+        return ! empty($this->file_path);
+    }
 
     public function document(): BelongsTo
     {

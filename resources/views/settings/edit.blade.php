@@ -212,10 +212,23 @@
                         <input type="checkbox" name="enable_attachments" value="1" class="mt-1 rounded text-[color:var(--color-primary)]"
                                @checked(($settings['enable_attachments'] ?? '0') === '1')>
                         <span>
-                            <span class="font-medium text-sm">Enable document attachments &amp; handover verification</span>
+                            <span class="font-medium text-sm">Enable “Supporting Documents” &amp; handover verification</span>
                             <span class="block text-xs text-gray-400 mt-0.5">
-                                When <strong>on</strong>, the holder can attach scanned files (PDF on desktop, or capture pages with the phone camera → saved as PDF) with a title each.
+                                When <strong>on</strong>, the holder can list supporting documents (a <strong>title</strong> each, with an optional PDF or captured pages).
                                 On hand-over the sender ticks each item as physically attached; the receiver ticks each item present to <strong>accept</strong>, or <strong>rejects</strong> (returns it to the sender) if something is missing.
+                                When <strong>off</strong> (default), this is hidden.
+                            </span>
+                        </span>
+                    </label>
+
+                    <label class="flex items-start gap-3 cursor-pointer border-t border-gray-100 dark:border-gray-700 pt-4">
+                        <input type="hidden" name="enable_digital_copy" value="0">
+                        <input type="checkbox" name="enable_digital_copy" value="1" class="mt-1 rounded text-[color:var(--color-primary)]"
+                               @checked(($settings['enable_digital_copy'] ?? '0') === '1')>
+                        <span>
+                            <span class="font-medium text-sm">Enable “Digital Copy” of the document</span>
+                            <span class="block text-xs text-gray-400 mt-0.5">
+                                When <strong>on</strong>, the <strong>encoder</strong> can upload one digital copy (PDF or image, max 2 MB) of the document they're encoding. Everyone concerned can view it; it does <em>not</em> affect receiving/rejecting (that stays tied to Supporting Documents).
                                 When <strong>off</strong> (default), this is hidden.
                             </span>
                         </span>

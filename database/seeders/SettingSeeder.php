@@ -24,7 +24,8 @@ class SettingSeeder extends Seeder
             'enable_route_items' => '0',    // off -> route-slip multi-item tracking hidden
             'enable_batch_receive' => '1',  // batch-receive page
             'enable_document_linking' => '1', // link related documents
-            'enable_attachments' => '0',    // document attachments/uploads (off by default)
+            'enable_attachments' => '0',    // supporting documents (off by default)
+            'enable_digital_copy' => '0',   // encoder digital copy of the document (off by default)
             'enable_messaging' => '0',      // in-app chat (off by default)
             'messaging_scope' => 'all',     // 'all' (any office) or 'office' (own department only)
             'messaging_excluded_roles' => '[]', // role names barred from chat (JSON array)

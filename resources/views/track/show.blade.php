@@ -47,41 +47,64 @@
             @endif
         </x-card>
 
-        {{-- Attachments --}}
+        {{-- Digital Copy --}}
+        @if(\App\Models\Document::digitalCopyEnabled())
+            @php $dc = $document->digitalCopy; $canDigital = ! $document->isClosed() && auth()->id() === $document->created_by; @endphp
+            <x-card>
+                <h2 class="font-semibold mb-3">Digital Copy <span class="text-gray-400 font-normal text-sm">(the document's digitized original)</span></h2>
+                @if($dc)
+                    <a href="{{ route('attachments.download', $dc) }}" target="_blank" class="flex items-center gap-3 p-2.5 rounded-lg bg-gray-50 dark:bg-gray-700/40">
+                        <svg class="w-5 h-5 text-red-500 shrink-0" fill="none" stroke="currentColor" stroke-width="1.6" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+                        <span class="min-w-0"><span class="block text-sm font-medium">View digital copy</span><span class="block text-[11px] text-gray-400">{{ $dc->humanSize() }}</span></span>
+                    </a>
+                @endif
+                @if($canDigital)
+                    <form method="POST" action="{{ route('attachments.digitalCopy', $document) }}" enctype="multipart/form-data" class="space-y-2 {{ $dc ? 'mt-3' : '' }}" x-data="{ mode: 'camera' }">
+                        @csrf
+                        <div class="flex gap-1 text-xs">
+                            <button type="button" @click="mode='camera'" :class="mode==='camera' ? 'bg-[color:var(--color-primary)] text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'" class="flex-1 px-3 py-1.5 rounded-lg font-medium">📷 Capture</button>
+                            <button type="button" @click="mode='pdf'" :class="mode==='pdf' ? 'bg-[color:var(--color-primary)] text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'" class="flex-1 px-3 py-1.5 rounded-lg font-medium">Browse PDF File</button>
+                        </div>
+                        <div x-show="mode==='camera'"><x-file-drop name="images[]" accept="image/*" :multiple="true" :capture="true" icon="camera" label="Capture the document" /></div>
+                        <div x-show="mode==='pdf'" x-cloak><x-file-drop name="pdf" accept="application/pdf" label="Browse a PDF (max 2 MB)" /></div>
+                        <x-btn type="submit" class="w-full">{{ $dc ? 'Replace digital copy' : 'Upload digital copy' }}</x-btn>
+                    </form>
+                @elseif(! $dc)
+                    <p class="text-sm text-gray-400">No digital copy uploaded.</p>
+                @endif
+            </x-card>
+        @endif
+
+        {{-- Supporting Documents --}}
         @if(\App\Models\Document::attachmentsEnabled())
             @php $canAttach = ! $document->isClosed() && (
                 ($document->status === 'draft' && auth()->id() === $document->created_by)
                 || ($document->status === 'received' && auth()->id() === $document->current_holder_id)
             ); @endphp
             <x-card>
-                <h2 class="font-semibold mb-3">Attachments <span class="text-gray-400 font-normal text-sm">({{ $document->attachments->count() }})</span></h2>
-                @forelse($document->attachments as $att)
-                    <a href="{{ route('attachments.download', $att) }}" target="_blank" class="flex items-center gap-3 py-2 border-b border-gray-50 dark:border-gray-700/50 last:border-0">
-                        <span class="shrink-0 w-9 h-9 rounded-lg grid place-items-center bg-red-50 dark:bg-red-900/20 text-red-500"><svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.6" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg></span>
-                        <span class="min-w-0"><span class="block font-medium text-sm truncate">{{ $att->title }}</span><span class="block text-[11px] text-gray-400">{{ $att->humanSize() }}</span></span>
-                    </a>
+                <h2 class="font-semibold mb-3">Supporting Documents <span class="text-gray-400 font-normal text-sm">({{ $document->supportingDocuments->count() }})</span></h2>
+                @forelse($document->supportingDocuments as $att)
+                    <div class="flex items-center gap-3 py-2 border-b border-gray-50 dark:border-gray-700/50 last:border-0">
+                        <span class="shrink-0 w-9 h-9 rounded-lg grid place-items-center {{ $att->hasFile() ? 'bg-red-50 dark:bg-red-900/20 text-red-500' : 'bg-gray-100 dark:bg-gray-700 text-gray-400' }}"><svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.6" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg></span>
+                        <span class="min-w-0 flex-1"><span class="block font-medium text-sm truncate">{{ $att->title }}@if($att->hasFile())<a href="{{ route('attachments.download', $att) }}" target="_blank" class="text-[11px] link ml-1">view</a>@else<span class="text-[11px] text-gray-400 ml-1">(no file)</span>@endif</span></span>
+                    </div>
                 @empty
-                    <p class="text-sm text-gray-400">No attachments yet.</p>
+                    <p class="text-sm text-gray-400">No supporting documents yet.</p>
                 @endforelse
 
                 @if($canAttach)
-                    <div x-data="{ mode: 'camera' }" class="mt-3 pt-3 border-t border-gray-100 dark:border-gray-700">
+                    <div x-data="{ mode: 'none' }" class="mt-3 pt-3 border-t border-gray-100 dark:border-gray-700">
                         <form method="POST" action="{{ route('attachments.store', $document) }}" enctype="multipart/form-data" class="space-y-2">
                             @csrf
-                            <input type="text" name="title" class="input" placeholder="Attachment title / document type (required)" required maxlength="150">
+                            <input type="text" name="title" class="input" placeholder="Supporting document title (required)" required maxlength="150">
                             <div class="flex gap-1 text-xs">
-                                <button type="button" @click="mode='camera'" :class="mode==='camera' ? 'bg-[color:var(--color-primary)] text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'" class="flex-1 px-3 py-1.5 rounded-lg font-medium">📷 Capture pages</button>
-                                <button type="button" @click="mode='pdf'" :class="mode==='pdf' ? 'bg-[color:var(--color-primary)] text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'" class="flex-1 px-3 py-1.5 rounded-lg font-medium">Upload PDF</button>
+                                <button type="button" @click="mode='none'" :class="mode==='none' ? 'bg-[color:var(--color-primary)] text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'" class="flex-1 px-2 py-1.5 rounded-lg font-medium">Title only</button>
+                                <button type="button" @click="mode='camera'" :class="mode==='camera' ? 'bg-[color:var(--color-primary)] text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'" class="flex-1 px-2 py-1.5 rounded-lg font-medium">📷 Capture</button>
+                                <button type="button" @click="mode='pdf'" :class="mode==='pdf' ? 'bg-[color:var(--color-primary)] text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'" class="flex-1 px-2 py-1.5 rounded-lg font-medium">PDF</button>
                             </div>
-                            <div x-show="mode==='camera'">
-                                <input type="file" name="images[]" accept="image/*" capture="environment" multiple class="text-sm w-full">
-                                <p class="text-[11px] text-gray-400 mt-1">Capture the cover page (and more). Saved as one compressed PDF.</p>
-                            </div>
-                            <div x-show="mode==='pdf'" x-cloak>
-                                <input type="file" name="pdf" accept="application/pdf" class="text-sm w-full">
-                                <p class="text-[11px] text-gray-400 mt-1">PDF, max 2 MB.</p>
-                            </div>
-                            <x-btn type="submit" class="w-full">Upload attachment</x-btn>
+                            <div x-show="mode==='camera'"><x-file-drop name="images[]" accept="image/*" :multiple="true" :capture="true" icon="camera" label="Capture page(s) — cover first" /></div>
+                            <div x-show="mode==='pdf'" x-cloak><x-file-drop name="pdf" accept="application/pdf" label="Browse a PDF (max 2 MB)" /></div>
+                            <x-btn type="submit" class="w-full">Add supporting document</x-btn>
                         </form>
                     </div>
                 @endif
@@ -106,8 +129,8 @@
                         $isClaim = $document->current_holder_id === null;
                         $latestLog = $document->logs->first();
                         $isReturned = $latestLog && $latestLog->action === 'rejected';
-                        $hasAttR = \App\Models\Document::attachmentsEnabled() && $document->attachments->isNotEmpty() && ! $isReturned;
-                        $reqR = $hasAttR ? $document->attachments->count() + 1 : 0;
+                        $hasAttR = \App\Models\Document::attachmentsEnabled() && $document->supportingDocuments->isNotEmpty() && ! $isReturned;
+                        $reqR = $hasAttR ? $document->supportingDocuments->count() + 1 : 0;
                     @endphp
                     <div class="p-3 rounded-lg {{ $isReturned ? 'bg-red-50 dark:bg-red-900/20' : 'bg-blue-50 dark:bg-blue-900/20' }} space-y-2" x-data="{ present: [] }">
                         @if($isReturned)
@@ -151,7 +174,7 @@
                 @can('forward', $document)
                     <button @click="panel = panel === 'forward' ? null : 'forward'" class="w-full text-left px-4 py-2 rounded-lg bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 text-sm font-medium">Forward to another staff</button>
                     <div x-show="panel === 'forward'" x-cloak class="p-3 rounded-lg bg-gray-50 dark:bg-gray-700/40">
-                        @php $hasAttF = \App\Models\Document::attachmentsEnabled() && $document->attachments->isNotEmpty(); $reqF = $hasAttF ? $document->attachments->count() + 1 : 0; @endphp
+                        @php $hasAttF = \App\Models\Document::attachmentsEnabled() && $document->supportingDocuments->isNotEmpty(); $reqF = $hasAttF ? $document->supportingDocuments->count() + 1 : 0; @endphp
                         <form method="POST" action="{{ route('documents.forward', $document) }}" class="space-y-2" x-data="{ present: [] }"
                               data-confirm="Forward this document to the selected staff?">
                             @csrf
