@@ -90,8 +90,9 @@
                                     <div class="text-xs text-gray-400">{{ $doc->creator?->orgShort() }}</div>
                                 </td>
                                 <td class="table-td" data-label="Current Holder">
-                                    @if($doc->is_broadcast)
-                                        <span class="text-gray-400">📣 Distributed</span>
+                                    @if($doc->is_broadcast || $doc->distribution_summary)
+                                        <span class="text-gray-500 dark:text-gray-300">📣 Distributed</span>
+                                        @if($doc->distribution_summary)<div class="text-xs text-gray-400">{{ $doc->distribution_summary }}</div>@endif
                                     @elseif($doc->current_holder_id && $doc->status === 'draft')
                                         <span class="text-amber-600 dark:text-amber-400">Pending release</span>
                                         <div class="text-xs text-gray-400">to {{ $doc->currentHolder->name }}</div>

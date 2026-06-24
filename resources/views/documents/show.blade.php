@@ -272,6 +272,63 @@
                     </div>
                 </x-card>
 
+                {{-- Attachments --}}
+                @if(\App\Models\Document::attachmentsEnabled())
+                    @php
+                        $canAttach = ! $document->isClosed() && (auth()->id() === $document->current_holder_id || auth()->id() === $document->created_by || auth()->user()->hasRole('Super Admin'));
+                    @endphp
+                    <x-card>
+                        <div class="flex items-center justify-between mb-3">
+                            <h2 class="font-semibold">Attachments <span class="text-gray-400 font-normal text-sm">({{ $document->attachments->count() }})</span></h2>
+                            <span class="text-[11px] text-gray-400">PDF · max 2 MB each</span>
+                        </div>
+
+                        @forelse($document->attachments as $att)
+                            <div class="flex items-center gap-3 py-2 border-b border-gray-50 dark:border-gray-700/50 last:border-0">
+                                <span class="shrink-0 w-9 h-9 rounded-lg grid place-items-center bg-red-50 dark:bg-red-900/20 text-red-500">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.6" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+                                </span>
+                                <a href="{{ route('attachments.download', $att) }}" target="_blank" class="min-w-0 flex-1 group">
+                                    <div class="font-medium text-sm truncate group-hover:underline">{{ $att->title }}</div>
+                                    <div class="text-[11px] text-gray-400">{{ $att->humanSize() }} · by {{ $att->uploader?->name ?? '—' }} · {{ $att->created_at->diffForHumans() }}</div>
+                                </a>
+                                @if($canAttach)
+                                    <form method="POST" action="{{ route('attachments.destroy', $att) }}" data-confirm="Remove this attachment?">
+                                        @csrf @method('DELETE')
+                                        <button class="shrink-0 p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20" title="Remove">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                                        </button>
+                                    </form>
+                                @endif
+                            </div>
+                        @empty
+                            <p class="text-sm text-gray-400">No attachments yet.</p>
+                        @endforelse
+
+                        @if($canAttach)
+                            <div x-data="{ mode: 'pdf' }" class="mt-4 pt-3 border-t border-gray-100 dark:border-gray-700">
+                                <form method="POST" action="{{ route('attachments.store', $document) }}" enctype="multipart/form-data" class="space-y-2">
+                                    @csrf
+                                    <input type="text" name="title" class="input" placeholder="Attachment title / document type (required)" required maxlength="150">
+                                    <div class="flex gap-1 text-xs">
+                                        <button type="button" @click="mode='pdf'" :class="mode==='pdf' ? 'bg-[color:var(--color-primary)] text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'" class="flex-1 px-3 py-1.5 rounded-lg font-medium">Upload PDF</button>
+                                        <button type="button" @click="mode='camera'" :class="mode==='camera' ? 'bg-[color:var(--color-primary)] text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'" class="flex-1 px-3 py-1.5 rounded-lg font-medium">Capture pages 📷</button>
+                                    </div>
+                                    <div x-show="mode==='pdf'">
+                                        <input type="file" name="pdf" accept="application/pdf" class="text-sm w-full">
+                                        <p class="text-[11px] text-gray-400 mt-1">Select a PDF (max 2 MB).</p>
+                                    </div>
+                                    <div x-show="mode==='camera'" x-cloak>
+                                        <input type="file" name="images[]" accept="image/*" capture="environment" multiple class="text-sm w-full">
+                                        <p class="text-[11px] text-gray-400 mt-1">Capture one or more pages (cover page first). They'll be combined and saved as a compressed PDF.</p>
+                                    </div>
+                                    <x-btn type="submit" class="w-full">Upload attachment</x-btn>
+                                </form>
+                            </div>
+                        @endif
+                    </x-card>
+                @endif
+
                 {{-- Related documents --}}
                 @if(\App\Models\Document::linkingEnabled())
                 <x-card>
@@ -404,32 +461,54 @@
                         @endcan
 
                         @can('release', $document)
-                            <form method="POST" action="{{ route('documents.release', $document) }}" class="space-y-2 p-3 rounded-lg bg-amber-50 dark:bg-amber-900/20"
+                            @php $hasAtt = \App\Models\Document::attachmentsEnabled() && $document->attachments->isNotEmpty(); $reqN = $hasAtt ? $document->attachments->count() + 1 : 0; @endphp
+                            <form method="POST" action="{{ route('documents.release', $document) }}" class="space-y-2 p-3 rounded-lg bg-amber-50 dark:bg-amber-900/20" x-data="{ present: [] }"
                                   data-confirm="Release this document to {{ $document->currentHolder?->name }}? You will then print and attach the QR.">
                                 @csrf
                                 <p class="text-xs text-amber-700 dark:text-amber-300">Releasing hands the document to <strong>{{ $document->currentHolder?->name }}</strong>. Print and attach the QR.</p>
+                                @if($hasAtt)
+                                    <p class="text-xs font-medium text-amber-800 dark:text-amber-200">Tick each item you have physically attached:</p>
+                                    @include('documents._checklist')
+                                @endif
                                 <input type="text" name="remarks" class="input" placeholder="Release remarks (optional)">
-                                <x-btn type="submit" variant="primary" class="w-full">🚀 Release Document</x-btn>
+                                <x-btn type="submit" variant="primary" class="w-full" x-bind:disabled="present.length < {{ $reqN }}" ::class="present.length < {{ $reqN }} ? 'opacity-50 pointer-events-none' : ''">🚀 Release Document</x-btn>
                             </form>
                         @endcan
 
                         @can('receive', $document)
                             @php $desktopReceive = ($settings['allow_desktop_receive'] ?? '0') === '1'; $isClaim = $document->current_holder_id === null; @endphp
+                            @php $hasAttR = \App\Models\Document::attachmentsEnabled() && $document->attachments->isNotEmpty(); $reqR = $hasAttR ? $document->attachments->count() + 1 : 0; @endphp
                             @if($desktopReceive)
                                 {{-- Desktop receive/claim explicitly enabled in settings --}}
-                                <form method="POST" action="{{ route('documents.receive', $document) }}" class="space-y-2 p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20"
-                                      data-confirm="{{ $isClaim ? 'Claim this document for your office? You will become its holder.' : 'Confirm you physically received this document?' }}">
-                                    @csrf
+                                <div class="p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20 space-y-2" x-data="{ present: [] }">
                                     <p class="text-xs text-blue-700 dark:text-blue-300">
                                         @if($isClaim)
-                                            📥 This document was <strong>transferred to your office</strong>. Claim it to take responsibility — other receivers will then stop seeing it as unclaimed.
+                                            📥 This document was <strong>transferred to your office</strong>. Claim it to take responsibility.
+                                        @elseif($hasAttR)
+                                            Physically check each item below, then tick it. Accept only if everything is present; otherwise reject.
                                         @else
                                             Confirm you physically received this document.
                                         @endif
                                     </p>
-                                    <input type="text" name="remarks" class="input" placeholder="Remarks (optional)">
-                                    <x-btn type="submit" variant="primary" class="w-full">{{ $isClaim ? '📥 Claim & Receive' : '✅ Receive Document' }}</x-btn>
-                                </form>
+                                    @if($hasAttR)
+                                        @include('documents._checklist')
+                                    @endif
+                                    <form method="POST" action="{{ route('documents.receive', $document) }}" class="space-y-2"
+                                          data-confirm="{{ $isClaim ? 'Claim this document for your office?' : 'Confirm you physically received this document?' }}">
+                                        @csrf
+                                        <template x-for="id in present" :key="id"><input type="hidden" name="present[]" :value="id"></template>
+                                        <input type="text" name="remarks" class="input" placeholder="Remarks (optional)">
+                                        <x-btn type="submit" variant="primary" class="w-full" x-bind:disabled="present.length < {{ $reqR }}" ::class="present.length < {{ $reqR }} ? 'opacity-50 pointer-events-none' : ''">{{ $isClaim ? '📥 Claim & Receive' : '✅ Accept & Receive' }}</x-btn>
+                                    </form>
+                                    @if($hasAttR)
+                                        <form method="POST" action="{{ route('documents.reject', $document) }}" class="space-y-2 pt-2 border-t border-blue-100 dark:border-blue-900/40"
+                                              data-confirm="Reject and return this document to the sender?">
+                                            @csrf
+                                            <input type="text" name="remarks" class="input" placeholder="What's missing / wrong? (required)" required>
+                                            <x-btn type="submit" variant="danger" class="w-full">✗ Reject &amp; return to sender</x-btn>
+                                        </form>
+                                    @endif
+                                </div>
                             @else
                                 {{-- Default: physical possession is proven by scanning the QR on the document itself --}}
                                 <div class="p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20 text-center space-y-1">
@@ -451,7 +530,8 @@
                                 Forward to another staff
                             </button>
                             <div x-show="panel === 'forward'" x-cloak class="p-3 rounded-lg bg-gray-50 dark:bg-gray-700/40">
-                                <form method="POST" action="{{ route('documents.forward', $document) }}" class="space-y-2"
+                                @php $hasAttF = \App\Models\Document::attachmentsEnabled() && $document->attachments->isNotEmpty(); $reqF = $hasAttF ? $document->attachments->count() + 1 : 0; @endphp
+                                <form method="POST" action="{{ route('documents.forward', $document) }}" class="space-y-2" x-data="{ present: [] }"
                                       data-confirm="Forward this document to the selected staff?">
                                     @csrf
                                     <p class="text-xs text-gray-500 dark:text-gray-400">Forwards within <strong>your own office</strong> only.</p>
@@ -463,8 +543,12 @@
                                             </optgroup>
                                         @endforeach
                                     </select>
+                                    @if($hasAttF)
+                                        <p class="text-xs font-medium text-gray-600 dark:text-gray-300">Confirm each item is physically attached:</p>
+                                        @include('documents._checklist')
+                                    @endif
                                     <textarea name="remarks" rows="2" class="input" placeholder="Details about this action (required)" required></textarea>
-                                    <x-btn type="submit" class="w-full">Forward</x-btn>
+                                    <x-btn type="submit" class="w-full" x-bind:disabled="present.length < {{ $reqF }}" ::class="present.length < {{ $reqF }} ? 'opacity-50 pointer-events-none' : ''">Forward</x-btn>
                                 </form>
                             </div>
                         @endcan
@@ -476,7 +560,8 @@
                                     Transfer to another office
                                 </button>
                                 <div x-show="panel === 'transfer'" x-cloak class="p-3 rounded-lg bg-gray-50 dark:bg-gray-700/40">
-                                    <form method="POST" action="{{ route('documents.transfer', $document) }}" class="space-y-2"
+                                    @php $hasAttT = \App\Models\Document::attachmentsEnabled() && $document->attachments->isNotEmpty(); $reqT = $hasAttT ? $document->attachments->count() + 1 : 0; @endphp
+                                    <form method="POST" action="{{ route('documents.transfer', $document) }}" class="space-y-2" x-data="{ present: [] }"
                                           data-confirm="Transfer this document to the selected office? Their receiving staff will be able to claim it.">
                                         @csrf
                                         <p class="text-xs text-gray-500 dark:text-gray-400">Sends to the office's receiving pool — no specific person. Any receiver there can claim it.</p>
@@ -488,8 +573,12 @@
                                                 @endif
                                             @endforeach
                                         </select>
+                                        @if($hasAttT)
+                                            <p class="text-xs font-medium text-gray-600 dark:text-gray-300">Confirm each item is physically attached:</p>
+                                            @include('documents._checklist')
+                                        @endif
                                         <textarea name="remarks" rows="2" class="input" placeholder="Details about this transfer (required)" required></textarea>
-                                        <x-btn type="submit" class="w-full">📤 Transfer to office</x-btn>
+                                        <x-btn type="submit" class="w-full" x-bind:disabled="present.length < {{ $reqT }}" ::class="present.length < {{ $reqT }} ? 'opacity-50 pointer-events-none' : ''">📤 Transfer to office</x-btn>
                                     </form>
                                 </div>
                             @endif

@@ -44,6 +44,16 @@ class DocumentPolicy
             return true; // members see everything in their own department
         }
 
+        // A department head/assistant head can also see a document that concerns any
+        // of their own staff — even after it has moved to another office.
+        if ($user->isHead() && $user->department_id) {
+            $concernsMyDept = $document->creator?->department_id === $user->department_id
+                || $document->assignees()->where('users.department_id', $user->department_id)->exists();
+            if ($concernsMyDept) {
+                return true;
+            }
+        }
+
         return $this->concerns($user, $document); // cross-department: only if forwarded/released to them
     }
 

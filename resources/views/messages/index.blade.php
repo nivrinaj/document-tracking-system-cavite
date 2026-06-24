@@ -115,7 +115,7 @@
                     </div>
 
                     {{-- messages --}}
-                    <div x-ref="scroll" class="flex-1 overflow-y-auto px-4 py-4 space-y-1.5 bg-gray-50 dark:bg-gray-900/30">
+                    <div x-ref="scroll" class="flex-1 overflow-y-auto px-4 py-4 space-y-3 bg-gray-50 dark:bg-gray-900/30">
                         <template x-for="m in messages" :key="m.id">
                             <div class="flex flex-col" :class="m.mine ? 'items-end' : 'items-start'">
                                 <div class="px-3 py-1.5 rounded-2xl text-sm leading-snug shadow-sm"

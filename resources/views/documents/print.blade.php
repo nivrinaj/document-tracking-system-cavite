@@ -22,9 +22,11 @@
         * { box-sizing: border-box; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
         body { font-family: 'Segoe UI', Arial, sans-serif; margin: 0; padding: 24px; color: #111; background: #f3f4f6; }
         .slip { width: 384px; margin: 0 auto; background: #fff; border-radius: 14px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,.12); border: 1px solid #e5e7eb; }
-        .header { background: {{ $primary }}; color: #fff; padding: 14px 18px; text-align: center; }
-        .header .org { font-size: 10px; text-transform: uppercase; letter-spacing: .12em; opacity: .85; }
-        .header .slip-label { font-size: 15px; font-weight: 700; margin-top: 2px; letter-spacing: .02em; }
+        .header { background: {{ $primary }}; color: #fff; padding: 16px 18px 14px; text-align: center; }
+        .header .logo { width: 56px; height: 56px; margin: 0 auto 8px; display: block; border-radius: 50%; background: #fff; padding: 4px; object-fit: contain; }
+        .header .org { font-size: 16px; font-weight: 800; line-height: 1.2; letter-spacing: .01em; }
+        .header .sub { font-size: 9px; text-transform: uppercase; letter-spacing: .12em; opacity: .85; margin-top: 3px; }
+        .header .slip-label { display: inline-block; font-size: 11px; font-weight: 700; margin-top: 8px; letter-spacing: .03em; text-transform: uppercase; background: rgba(255,255,255,.18); padding: 3px 12px; border-radius: 999px; }
         .body { padding: 18px; }
         .code-row { text-align: center; margin-bottom: 12px; }
         .code { font-family: 'Consolas', monospace; font-size: 18px; font-weight: 700; letter-spacing: .03em; color: #111; }
@@ -59,7 +61,11 @@
 <body>
     <div class="slip">
         <div class="header">
-            <div class="org">{{ $settings['organization'] ?? $settings['app_name'] ?? 'Provincial Government of Cavite' }}</div>
+            @if(!empty($settings['logo_path']))
+                <img class="logo" src="{{ asset('storage/'.$settings['logo_path']) }}" alt="">
+            @endif
+            <div class="org">{{ $settings['organization'] ?: 'Provincial Government of Cavite' }}</div>
+            @if(!empty($settings['app_name']))<div class="sub">{{ $settings['app_name'] }}</div>@endif
             <div class="slip-label">Document Tracking Slip</div>
         </div>
         <div class="body">

@@ -28,6 +28,7 @@ class TrackController extends Controller
             'creator.department', 'creator.division',
             'currentHolder.department', 'currentHolder.division',
             'division', 'logs.actor', 'logs.toUser',
+            'attachments.uploader',
         ]);
 
         // Forwarding is within the user's own office only (matches the policy).

@@ -6,6 +6,20 @@ Format based on [Keep a Changelog](https://keepachangelog.com).
 
 ---
 
+## 1.1.0 — 2026-06-24
+**Document attachments & physical handover verification + QOL**
+- **New: document attachments** (Super-Admin toggle, off by default). The holder can attach scanned files with a **title** each:
+  - **Desktop:** upload a **PDF** (max 2 MB).
+  - **Mobile:** **capture pages with the camera** (cover page + more) — they're combined and **saved as one compressed PDF** server-side (no app needed). Images are downscaled and JPEG-recompressed to stay small without hurting readability.
+- **Handover verification.** When attachments exist, hand-over becomes a checklist:
+  - The **sender** must tick the main document + every attachment as physically attached before they can forward/release/transfer.
+  - The **receiver** ticks each item physically present; **Accept & Receive** only unlocks when everything is ticked. If something's missing they **Reject** (reason required), which **returns the document to the sender** to sort out — the rejecter can no longer act, and the sender can re-scan to receive it back.
+- **Wider visibility:** all concerned staff **plus the department head of each concerned office** (even across two departments) can see the document and open its attachments.
+- **QR slip redesign:** the system **logo** now sits on top with **“Provincial Government of Cavite”** shown large and prominent.
+- **Voucher number confirmation:** voucher documents now require re-typing the number (paste disabled, live match check) to prevent mistakes from the physical voucher.
+- **Documents list:** distributed documents now show **where** they went (department / division / N people) instead of just “Distributed”.
+- **Chat spacing** between messages increased for readability.
+
 ## 1.0.3 — 2026-06-23
 **Chat bubble sizing — definitive fix, group name polish**
 - **Chat bubbles now shrink to their text for real.** Bubbles use `width: fit-content` via an inline style (immune to CSS purge/flex stretch), so a one-word message like “test” is a small bubble — fixed on the Messages page and the floating widget.

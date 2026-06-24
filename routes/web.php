@@ -45,6 +45,12 @@ Route::middleware(['auth', 'active'])->group(function () {
     Route::post('/documents/{document}/transfer', [DocumentController::class, 'transfer'])->name('documents.transfer');
     Route::post('/documents/{document}/pending', [DocumentController::class, 'pending'])->name('documents.pending');
     Route::post('/documents/{document}/resume', [DocumentController::class, 'resume'])->name('documents.resume');
+    Route::post('/documents/{document}/reject', [DocumentController::class, 'reject'])->name('documents.reject');
+
+    // Attachments
+    Route::post('/documents/{document}/attachments', [\App\Http\Controllers\AttachmentController::class, 'store'])->name('attachments.store');
+    Route::get('/attachments/{attachment}', [\App\Http\Controllers\AttachmentController::class, 'download'])->name('attachments.download');
+    Route::delete('/attachments/{attachment}', [\App\Http\Controllers\AttachmentController::class, 'destroy'])->name('attachments.destroy');
     Route::post('/documents/{document}/distribute', [DocumentController::class, 'distribute'])->name('documents.distribute');
     Route::post('/documents/{document}/link', [DocumentController::class, 'linkDocument'])->name('documents.link');
     Route::delete('/documents/{document}/link/{related}', [DocumentController::class, 'unlinkDocument'])->name('documents.unlink');

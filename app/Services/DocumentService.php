@@ -78,6 +78,10 @@ class DocumentService
                 ->where('id', '!=', $actor->id)
                 ->get();
 
+            $document->update(['distribution_summary' => $scope === 'division'
+                ? 'Division: '.($actor->division?->code ?? '—')
+                : 'Department: '.($actor->department?->code ?? '—')]);
+
             foreach ($recipients as $r) {
                 $this->addAcknowledger($document, $r->id);
                 $r->notify(new \App\Notifications\DocumentRouted($document, 'broadcast', $actor->name, $data['assign_remarks'] ?? null));
@@ -296,6 +300,36 @@ class DocumentService
         });
     }
 
+    /**
+     * Reject an incoming hand-over (e.g. an attachment is missing) and return the
+     * document to whoever sent it. The sender can then scan to receive it back and
+     * sort things out internally. The rejecter is no longer the holder.
+     */
+    public function reject(Document $document, User $actor, string $remarks): Document
+    {
+        return DB::transaction(function () use ($document, $actor, $remarks) {
+            $handover = $document->logs()
+                ->whereIn('action', ['forwarded', 'released', 'transferred'])
+                ->where('to_user_id', $actor->id)
+                ->latest('id')->first();
+            $returnTo = $handover?->from_user_id ?? $handover?->actor_id ?? $document->created_by;
+            $to = User::find($returnTo);
+
+            $document->update([
+                'status' => 'released',
+                'current_holder_id' => $returnTo,
+                'department_id' => $to?->department_id ?? $document->department_id,
+                'division_id' => $to?->division_id ?? $document->division_id,
+                'is_pending' => false,
+                'pending_at' => null,
+            ]);
+            $this->log($document, 'rejected', $actor, toUserId: $returnTo, remarks: $remarks);
+            $this->notify($returnTo, $actor, $document, 'rejected', $remarks);
+
+            return $document->refresh();
+        });
+    }
+
     /** Forward the document to another staff member. Always requires remarks. */
     public function forward(Document $document, int $toUserId, User $actor, string $remarks): Document
     {
@@ -435,6 +469,14 @@ class DocumentService
                 $r->notify(new \App\Notifications\DocumentRouted($document, 'broadcast', $actor->name, $remarks));
             }
 
+            $summary = match ($scope) {
+                'division' => 'Division: '.(\App\Models\Division::find($divisionId)?->code ?? '—'),
+                'department' => 'Department: '.($actor->department?->code ?? '—'),
+                default => $recipients->count().' selected '.\Illuminate\Support\Str::plural('person', $recipients->count()),
+            };
+            $existing = $document->distribution_summary;
+            $document->update(['distribution_summary' => $existing ? $existing.'; '.$summary : $summary]);
+
             $this->log($document, 'distributed', $actor,
                 remarks: 'Distributed to '.$recipients->count().' recipient(s) for acknowledgement.'.($remarks ? " — {$remarks}" : ''));
 
@@ -495,6 +537,7 @@ class DocumentService
                 $r->notify(new \App\Notifications\DocumentRouted($document, 'broadcast', $actor->name, $data['assign_remarks'] ?? null));
             }
 
+            $document->update(['distribution_summary' => $recipients->count().' selected '.\Illuminate\Support\Str::plural('person', $recipients->count())]);
             $this->log($document, 'released', $actor, remarks: 'Sent to '.$recipients->count().' selected recipient(s).');
 
             return $document->refresh();

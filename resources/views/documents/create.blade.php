@@ -61,10 +61,18 @@
                         </select>
                     </div>
 
-                    <div x-show="voucherTypes.includes(docType)" x-cloak>
+                    <div x-show="voucherTypes.includes(docType)" x-cloak x-data="{ confirmNo: '{{ old('voucher_number_confirmation') }}' }">
                         <label class="label">Voucher Number <span class="text-red-500">*</span></label>
-                        <input type="text" name="voucher_number" x-model="voucherNo" class="input" placeholder="e.g. DV-00123" x-bind:required="voucherTypes.includes(docType)">
+                        <input type="text" name="voucher_number" x-model="voucherNo" class="input" placeholder="e.g. DV-00123" x-bind:required="voucherTypes.includes(docType)" autocomplete="off">
                         <p class="text-xs text-gray-400 mt-1">Code: <span class="font-mono">{{ \App\Models\Document::trackingPrefix() }}-{{ date('Y') }}-<span x-text="(voucherNo || 'XXXX').toUpperCase().replace(/[^A-Z0-9\-]/g,'')"></span></span></p>
+
+                        <label class="label mt-3">Confirm Voucher Number <span class="text-red-500">*</span></label>
+                        <input type="text" name="voucher_number_confirmation" x-model="confirmNo" class="input" placeholder="Re-type to confirm" x-bind:required="voucherTypes.includes(docType)" autocomplete="off"
+                               onpaste="return false;">
+                        <p class="text-xs mt-1" x-show="confirmNo.length > 0">
+                            <span x-show="confirmNo === voucherNo" class="text-green-600 dark:text-green-400">✓ Matches — double-check it against the physical voucher.</span>
+                            <span x-show="confirmNo !== voucherNo" class="text-red-600 dark:text-red-400">✗ Doesn't match the voucher number above.</span>
+                        </p>
                     </div>
 
                     <div>

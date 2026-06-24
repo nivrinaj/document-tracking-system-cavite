@@ -53,6 +53,8 @@ class DocumentLog extends Model
             'item_cleared' => 'Item cleared',
             'item_rejected' => 'Item rejected',
             'distributed' => 'Distributed',
+            'attached' => 'Attachment added',
+            'rejected' => 'Rejected / returned',
             'reopened' => 'Reopened',
             'archived' => 'Archived',
             'completed' => 'Completed',
@@ -73,6 +75,8 @@ class DocumentLog extends Model
             'item_cleared' => 'green',
             'item_rejected' => 'red',
             'distributed' => 'indigo',
+            'attached' => 'blue',
+            'rejected' => 'red',
             'archived', 'completed' => 'green',
             default => 'gray',
         };

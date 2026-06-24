@@ -112,6 +112,7 @@ class DocumentController extends Controller
             'reference_no' => ['nullable', 'string', 'max:255'],
             'document_type' => ['required', 'string', 'max:100'],
             'voucher_number' => ['nullable', 'required_if:document_type,Voucher', 'string', 'max:100'],
+            'voucher_number_confirmation' => ['nullable', 'required_with:voucher_number', 'same:voucher_number'],
             'description' => ['nullable', 'string'],
             'source_department_id' => ['nullable', 'string', 'max:50'],
             'source_division_id' => ['nullable', 'exists:divisions,id'],
@@ -210,6 +211,7 @@ class DocumentController extends Controller
             'possessions',
             'items.decider',
             'relatedDocuments.currentHolder',
+            'attachments.uploader',
         ]);
 
         $user = Auth::user();
@@ -294,6 +296,11 @@ class DocumentController extends Controller
         $this->authorize('release', $document);
 
         $data = $request->validate(['remarks' => ['nullable', 'string']]);
+
+        if ($missing = $this->missingChecklist($document, $request)) {
+            return back()->with('error', $missing);
+        }
+
         $service->release($document, $request->user(), $data['remarks'] ?? null);
 
         return back()->with('success', 'Document released. You can now print the QR code.');
@@ -304,9 +311,44 @@ class DocumentController extends Controller
         $this->authorize('receive', $document);
 
         $data = $request->validate(['remarks' => ['nullable', 'string']]);
+
+        // When attachments exist, the recipient must confirm every item is physically present.
+        if ($missing = $this->missingChecklist($document, $request)) {
+            return back()->with('error', $missing);
+        }
+
         $service->receive($document, $request->user(), $data['remarks'] ?? null);
 
-        return back()->with('success', 'Document marked as received.');
+        return back()->with('success', 'Document received.');
+    }
+
+    public function reject(Request $request, Document $document, DocumentService $service)
+    {
+        // The intended recipient (same gate as receive) may reject instead of accepting.
+        $this->authorize('receive', $document);
+
+        $data = $request->validate(['remarks' => ['required', 'string', 'min:3']]);
+        $service->reject($document, $request->user(), $data['remarks']);
+
+        return back()->with('success', 'Document rejected and returned to the sender.');
+    }
+
+    /**
+     * If the document has attachments, ensure the submitted checklist confirms the
+     * main document + every attachment. Returns an error string, or null if OK.
+     */
+    private function missingChecklist(Document $document, Request $request): ?string
+    {
+        if (! Document::attachmentsEnabled() || $document->attachments->isEmpty()) {
+            return null;
+        }
+        $required = $document->attachments->pluck('id')->map(fn ($id) => 'att_'.$id)->push('main')->all();
+        $present = (array) $request->input('present', []);
+        if (array_diff($required, $present)) {
+            return 'Please tick the main document and every attachment you physically have — or reject if something is missing.';
+        }
+
+        return null;
     }
 
     public function forward(Request $request, Document $document, DocumentService $service)
@@ -320,6 +362,10 @@ class DocumentController extends Controller
 
         if ((int) $data['to_user_id'] === (int) $document->current_holder_id) {
             return back()->with('error', 'That staff member already holds this document — pick someone else.');
+        }
+
+        if ($missing = $this->missingChecklist($document, $request)) {
+            return back()->with('error', $missing);
         }
 
         // Forwarding is ALWAYS within the same office. To move a document to another
@@ -388,6 +434,10 @@ class DocumentController extends Controller
         // Can't transfer to the office that already holds it — use Forward/Assign within the office instead.
         if ((int) $data['to_department_id'] === (int) $document->department_id) {
             return back()->with('error', 'This document is already in that office. Use Forward or Assign to route it within the office.');
+        }
+
+        if ($missing = $this->missingChecklist($document, $request)) {
+            return back()->with('error', $missing);
         }
 
         $service->transferToOffice($document, (int) $data['to_department_id'], $request->user(), $data['remarks']);
