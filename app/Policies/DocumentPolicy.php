@@ -31,30 +31,39 @@ class DocumentPolicy
     }
 
     /**
-     * Can the user SEE the document details / history?
-     * Heads (Dept Head, Asst Head, Super Admin) see every document; everyone
-     * else only sees documents that concern them. Powers the "QR not found" rule.
+     * Can the user SEE the document details / history? Role-scoped:
+     *  - Executives (viewAll): every document.
+     *  - Department Head / Asst Head: their whole department + anything concerning
+     *    their department's staff (even if it moved to another office).
+     *  - Division Head: only their division's documents + anything concerning their
+     *    division's staff.
+     *  - Everyone else: only documents that concern them.
+     * Always: anything that concerns the user personally (cross-office included).
      */
     public function view(User $user, Document $document): bool
     {
         if ($user->can('documents.viewAll')) {
-            return true; // executives / super admin: every department
+            return true;
         }
-        if ($user->department_id && $document->department_id === $user->department_id) {
-            return true; // members see everything in their own department
+        if ($this->concerns($user, $document)) {
+            return true; // personally concerned — even across offices
         }
 
-        // A department head/assistant head can also see a document that concerns any
-        // of their own staff — even after it has moved to another office.
-        if ($user->isHead() && $user->department_id) {
-            $concernsMyDept = $document->creator?->department_id === $user->department_id
+        // Department head / assistant head: the entire own department.
+        if ($user->hasAnyRole(['Department Head', 'Assistant Department Head']) && $user->department_id) {
+            return $document->department_id === $user->department_id
+                || $document->creator?->department_id === $user->department_id
                 || $document->assignees()->where('users.department_id', $user->department_id)->exists();
-            if ($concernsMyDept) {
-                return true;
-            }
         }
 
-        return $this->concerns($user, $document); // cross-department: only if forwarded/released to them
+        // Division head: only their own division's scope.
+        if ($user->hasRole('Division Head') && $user->division_id) {
+            return ($document->division_id === $user->division_id && $document->department_id === $user->department_id)
+                || $document->creator?->division_id === $user->division_id
+                || $document->assignees()->where('users.division_id', $user->division_id)->exists();
+        }
+
+        return false;
     }
 
     /** Only Super Admin can bring a finished document back to active (e.g. accidental completion). */
@@ -99,8 +108,8 @@ class DocumentPolicy
             return true;
         }
 
-        // 2. Unclaimed transfer in my department — requires claim permission
-        return $user->can('documents.claim')
+        // 2. Unclaimed transfer in my department — requires the claim capability
+        return $user->canClaimFromOffice()
             && $this->isClaimable($document)
             && $user->department_id
             && $document->department_id === $user->department_id;
@@ -185,7 +194,7 @@ class DocumentPolicy
      */
     public function transfer(User $user, Document $document): bool
     {
-        if (! $user->can('documents.release') || $document->isClosed()) {
+        if (! $user->canTransferOffice() || $document->isClosed()) {
             return false;
         }
 
@@ -193,32 +202,30 @@ class DocumentPolicy
             || $this->canOverride($user);
     }
 
-    /** Release is done by the encoder while still a draft with an assignee. */
+    /** Release is done by the encoder (someone with encode rights) on their own draft. */
     public function release(User $user, Document $document): bool
     {
-        return $user->can('documents.release')
-            && $document->status === 'draft'
-            && $document->current_holder_id !== null
-            && ($document->created_by === $user->id || $this->canOverride($user));
+        if ($document->status !== 'draft' || $document->current_holder_id === null) {
+            return false;
+        }
+
+        return ($user->canEncode() && $document->created_by === $user->id) || $this->canOverride($user);
     }
 
     public function assign(User $user, Document $document): bool
     {
         // Never re-route a finished (archived/completed) document.
-        if (! $user->can('documents.assign') || $document->isClosed()) {
+        if ($document->isClosed()) {
             return false;
         }
-
-        // Override roles (Super Admin / Department Head) may re-route any active document.
         if ($this->canOverride($user)) {
             return true;
         }
 
-        // The encoder may (re)assign only while the document is still a draft OR
-        // released-but-not-yet-received — to fix a mis-assignment before pickup —
-        // AND only while it is still inside their own office. Once it has been
-        // transferred to another office, that office owns routing (via claim → forward).
-        return $document->created_by === $user->id
+        // The encoder may (re)assign their own draft (or released-but-not-received) while
+        // it is still inside their office — to fix a mis-assignment before pickup.
+        return $user->canEncode()
+            && $document->created_by === $user->id
             && in_array($document->status, ['draft', 'released'])
             && $document->department_id === $user->department_id;
     }

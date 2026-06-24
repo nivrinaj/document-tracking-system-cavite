@@ -38,7 +38,7 @@ class DashboardController extends Controller
 
         // Unclaimed transfers sitting in the user's office (any receiver can claim).
         $toClaim = collect();
-        if ($user->can('documents.claim') && $user->department_id) {
+        if ($user->canClaimFromOffice() && $user->department_id) {
             $toClaim = Document::with('creator')
                 ->whereNull('current_holder_id')
                 ->where('status', 'released')
@@ -61,7 +61,7 @@ class DashboardController extends Controller
             ->latest('updated_at')->take(8)->get();
 
         $toRelease = collect();
-        if ($user->can('documents.release')) {
+        if ($user->canEncode()) {
             $toRelease = Document::with(['currentHolder', 'division'])
                 ->where('created_by', $user->id)
                 ->where('status', 'draft')

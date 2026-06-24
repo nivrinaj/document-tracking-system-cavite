@@ -6,6 +6,18 @@ Format based on [Keep a Changelog](https://keepachangelog.com).
 
 ---
 
+## 1.3.0 — 2026-06-24
+**Per-user capabilities, role-scoped visibility, searchable routing dropdowns & QOL**
+- **Per-user capabilities replace the “Receiving Staff” role.** That role is retired; everyone is **Staff** plus three Super-Admin toggles per account (shown as clean switches on the user form): **Can encode**, **Can transfer to another office**, **Can claim from another office**. Encoders automatically assign & release their own drafts. Existing Receiving Staff were migrated automatically with the matching toggles on.
+- **Role-scoped visibility.**
+  - **Division Head:** sees only their division — documents in it, that concern them, or that concern their division's staff.
+  - **Department Head / Assistant Head:** sees the whole department (all divisions) + anything concerning their staff, even after it moves to another office.
+  - **Everyone else:** only documents that concern them.
+  - All roles still see any document that **personally concerns them**, across offices.
+- **Searchable Forward & Transfer dropdowns** — type to filter by name/office, so picking from many users/offices is instant.
+- **Mobile “Last action” fixed** — no more “0 seconds ago ago”.
+- **Tracking history collapses** when long (shows the latest 5 with a “Show all” toggle) on desktop and mobile.
+
 ## 1.2.0 — 2026-06-24
 **Digital Copy + Supporting Documents, possession-on-transit fix, paused total, real-time chat, slip & UI polish**
 - **Transit timing fixed (again, properly).** The running “holding now” clock always follows whoever **physically has the document**. When a document is rejected and is on its way back, the clock is on the **rejecter** until the sender receives it; during any forward/release it's on the **sender** until the recipient accepts. No more “holding now” on someone who hasn't received it.

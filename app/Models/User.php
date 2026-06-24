@@ -115,6 +115,32 @@ class User extends Authenticatable
         }
     }
 
+    /** May this user transfer a document to ANOTHER office's claim pool? */
+    public function canTransferOffice(): bool
+    {
+        if ($this->hasRole('Super Admin')) {
+            return true;
+        }
+        try {
+            return $this->hasPermissionTo('documents.transfer_office');
+        } catch (\Throwable $e) {
+            return false;
+        }
+    }
+
+    /** May this user claim/receive documents transferred from ANOTHER office? */
+    public function canClaimFromOffice(): bool
+    {
+        if ($this->hasRole('Super Admin')) {
+            return true;
+        }
+        try {
+            return $this->hasPermissionTo('documents.claim');
+        } catch (\Throwable $e) {
+            return false;
+        }
+    }
+
     /** Documents this user encoded (as receiving staff). */
     public function encodedDocuments(): HasMany
     {

@@ -178,12 +178,8 @@
                         <form method="POST" action="{{ route('documents.forward', $document) }}" class="space-y-2" x-data="{ present: [] }"
                               data-confirm="Forward this document to the selected staff?">
                             @csrf
-                            <select name="to_user_id" class="input" required>
-                                <option value="">— Forward to —</option>
-                                @foreach($users->where('id', '!=', $document->current_holder_id)->groupBy(fn($u) => $u->department?->code ?? 'No office') as $group => $gu)
-                                    <optgroup label="{{ $group }}">@foreach($gu as $u)<option value="{{ $u->id }}">{{ $u->name }} — {{ $u->division?->code ?? 'Head' }}</option>@endforeach</optgroup>
-                                @endforeach
-                            </select>
+                            <x-search-select name="to_user_id" placeholder="— Forward to —"
+                                :options="$users->where('id', '!=', $document->current_holder_id)->map(fn($u) => ['value' => $u->id, 'label' => $u->name.' — '.($u->division?->code ?? 'Head'), 'group' => $u->department?->code ?? ''])->values()" />
                             @if($hasAttF)
                                 <p class="text-xs font-medium text-gray-600 dark:text-gray-300">Confirm each item is physically attached:</p>
                                 @include('documents._checklist')

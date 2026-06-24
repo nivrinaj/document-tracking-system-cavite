@@ -119,13 +119,24 @@ class Document extends Model
             return $query;
         }
 
-        return $query->where(function ($q) use ($user) {
-            if ($user->department_id) {
-                $q->where('documents.department_id', $user->department_id);
-            }
-            $q->orWhere('created_by', $user->id)
+        $isDeptHead = $user->hasAnyRole(['Department Head', 'Assistant Department Head']) && $user->department_id;
+        $isDivHead = $user->hasRole('Division Head') && $user->division_id;
+
+        return $query->where(function ($q) use ($user, $isDeptHead, $isDivHead) {
+            // Always: documents that concern the user personally (cross-office included).
+            $q->where('created_by', $user->id)
                 ->orWhere('current_holder_id', $user->id)
                 ->orWhereHas('assignees', fn ($a) => $a->where('users.id', $user->id));
+
+            if ($isDeptHead) {
+                $q->orWhere('documents.department_id', $user->department_id)
+                    ->orWhereHas('creator', fn ($c) => $c->where('department_id', $user->department_id))
+                    ->orWhereHas('assignees', fn ($a) => $a->where('users.department_id', $user->department_id));
+            } elseif ($isDivHead) {
+                $q->orWhere(fn ($w) => $w->where('documents.division_id', $user->division_id)->where('documents.department_id', $user->department_id))
+                    ->orWhereHas('creator', fn ($c) => $c->where('division_id', $user->division_id))
+                    ->orWhereHas('assignees', fn ($a) => $a->where('users.division_id', $user->division_id));
+            }
         });
     }
 
@@ -290,10 +301,12 @@ class Document extends Model
         return $this->updated_at;
     }
 
-    /** Human elapsed time since the last action, e.g. "3 hours". */
+    /** Human elapsed time since the last action, WITHOUT an "ago" suffix (callers add context). */
     public function elapsedSinceLastAction(): string
     {
-        return optional($this->lastActionAt())->diffForHumans(['parts' => 2, 'short' => false]) ?? '—';
+        return optional($this->lastActionAt())->diffForHumans([
+            'parts' => 2, 'short' => false, 'syntax' => \Carbon\CarbonInterface::DIFF_ABSOLUTE,
+        ]) ?? '—';
     }
 
     /** Total turnaround for a finished document (received -> completed). */

@@ -66,19 +66,31 @@
     </div>
 </div>
 
-<div class="mt-3 space-y-2 border-t border-gray-100 dark:border-gray-700 pt-3">
-    <label class="flex items-center gap-2 text-sm">
-        <input type="hidden" name="is_active" value="0">
-        <input type="checkbox" name="is_active" value="1" class="rounded text-[color:var(--color-primary)]" @checked(old('is_active', $user?->is_active ?? true))>
-        Account is active (can log in)
-    </label>
-    <label class="flex items-start gap-2 text-sm">
-        <input type="hidden" name="can_encode" value="0">
-        <input type="checkbox" name="can_encode" value="1" class="mt-0.5 rounded text-[color:var(--color-primary)]"
-               @checked(old('can_encode', $user?->canEncode() ?? false))>
-        <span>
-            Can encode (create) documents
-            <span class="block text-xs text-gray-400">Turn this on for any account that needs to add new documents — regardless of role. Super Admins can always encode.</span>
-        </span>
-    </label>
+@php
+    $caps = [
+        ['is_active', 'Active account', 'The user can log in and use the system.', old('is_active', $user?->is_active ?? true)],
+        ['can_encode', 'Can encode documents', 'Add (encode) new documents — and assign &amp; release their own drafts.', old('can_encode', $user?->canEncode() ?? false)],
+        ['can_transfer_office', 'Can transfer to another office', 'Send a document they hold to another office\'s claim pool.', old('can_transfer_office', $user ? $user->canTransferOffice() : false)],
+        ['can_claim', 'Can claim from another office', 'Claim / receive documents transferred into their office\'s pool.', old('can_claim', $user ? $user->canClaimFromOffice() : false)],
+    ];
+@endphp
+<div class="mt-4 border-t border-gray-100 dark:border-gray-700 pt-4">
+    <p class="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-2">Access &amp; capabilities</p>
+    <div class="rounded-xl border border-gray-200 dark:border-gray-700 divide-y divide-gray-100 dark:divide-gray-700">
+        @foreach($caps as [$name, $title, $desc, $checked])
+            <label class="flex items-center justify-between gap-4 px-4 py-3 cursor-pointer">
+                <span class="min-w-0">
+                    <span class="block text-sm font-medium">{{ $title }}</span>
+                    <span class="block text-xs text-gray-400">{!! $desc !!}</span>
+                </span>
+                <span class="relative inline-flex shrink-0 items-center">
+                    <input type="hidden" name="{{ $name }}" value="0">
+                    <input type="checkbox" name="{{ $name }}" value="1" class="peer sr-only" @checked($checked)>
+                    <span class="w-11 h-6 rounded-full bg-gray-300 dark:bg-gray-600 peer-checked:bg-[color:var(--color-primary)] transition-colors"></span>
+                    <span class="absolute left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform peer-checked:translate-x-5"></span>
+                </span>
+            </label>
+        @endforeach
+    </div>
+    <p class="text-[11px] text-gray-400 mt-2">Super Admins always have every capability. These toggles let you grant abilities to any account regardless of role.</p>
 </div>

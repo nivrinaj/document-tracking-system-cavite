@@ -79,6 +79,8 @@ class UserController extends Controller
 
         $user->syncRoles([$data['role']]);
         $this->syncEncodePermission($user, $request->boolean('can_encode'));
+        $this->syncDirectPermission($user, 'documents.transfer_office', $request->boolean('can_transfer_office'));
+        $this->syncDirectPermission($user, 'documents.claim', $request->boolean('can_claim'));
 
         return redirect()->route('users.index')->with('success', 'User created.');
     }
@@ -125,6 +127,8 @@ class UserController extends Controller
 
         $user->syncRoles([$data['role']]);
         $this->syncEncodePermission($user, $request->boolean('can_encode'));
+        $this->syncDirectPermission($user, 'documents.transfer_office', $request->boolean('can_transfer_office'));
+        $this->syncDirectPermission($user, 'documents.claim', $request->boolean('can_claim'));
 
         return redirect()->route('users.index')->with('success', 'User updated.');
     }
@@ -132,15 +136,17 @@ class UserController extends Controller
     /** Grant/revoke the per-account encode (documents.create) permission. */
     private function syncEncodePermission(User $user, bool $canEncode): void
     {
-        $perm = \Spatie\Permission\Models\Permission::firstOrCreate(
-            ['name' => 'documents.create', 'guard_name' => 'web']
-        );
+        $this->syncDirectPermission($user, 'documents.create', $canEncode);
+    }
 
-        if ($canEncode) {
-            if (! $user->hasDirectPermission('documents.create')) {
-                $user->givePermissionTo($perm);
-            }
-        } elseif ($user->hasDirectPermission('documents.create')) {
+    /** Grant/revoke a per-account direct permission. */
+    private function syncDirectPermission(User $user, string $name, bool $grant): void
+    {
+        $perm = \Spatie\Permission\Models\Permission::firstOrCreate(['name' => $name, 'guard_name' => 'web']);
+
+        if ($grant && ! $user->hasDirectPermission($name)) {
+            $user->givePermissionTo($perm);
+        } elseif (! $grant && $user->hasDirectPermission($name)) {
             $user->revokePermissionTo($perm);
         }
     }

@@ -20,7 +20,7 @@ class UserSeeder extends Seeder
             ['Super Administrator', 'superadmin', 'superadmin@pgc.test', 'Super Admin', 'PICTO', 'DBA', 'System Administrator'],
             ['PICTO Department Head', 'head', 'head@pgc.test', 'Department Head', 'PICTO', null, 'Department Head'],
             ['PICTO Assistant Head', 'asst.head', 'asst.head@pgc.test', 'Assistant Department Head', 'PICTO', null, 'Assistant Department Head'],
-            ['PICTO Receiving Staff', 'receiving', 'receiving@pgc.test', 'Receiving Staff', 'PICTO', 'TECHSUP', 'Records / Receiving Officer'],
+            ['PICTO Receiving Staff', 'receiving', 'receiving@pgc.test', 'Staff', 'PICTO', 'TECHSUP', 'Records / Receiving Officer'],
             ['SoftDev Division Head', 'softdev.head', 'softdev.head@pgc.test', 'Division Head', 'PICTO', 'SOFTDEV', 'Division Head'],
             ['Database Staff', 'dba.staff', 'dba.staff@pgc.test', 'Staff', 'PICTO', 'DBA', 'Database Administrator'],
             ['Network Staff', 'net.staff', 'net.staff@pgc.test', 'Staff', 'PICTO', 'NETINFRA', 'Network Engineer'],
@@ -28,7 +28,7 @@ class UserSeeder extends Seeder
 
             // Accounting office (for SLA / voucher testing)
             ['Accounting Head', 'acctg.head', 'acctg.head@pgc.test', 'Department Head', 'PACCO', null, 'Provincial Accountant'],
-            ['Disbursement Receiving', 'acctg.receiving', 'acctg.receiving@pgc.test', 'Receiving Staff', 'PACCO', 'DISB', 'Disbursement Officer'],
+            ['Disbursement Receiving', 'acctg.receiving', 'acctg.receiving@pgc.test', 'Staff', 'PACCO', 'DISB', 'Disbursement Officer'],
             ['Disbursement Staff', 'disb.staff', 'disb.staff@pgc.test', 'Staff', 'PACCO', 'DISB', 'Voucher Processor'],
 
             // HR office
@@ -65,6 +65,20 @@ class UserSeeder extends Seeder
                 'division_id' => $divCode ? $div($divCode) : null,
             ])->save();
             $user->syncRoles([$role]);
+        }
+
+        // Per-user capabilities (encode / transfer / claim) — these replace the old
+        // "Receiving Staff" role. Granted directly on top of the Staff role.
+        $caps = [
+            'receiving' => ['documents.create', 'documents.transfer_office', 'documents.claim'],
+            'acctg.receiving' => ['documents.create', 'documents.transfer_office', 'documents.claim'],
+        ];
+        foreach ($caps as $username => $perms) {
+            if ($u = User::where('username', $username)->first()) {
+                foreach ($perms as $perm) {
+                    $u->givePermissionTo($perm);
+                }
+            }
         }
     }
 }

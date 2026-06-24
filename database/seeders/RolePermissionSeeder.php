@@ -22,12 +22,13 @@ class RolePermissionSeeder extends Seeder
             'documents.view',        // view documents that concern me / my department
             'documents.viewAny',     // (legacy) view all in department
             'documents.viewAll',     // view documents across ALL departments (executives)
-            'documents.create',      // encode a new incoming document
-            'documents.assign',      // assign to a staff
-            'documents.release',     // release (hand over the QR)
-            'documents.receive',     // confirm physical receipt
-            'documents.claim',       // claim unclaimed cross-office transfer
-            'documents.forward',     // forward to another staff
+            'documents.create',          // encode a new incoming document (per-user toggle)
+            'documents.assign',          // (derived from encode) assign a draft to staff
+            'documents.release',         // (derived from encode) release / hand over the QR
+            'documents.receive',         // confirm physical receipt
+            'documents.claim',           // claim unclaimed cross-office transfer (per-user toggle)
+            'documents.transfer_office', // send a document to another office (per-user toggle)
+            'documents.forward',         // forward to another staff
             'documents.archive',     // archive / complete
             'documents.delete',
             // Admin modules
@@ -50,49 +51,42 @@ class RolePermissionSeeder extends Seeder
         $superAdmin = Role::firstOrCreate(['name' => 'Super Admin', 'guard_name' => 'web']);
         $head       = Role::firstOrCreate(['name' => 'Department Head', 'guard_name' => 'web']);
         $asstHead   = Role::firstOrCreate(['name' => 'Assistant Department Head', 'guard_name' => 'web']);
-        $receiving  = Role::firstOrCreate(['name' => 'Receiving Staff', 'guard_name' => 'web']);
         $staff      = Role::firstOrCreate(['name' => 'Staff', 'guard_name' => 'web']);
 
         // Super Admin implicitly gets everything via Gate::before (see AppServiceProvider),
         // but we also sync all permissions so the UI reflects it.
         $superAdmin->syncPermissions(Permission::all());
 
-        // NOTE: "documents.create" (encode) is now granted PER USER on the user
-        // edit screen, not by role (see migration make_encode_per_user). So it is
-        // intentionally omitted from the role lists below.
+        // NOTE: encode (documents.create), transfer (documents.transfer_office) and
+        // claim (documents.claim) are PER-USER toggles on the user edit screen.
+        // assign/release are DERIVED from encode (the encoder acts on their own draft).
+        // Heads/division-heads/chiefs still get transfer + claim by role below.
 
-        // Heads: full visibility + logs + reports + can act on documents.
+        // Heads: full visibility + logs + reports + can route documents.
         $headPerms = [
             'dashboard.view',
             'documents.view', 'documents.viewAny',
-            'documents.assign', 'documents.release',
-            'documents.receive', 'documents.claim', 'documents.forward', 'documents.archive',
+            'documents.receive', 'documents.claim', 'documents.transfer_office',
+            'documents.forward', 'documents.archive',
             'reports.view', 'logs.view', 'documentation.view',
         ];
         $head->syncPermissions($headPerms);
         $asstHead->syncPermissions($headPerms);
 
-        // Receiving staff: the QR/release workflow.
-        $receiving->syncPermissions([
-            'dashboard.view',
-            'documents.view', 'documents.assign',
-            'documents.release', 'documents.receive', 'documents.claim', 'documents.forward',
-            'documents.archive', 'reports.view', 'documentation.view',
-        ]);
-
         // Regular staff: receive / forward / archive what is assigned to them.
+        // (Encode / transfer / claim are granted per-user on top of this.)
         $staff->syncPermissions([
             'dashboard.view',
             'documents.view', 'documents.receive', 'documents.forward',
             'documents.archive', 'documentation.view',
         ]);
 
-        // Division Head: like receiving staff but within their own division.
+        // Division Head: route within their division + claim/transfer.
         $divisionHead = Role::firstOrCreate(['name' => 'Division Head', 'guard_name' => 'web']);
         $divisionHead->syncPermissions([
             'dashboard.view',
-            'documents.view', 'documents.assign', 'documents.release',
-            'documents.receive', 'documents.claim', 'documents.forward', 'documents.archive',
+            'documents.view', 'documents.receive', 'documents.claim', 'documents.transfer_office',
+            'documents.forward', 'documents.archive',
             'reports.view', 'documentation.view',
         ]);
 
@@ -113,7 +107,7 @@ class RolePermissionSeeder extends Seeder
         }
 
         // Chiefs of Staff: run their office workflow + org-wide visibility.
-        $chiefPerms = array_merge($execPerms, ['documents.assign', 'documents.release', 'documents.claim']);
+        $chiefPerms = array_merge($execPerms, ['documents.claim', 'documents.transfer_office']);
         foreach (['Chief of Staff (OPG)', 'Chief of Staff (OPVG)'] as $chiefName) {
             Role::firstOrCreate(['name' => $chiefName, 'guard_name' => 'web'])->syncPermissions($chiefPerms);
         }

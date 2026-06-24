@@ -419,28 +419,40 @@
                 </x-card>
                 @endif
 
-                {{-- History timeline --}}
-                <x-card title="Tracking history">
-                    <ol class="relative border-l border-gray-200 dark:border-gray-700 ml-2 space-y-6">
-                        @foreach($document->logs as $log)
-                            <li class="ml-5">
-                                <span class="absolute -left-[7px] w-3.5 h-3.5 rounded-full border-2 border-white dark:border-gray-800" style="background: var(--color-primary)"></span>
-                                <div class="flex items-center gap-2 flex-wrap">
-                                    <x-badge :color="$log->actionColor()">{{ $log->actionLabel() }}</x-badge>
-                                    <span class="text-xs text-gray-400">{{ $log->created_at->format('M d, Y g:i A') }} · {{ $log->created_at->diffForHumans() }}</span>
-                                </div>
-                                <p class="text-sm mt-1">
-                                    <span class="font-medium">{{ $log->actor?->name ?? 'System' }}</span>@if($log->actor)<span class="text-xs text-gray-400"> · {{ $log->actor->orgShort() }}</span>@endif
-                                    @if($log->toUser)
-                                        <span class="text-gray-400">→</span> <span class="font-medium">{{ $log->toUser->name }}</span><span class="text-xs text-gray-400"> · {{ $log->toUser->orgShort() }}</span>
+                {{-- History timeline — collapses when long --}}
+                @php $logCount = $document->logs->count(); $logCollapse = 5; @endphp
+                <x-card>
+                    <div x-data="{ all: {{ $logCount <= $logCollapse ? 'true' : 'false' }} }">
+                        <div class="flex items-center justify-between mb-3">
+                            <h2 class="font-semibold">Tracking history <span class="text-gray-400 font-normal text-sm">({{ $logCount }})</span></h2>
+                            @if($logCount > $logCollapse)
+                                <button type="button" @click="all = !all" class="text-xs link" x-text="all ? 'Show recent only' : 'Show all {{ $logCount }} →'"></button>
+                            @endif
+                        </div>
+                        <ol class="relative border-l border-gray-200 dark:border-gray-700 ml-2 space-y-6">
+                            @foreach($document->logs as $i => $log)
+                                <li class="ml-5" @if($i >= $logCollapse) x-show="all" x-cloak @endif>
+                                    <span class="absolute -left-[7px] w-3.5 h-3.5 rounded-full border-2 border-white dark:border-gray-800" style="background: var(--color-primary)"></span>
+                                    <div class="flex items-center gap-2 flex-wrap">
+                                        <x-badge :color="$log->actionColor()">{{ $log->actionLabel() }}</x-badge>
+                                        <span class="text-xs text-gray-400">{{ $log->created_at->format('M d, Y g:i A') }} · {{ $log->created_at->diffForHumans() }}</span>
+                                    </div>
+                                    <p class="text-sm mt-1">
+                                        <span class="font-medium">{{ $log->actor?->name ?? 'System' }}</span>@if($log->actor)<span class="text-xs text-gray-400"> · {{ $log->actor->orgShort() }}</span>@endif
+                                        @if($log->toUser)
+                                            <span class="text-gray-400">→</span> <span class="font-medium">{{ $log->toUser->name }}</span><span class="text-xs text-gray-400"> · {{ $log->toUser->orgShort() }}</span>
+                                        @endif
+                                    </p>
+                                    @if($log->remarks)
+                                        <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5">“{{ $log->remarks }}”</p>
                                     @endif
-                                </p>
-                                @if($log->remarks)
-                                    <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5">“{{ $log->remarks }}”</p>
-                                @endif
-                            </li>
-                        @endforeach
-                    </ol>
+                                </li>
+                            @endforeach
+                        </ol>
+                        @if($logCount > $logCollapse)
+                            <button type="button" @click="all = !all" x-show="!all" class="mt-4 ml-2 text-xs link">Show all {{ $logCount }} entries →</button>
+                        @endif
+                    </div>
                 </x-card>
             </div>
 
@@ -603,14 +615,8 @@
                                       data-confirm="Forward this document to the selected staff?">
                                     @csrf
                                     <p class="text-xs text-gray-500 dark:text-gray-400">Forwards within <strong>your own office</strong> only.</p>
-                                    <select name="to_user_id" class="input" required>
-                                        <option value="">— Forward to —</option>
-                                        @foreach($users->where('id', '!=', $document->current_holder_id)->groupBy(fn($u) => $u->department?->code ?? 'No office') as $group => $gu)
-                                            <optgroup label="{{ $group }}">
-                                                @foreach($gu as $u)<option value="{{ $u->id }}">{{ $u->name }} — {{ $u->division?->code ?? 'Head' }}</option>@endforeach
-                                            </optgroup>
-                                        @endforeach
-                                    </select>
+                                    <x-search-select name="to_user_id" placeholder="— Forward to —"
+                                        :options="$users->where('id', '!=', $document->current_holder_id)->map(fn($u) => ['value' => $u->id, 'label' => $u->name.' — '.($u->division?->code ?? 'Head'), 'group' => $u->department?->code ?? ''])->values()" />
                                     @if($hasAttF)
                                         <p class="text-xs font-medium text-gray-600 dark:text-gray-300">Confirm each item is physically attached:</p>
                                         @include('documents._checklist')
@@ -633,14 +639,8 @@
                                           data-confirm="Transfer this document to the selected office? Their receiving staff will be able to claim it.">
                                         @csrf
                                         <p class="text-xs text-gray-500 dark:text-gray-400">Sends to the office's receiving pool — no specific person. Any receiver there can claim it.</p>
-                                        <select name="to_department_id" class="input" required>
-                                            <option value="">— Select office —</option>
-                                            @foreach($departments as $dept)
-                                                @if($dept->id != $document->department_id)
-                                                    <option value="{{ $dept->id }}">{{ $dept->code }} — {{ $dept->name }}</option>
-                                                @endif
-                                            @endforeach
-                                        </select>
+                                        <x-search-select name="to_department_id" placeholder="— Select office —"
+                                            :options="$departments->where('id', '!=', $document->department_id)->map(fn($d) => ['value' => $d->id, 'label' => $d->code.' — '.$d->name])->values()" />
                                         @if($hasAttT)
                                             <p class="text-xs font-medium text-gray-600 dark:text-gray-300">Confirm each item is physically attached:</p>
                                             @include('documents._checklist')
