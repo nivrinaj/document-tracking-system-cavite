@@ -85,6 +85,8 @@ class DocumentController extends Controller
 
         $user = Auth::user();
         $types = \App\Models\DocumentType::availableFor($user->department_id);
+        $isAccounting = optional($user->department)->code === 'PACCO';
+        $isHospital = optional($user->division)->code === 'FHTD';
 
         // Offices with the user's own department listed first (QoL).
         $departments = \App\Models\Department::orderByRaw('id = ? desc', [$user->department_id ?? 0])
@@ -100,6 +102,14 @@ class DocumentController extends Controller
             'crossDept' => \App\Models\Setting::get('allow_cross_department', '0') === '1',
             'priorityEnabled' => Document::priorityEnabled(),
             'ownDeptId' => $user->department_id,
+            // Accounting reference data for Voucher / Payroll fields.
+            'funds' => \App\Models\Fund::where('is_active', true)
+                ->when($isHospital, fn ($q) => $q->where('hospital_available', true))
+                ->orderBy('sort_order')->orderBy('name')->get(),
+            'responsibilityCenters' => \App\Models\ResponsibilityCenter::where('is_active', true)->orderBy('sort_order')->orderBy('name')->get(),
+            'natures' => \App\Models\NatureOfTransaction::where('is_active', true)->orderBy('sort_order')->orderBy('name')->get(),
+            'isHospital' => $isHospital,
+            'isAccounting' => $isAccounting,
         ]);
     }
 
@@ -107,12 +117,24 @@ class DocumentController extends Controller
     {
         $this->authorizeAction('documents.create');
 
+        // Accounting fields only apply to the Accounting office (PACCO); other offices
+        // using the global Voucher type keep the legacy voucher-number flow.
+        $isAccounting = optional($request->user()->department)->code === 'PACCO';
+
         $data = $request->validate([
             'title' => ['required', 'string', 'max:255'],
             'reference_no' => ['nullable', 'string', 'max:255'],
             'document_type' => ['required', 'string', 'max:100'],
-            'voucher_number' => ['nullable', 'required_if:document_type,Voucher', 'string', 'max:100'],
-            'voucher_number_confirmation' => ['nullable', 'required_with:voucher_number', 'same:voucher_number'],
+            // Legacy voucher-number flow (offices using the global Voucher type with requires_voucher).
+            'voucher_number' => ['nullable', 'string', 'max:100'],
+            'voucher_number_confirmation' => ['nullable', 'string', 'max:100', 'same:voucher_number'],
+            // Accounting fields (revealed for Voucher / Payroll in the Accounting office).
+            'fund_id' => ['nullable', $isAccounting ? 'required_if:document_type,Voucher' : 'prohibited', 'exists:funds,id'],
+            'amount' => ['nullable', $isAccounting ? 'required_if:document_type,Voucher,Payroll' : 'nullable', 'numeric', 'min:0'],
+            'obr_no' => ['nullable', $isAccounting ? 'required_if:document_type,Voucher,Payroll' : 'nullable', 'string', 'max:100'],
+            'responsibility_center_id' => ['nullable', $isAccounting ? 'required_if:document_type,Voucher,Payroll' : 'prohibited', 'exists:responsibility_centers,id'],
+            'rc_code' => ['nullable', $isAccounting ? 'required_if:document_type,Voucher,Payroll' : 'nullable', 'string', 'max:150'],
+            'nature_of_transaction' => ['nullable', $isAccounting ? 'required_if:document_type,Voucher,Payroll' : 'nullable', 'string', 'max:150'],
             'description' => ['nullable', 'string'],
             'source_department_id' => ['nullable', 'string', 'max:50'],
             'source_division_id' => ['nullable', 'exists:divisions,id'],

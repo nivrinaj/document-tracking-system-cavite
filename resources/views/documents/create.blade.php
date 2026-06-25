@@ -7,6 +7,8 @@
                   docType: '{{ old('document_type', $documentTypes->first()->name ?? 'Memorandum') }}',
                   voucherNo: '{{ old('voucher_number') }}',
                   voucherTypes: @js($voucherTypeNames),
+                  isAccounting: {{ ($isAccounting ?? false) ? 'true' : 'false' }},
+                  get acct() { return this.isAccounting && (this.docType === 'Voucher' || this.docType === 'Payroll'); },
                   srcOffice: '{{ old('source_department_id') }}',
                   srcDiv: '{{ old('source_division_id') }}',
                   scope: '{{ old('broadcast_scope', 'none') }}',
@@ -61,18 +63,68 @@
                         </select>
                     </div>
 
-                    <div x-show="voucherTypes.includes(docType)" x-cloak x-data="{ confirmNo: '{{ old('voucher_number_confirmation') }}' }">
+                    <div x-show="!isAccounting && voucherTypes.includes(docType)" x-cloak x-data="{ confirmNo: '{{ old('voucher_number_confirmation') }}' }">
                         <label class="label">Voucher Number <span class="text-red-500">*</span></label>
-                        <input type="text" name="voucher_number" x-model="voucherNo" class="input" placeholder="e.g. DV-00123" x-bind:required="voucherTypes.includes(docType)" autocomplete="off">
+                        <input type="text" name="voucher_number" x-model="voucherNo" class="input" placeholder="e.g. DV-00123" x-bind:required="!isAccounting && voucherTypes.includes(docType)" autocomplete="off">
                         <p class="text-xs text-gray-400 mt-1">Code: <span class="font-mono">{{ \App\Models\Document::trackingPrefix() }}-{{ date('Y') }}-<span x-text="(voucherNo || 'XXXX').toUpperCase().replace(/[^A-Z0-9\-]/g,'')"></span></span></p>
 
                         <label class="label mt-3">Confirm Voucher Number <span class="text-red-500">*</span></label>
-                        <input type="text" name="voucher_number_confirmation" x-model="confirmNo" class="input" placeholder="Re-type to confirm" x-bind:required="voucherTypes.includes(docType)" autocomplete="off"
+                        <input type="text" name="voucher_number_confirmation" x-model="confirmNo" class="input" placeholder="Re-type to confirm" x-bind:required="!isAccounting && voucherTypes.includes(docType)" autocomplete="off"
                                onpaste="return false;">
                         <p class="text-xs mt-1" x-show="confirmNo.length > 0">
                             <span x-show="confirmNo === voucherNo" class="text-green-600 dark:text-green-400">✓ Matches — double-check it against the physical voucher.</span>
                             <span x-show="confirmNo !== voucherNo" class="text-red-600 dark:text-red-400">✗ Doesn't match the voucher number above.</span>
                         </p>
+                    </div>
+
+                    {{-- ── Fund (Voucher only) ── --}}
+                    <div class="sm:col-span-2" x-show="isAccounting && docType === 'Voucher'" x-cloak>
+                        <label class="label">Fund <span class="text-red-500">*</span></label>
+                        <select name="fund_id" class="input" x-bind:required="isAccounting && docType === 'Voucher'">
+                            <option value="">— Select fund —</option>
+                            @foreach($funds as $f)
+                                <option value="{{ $f->id }}" @selected(old('fund_id')==$f->id)>{{ $f->name }} ({{ $f->code }})</option>
+                            @endforeach
+                        </select>
+                        <p class="text-xs text-gray-400 mt-1">
+                            A tracking code is auto-generated: <span class="font-mono">[Fund code]-{{ date('Y') }}-{{ date('m') }}-N{{ $isHospital ? '-H' : '' }}</span>.
+                            @if($isHospital)<span class="text-amber-600 dark:text-amber-400">Hospital division: only General &amp; Trust funds, with an “-H” suffix.</span>@endif
+                        </p>
+                    </div>
+
+                    {{-- ── Voucher / Payroll details ── --}}
+                    <div x-show="acct" x-cloak>
+                        <label class="label">Amount (₱) <span class="text-red-500">*</span></label>
+                        <input type="number" step="0.01" min="0" name="amount" value="{{ old('amount') }}" class="input" placeholder="0.00"
+                               x-bind:required="acct">
+                    </div>
+                    <div x-show="acct" x-cloak>
+                        <label class="label">OBR No. <span class="text-red-500">*</span></label>
+                        <input type="text" name="obr_no" value="{{ old('obr_no') }}" class="input" placeholder="OBR number, or N/A"
+                               x-bind:required="acct">
+                    </div>
+                    <div x-show="acct" x-cloak>
+                        <label class="label">Responsibility Center — Office/Unit/Project <span class="text-red-500">*</span></label>
+                        <select name="responsibility_center_id" class="input" x-bind:required="acct">
+                            <option value="">— Select —</option>
+                            @foreach($responsibilityCenters as $rc)
+                                <option value="{{ $rc->id }}" @selected(old('responsibility_center_id')==$rc->id)>{{ $rc->label() }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div x-show="acct" x-cloak>
+                        <label class="label">Responsibility Center — Code <span class="text-red-500">*</span></label>
+                        <input type="text" name="rc_code" value="{{ old('rc_code') }}" class="input" placeholder="e.g. SPA - 20% Development Fund"
+                               x-bind:required="acct">
+                    </div>
+                    <div class="sm:col-span-2" x-show="acct" x-cloak>
+                        <label class="label">Nature of Transaction <span class="text-red-500">*</span></label>
+                        <select name="nature_of_transaction" class="input" x-bind:required="acct">
+                            <option value="">— Select —</option>
+                            @foreach($natures as $n)
+                                <option value="{{ $n->name }}" @selected(old('nature_of_transaction')===$n->name)>{{ $n->name }}</option>
+                            @endforeach
+                        </select>
                     </div>
 
                     <div>

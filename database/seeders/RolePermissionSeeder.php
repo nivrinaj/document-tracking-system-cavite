@@ -39,6 +39,7 @@ class RolePermissionSeeder extends Seeder
             'reports.view',
             'logs.view',
             'settings.manage',
+            'accounting.manage',
             'documentation.view',
             'documentation.manage',
         ];
@@ -68,7 +69,7 @@ class RolePermissionSeeder extends Seeder
             'documents.view', 'documents.viewAny',
             'documents.receive', 'documents.claim', 'documents.transfer_office',
             'documents.forward', 'documents.archive',
-            'reports.view', 'logs.view', 'documentation.view',
+            'reports.view', 'logs.view', 'documentation.view', 'accounting.manage',
         ];
         $head->syncPermissions($headPerms);
         $asstHead->syncPermissions($headPerms);

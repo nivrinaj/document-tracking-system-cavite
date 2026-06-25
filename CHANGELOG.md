@@ -6,6 +6,17 @@ Format based on [Keep a Changelog](https://keepachangelog.com).
 
 ---
 
+## 1.4.0 — 2026-06-25
+**Accounting office: per-office document types, fund-based tracking codes, voucher/payroll fields & a setup module**
+- **Per-office document types.** Each office can now have its own set of document types. The Accounting office (PACCO) starts with **only Voucher and Payroll**; every other office keeps the shared global set unchanged. (Built so more office-specific types can be added later from the Document Types admin.)
+- **Fund dropdown on Vouchers.** When an Accounting user encodes a **Voucher**, a **Fund** picker appears: General Funds (101), SEF (221), Trust Fund (401), Gen. Fund 20% Development Fund (101).
+- **Auto-generated fund tracking code** in the format `[Fund code]-[Year]-[Month]-[sequence]` — e.g. an SEF voucher in June 2026 → `221-2026-06-8`. The sequence **resets every year**.
+  - **General / SEF / Trust share one running sequence** (the next number is the next number regardless of which of the three).
+  - The **20% Development Fund keeps its own separate sequence** — even though it shares code 101 with the General Fund, the system tells them apart behind the scenes.
+- **Hospital division (FHTD).** Users in the Accounting *For Hospital Transaction Division* see **only General Fund and Trust Fund**, run on **their own sequence**, and every code gets an **`-H` suffix** — e.g. `101-2026-06-188-H`, `401-2026-06-817-H`.
+- **Voucher / Payroll fields.** Selecting Voucher *or* Payroll reveals: **Amount (₱, required)**, **OBR No. (required — may be “N/A”)**, **Responsibility Center** as Office/Unit/Project (dropdown) **+ Code**, and **Nature of Transaction** (dropdown). These show on the document details and the printable slip.
+- **Accounting Setup module** (Department/Assistant Heads) — one page to manage **Funds** (name, code, dev-fund & hospital flags), **Responsibility Centers** (Office/Unit/Project + code) and **Nature of Transaction** options that feed the encode form.
+
 ## 1.3.0 — 2026-06-24
 **Per-user capabilities, role-scoped visibility, searchable routing dropdowns & QOL**
 - **Per-user capabilities replace the “Receiving Staff” role.** That role is retired; everyone is **Staff** plus three Super-Admin toggles per account (shown as clean switches on the user form): **Can encode**, **Can transfer to another office**, **Can claim from another office**. Encoders automatically assign & release their own drafts. Existing Receiving Staff were migrated automatically with the matching toggles on.

@@ -19,6 +19,12 @@ class Document extends Model
         'reference_no',
         'document_type',
         'voucher_number',
+        'fund_id',
+        'amount',
+        'obr_no',
+        'responsibility_center_id',
+        'rc_code',
+        'nature_of_transaction',
         'description',
         'source',
         'priority',
@@ -45,6 +51,7 @@ class Document extends Model
         'possession_started_at' => 'datetime',
         'is_broadcast' => 'boolean',
         'is_pending' => 'boolean',
+        'amount' => 'decimal:2',
     ];
 
     /** Whether the priority feature is enabled system-wide. */
@@ -157,6 +164,21 @@ class Document extends Model
         return \App\Models\Setting::get('tracking_prefix', 'PGC') ?: 'PGC';
     }
 
+    /**
+     * Accounting fund-based code: [FundCode]-[YYYY]-[MM]-[seq](-H).
+     * The sequence resets annually and is shared by General/SEF/Trust ('STD'); the
+     * 20% Development Fund ('DEV') and the Hospital division ('HOSP') each have their
+     * own. Hospital documents get an "-H" suffix.
+     */
+    public static function generateFundCode(Fund $fund, bool $hospital): string
+    {
+        $year = now()->format('Y');
+        $month = now()->format('m');
+        $seq = TrackingSequence::next($year, $fund->sequenceKey($hospital));
+
+        return $fund->code.'-'.$year.'-'.$month.'-'.$seq.($hospital ? '-H' : '');
+    }
+
     public static function generateTrackingCode(): string
     {
         // e.g. PGC-2026-3F9K2A  (human-readable + unique)
@@ -196,6 +218,16 @@ class Document extends Model
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function fund(): BelongsTo
+    {
+        return $this->belongsTo(Fund::class);
+    }
+
+    public function responsibilityCenter(): BelongsTo
+    {
+        return $this->belongsTo(ResponsibilityCenter::class);
     }
 
     public function currentHolder(): BelongsTo

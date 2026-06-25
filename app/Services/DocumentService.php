@@ -202,9 +202,13 @@ class DocumentService
                 ->values();
             unset($data['items']);
 
-            // Vouchers use their voucher number as the tail of the tracking code.
+            // Accounting funds drive an auto-generated fund-based tracking code:
+            //   [FundCode]-[YYYY]-[MM]-[seq](-H for the Hospital division).
             $trackingCode = null;
-            if (strtolower($data['document_type'] ?? '') === 'voucher' && ! empty($data['voucher_number'])) {
+            if (! empty($data['fund_id']) && ($fund = \App\Models\Fund::find($data['fund_id']))) {
+                $hospital = optional($actor->division)->code === 'FHTD';
+                $trackingCode = Document::generateFundCode($fund, $hospital);
+            } elseif (strtolower($data['document_type'] ?? '') === 'voucher' && ! empty($data['voucher_number'])) {
                 $trackingCode = Document::trackingCodeForVoucher($data['voucher_number']);
             }
 

@@ -19,11 +19,21 @@ class DocumentType extends Model
         return $this->belongsTo(Department::class);
     }
 
-    /** Active types available to a user's department (global + their department). */
+    /**
+     * Active types for a department. If the department has its OWN configured types,
+     * only those apply (e.g. Accounting → Voucher, Payroll); otherwise it falls back
+     * to the global types. This lets each office have a tailored set.
+     */
     public static function availableFor(?int $departmentId)
     {
-        return static::where('is_active', true)
-            ->where(fn ($q) => $q->whereNull('department_id')->orWhere('department_id', $departmentId))
-            ->orderBy('name')->get();
+        if ($departmentId) {
+            $own = static::where('is_active', true)->where('department_id', $departmentId)
+                ->orderBy('name')->get();
+            if ($own->isNotEmpty()) {
+                return $own;
+            }
+        }
+
+        return static::where('is_active', true)->whereNull('department_id')->orderBy('name')->get();
     }
 }

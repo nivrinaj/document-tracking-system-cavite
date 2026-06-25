@@ -95,6 +95,20 @@ Route::middleware(['auth', 'active'])->group(function () {
     // Accessible to everyone; the controller scopes what each user can see.
     Route::get('/logs', [LogController::class, 'index'])->name('logs.index');
 
+    /* -------------------- Accounting setup (funds, RC, nature) -------------------- */
+    Route::middleware('permission:accounting.manage')->prefix('accounting')->name('accounting.')->group(function () {
+        Route::get('/setup', [\App\Http\Controllers\AccountingController::class, 'index'])->name('index');
+        Route::post('/funds', [\App\Http\Controllers\AccountingController::class, 'storeFund'])->name('funds.store');
+        Route::put('/funds/{fund}', [\App\Http\Controllers\AccountingController::class, 'updateFund'])->name('funds.update');
+        Route::delete('/funds/{fund}', [\App\Http\Controllers\AccountingController::class, 'destroyFund'])->name('funds.destroy');
+        Route::post('/centers', [\App\Http\Controllers\AccountingController::class, 'storeCenter'])->name('centers.store');
+        Route::put('/centers/{center}', [\App\Http\Controllers\AccountingController::class, 'updateCenter'])->name('centers.update');
+        Route::delete('/centers/{center}', [\App\Http\Controllers\AccountingController::class, 'destroyCenter'])->name('centers.destroy');
+        Route::post('/natures', [\App\Http\Controllers\AccountingController::class, 'storeNature'])->name('natures.store');
+        Route::put('/natures/{nature}', [\App\Http\Controllers\AccountingController::class, 'updateNature'])->name('natures.update');
+        Route::delete('/natures/{nature}', [\App\Http\Controllers\AccountingController::class, 'destroyNature'])->name('natures.destroy');
+    });
+
     /* -------------------- System configuration -------------------- */
     Route::get('/settings', [SettingController::class, 'edit'])->name('settings.edit')->middleware('permission:settings.manage');
     Route::put('/settings', [SettingController::class, 'update'])->name('settings.update')->middleware('permission:settings.manage');

@@ -110,6 +110,27 @@
                         <div><dt class="text-[11px] uppercase tracking-wider text-gray-400">Current location</dt><dd class="mt-0.5">{{ $document->department?->code ?? '—' }}@if($document->division) · {{ $document->division->name }}@endif</dd></div>
                     </dl>
 
+                    {{-- Accounting facts (vouchers & payroll) --}}
+                    @if($document->fund_id || $document->amount !== null || $document->obr_no || $document->responsibility_center_id || $document->nature_of_transaction)
+                        <dl class="grid grid-cols-2 sm:grid-cols-4 gap-x-6 gap-y-4 text-sm mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
+                            @if($document->fund)
+                                <div><dt class="text-[11px] uppercase tracking-wider text-gray-400">Fund</dt><dd class="mt-0.5">{{ $document->fund->name }} <span class="text-gray-400">({{ $document->fund->code }})</span></dd></div>
+                            @endif
+                            @if($document->amount !== null)
+                                <div><dt class="text-[11px] uppercase tracking-wider text-gray-400">Amount</dt><dd class="mt-0.5 font-medium">₱{{ number_format($document->amount, 2) }}</dd></div>
+                            @endif
+                            @if($document->obr_no)
+                                <div><dt class="text-[11px] uppercase tracking-wider text-gray-400">OBR No.</dt><dd class="mt-0.5">{{ $document->obr_no }}</dd></div>
+                            @endif
+                            @if($document->responsibilityCenter || $document->rc_code)
+                                <div><dt class="text-[11px] uppercase tracking-wider text-gray-400">Responsibility Center</dt><dd class="mt-0.5">{{ $document->responsibilityCenter?->name ?? '—' }}@if($document->rc_code)<span class="text-gray-400"> · {{ $document->rc_code }}</span>@endif</dd></div>
+                            @endif
+                            @if($document->nature_of_transaction)
+                                <div><dt class="text-[11px] uppercase tracking-wider text-gray-400">Nature of Transaction</dt><dd class="mt-0.5">{{ $document->nature_of_transaction }}</dd></div>
+                            @endif
+                        </dl>
+                    @endif
+
                     {{-- Timeline facts --}}
                     @php $pausedSecs = $document->totalPausedSeconds(); @endphp
                     <dl class="grid grid-cols-2 sm:grid-cols-4 gap-x-6 gap-y-4 text-sm mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">

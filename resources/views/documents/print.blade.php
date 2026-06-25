@@ -90,6 +90,15 @@
                 @if($document->reference_no)
                     <div class="row"><span class="k">Reference No.</span><span class="v">{{ $document->reference_no }}</span></div>
                 @endif
+                @if($document->fund)
+                    <div class="row"><span class="k">Fund</span><span class="v">{{ $document->fund->name }} ({{ $document->fund->code }})</span></div>
+                @endif
+                @if($document->amount !== null)
+                    <div class="row"><span class="k">Amount</span><span class="v">₱{{ number_format($document->amount, 2) }}</span></div>
+                @endif
+                @if($document->obr_no)
+                    <div class="row"><span class="k">OBR No.</span><span class="v">{{ $document->obr_no }}</span></div>
+                @endif
                 <div class="row"><span class="k">Source / Origin</span><span class="v">{{ $sourceCombined }}</span></div>
                 <div class="row"><span class="k">Encoded</span><span class="v">{{ $document->created_at->format('M d, Y g:i A') }}</span></div>
             </div>
