@@ -63,6 +63,23 @@
                 </label>
             </x-card>
 
+            <x-card>
+                <h2 class="font-semibold mb-1 text-sm">Calendar display</h2>
+                <p class="text-xs text-gray-400 mb-3">How the Holidays and Department calendars are shown. List and Grid work identically — just different looks.</p>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    @php $modes = ['grid' => ['Grid', 'Month calendar view'], 'list' => ['List', 'Compact dated list'], 'disabled' => ['Form only', 'Hide the calendar view']]; @endphp
+                    @foreach($modes as $val => [$title, $desc])
+                        <label class="cursor-pointer">
+                            <input type="radio" name="calendar_display" value="{{ $val }}" class="peer sr-only" @checked(old('calendar_display', $displayMode) === $val)>
+                            <span class="block rounded-xl border border-gray-200 dark:border-gray-600 p-3 transition peer-checked:border-[color:var(--color-primary)] peer-checked:ring-2 peer-checked:ring-[color:var(--color-primary)]/30">
+                                <span class="block text-sm font-medium">{{ $title }}</span>
+                                <span class="block text-xs text-gray-400">{{ $desc }}</span>
+                            </span>
+                        </label>
+                    @endforeach
+                </div>
+            </x-card>
+
             <div class="flex justify-end">
                 <x-btn type="submit">Save settings</x-btn>
             </div>

@@ -6,6 +6,13 @@ Format based on [Keep a Changelog](https://keepachangelog.com).
 
 ---
 
+## 1.5.1 — 2026-06-26
+**Work-calendar polish: month-grid view, Super-Admin access fix, display toggle**
+- **Modern month-grid calendar** for the Holidays and Department calendars — colored entry chips, month navigation, click a day to add an entry on that date.
+- **Super-Admin display toggle** (Work Hours → Calendar display): **Grid / List / Form-only**. Grid and List are functionally identical.
+- **Fixed:** Super Admins (who may have no home office) got a 403 on the Department Work Calendar — they can now pick which department to manage; managers stay locked to their own office.
+- Confirmed **backdating is retroactive**: recording past leave/undertime/day-offs recomputes every document's working time live.
+
 ## 1.5.0 — 2026-06-26
 **Working-hours engine: pending time counted in real work time + holiday/leave calendars**
 - **Work Hours (Super Admin):** set the office schedule (default 8:00 AM–5:00 PM, Mon–Fri, 12:00–1:00 lunch = 8 hrs/day). A master toggle makes the system count **Holding / Idle / Turnaround** in working hours only — skipping nights, weekends, lunch, holidays and approved leave. Off by default (keeps plain calendar time until you enable it).

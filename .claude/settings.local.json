@@ -29,7 +29,9 @@
       "Bash(npm run *)",
       "Bash(php artisan *)",
       "Bash(php _smoke2.php)",
-      "Bash(php _mkdoc.php)"
+      "Bash(php _mkdoc.php)",
+      "Bash(php _chk.php)",
+      "Bash(php _upd.php)"
     ]
   }
 }

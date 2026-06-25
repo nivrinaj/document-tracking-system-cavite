@@ -17,6 +17,7 @@ class WorkCalendarController extends Controller
             'cfg' => \App\Services\BusinessHours::config(),
             'enabled' => \App\Services\BusinessHours::enabled(),
             'showBreakdown' => Setting::get('show_daily_breakdown', '0') === '1',
+            'displayMode' => Setting::get('calendar_display', 'grid'),
         ]);
     }
 
@@ -29,6 +30,7 @@ class WorkCalendarController extends Controller
             'work_lunch_end' => ['required', 'date_format:H:i', 'after:work_lunch_start'],
             'work_days' => ['required', 'array', 'min:1'],
             'work_days.*' => ['integer', 'between:1,7'],
+            'calendar_display' => ['required', Rule::in(['disabled', 'list', 'grid'])],
         ]);
 
         Setting::put('work_start', $data['work_start']);
@@ -36,6 +38,7 @@ class WorkCalendarController extends Controller
         Setting::put('work_lunch_start', $data['work_lunch_start']);
         Setting::put('work_lunch_end', $data['work_lunch_end']);
         Setting::put('work_days', implode(',', $data['work_days']));
+        Setting::put('calendar_display', $data['calendar_display']);
         Setting::put('work_hours_enabled', $request->boolean('work_hours_enabled') ? '1' : '0');
         Setting::put('show_daily_breakdown', $request->boolean('show_daily_breakdown') ? '1' : '0');
 
@@ -49,6 +52,7 @@ class WorkCalendarController extends Controller
 
         return view('work-calendar.holidays', [
             'year' => $year,
+            'displayMode' => Setting::get('calendar_display', 'grid'),
             'days' => CalendarDay::whereIn('type', CalendarDay::GLOBAL_TYPES)
                 ->whereYear('date', $year)->orderBy('date')->get(),
         ]);
@@ -77,13 +81,25 @@ class WorkCalendarController extends Controller
     /* ───────────────── Team calendar (calendar.manage) ───────────────── */
     public function team(Request $request)
     {
-        $dept = $request->user()->department;
-        abort_unless($dept, 403, 'You are not assigned to a department.');
+        $user = $request->user();
+        $departments = \App\Models\Department::orderBy('name')->get();
+        // Managers are locked to their own office; users without one (e.g. Super
+        // Admin) may pick which office to manage.
+        $canChoose = ! $user->department;
+        $dept = $user->department
+            ?? ($request->filled('department_id')
+                ? $departments->firstWhere('id', (int) $request->department_id)
+                : $departments->first());
+        abort_unless($dept, 403, 'No departments exist yet — create one first.');
+
         $year = (int) $request->input('year', now()->year);
 
         return view('work-calendar.team', [
             'department' => $dept,
+            'departments' => $departments,
+            'canChoose' => $canChoose,
             'year' => $year,
+            'displayMode' => Setting::get('calendar_display', 'grid'),
             'staff' => User::where('department_id', $dept->id)->orderBy('name')->get(),
             'days' => CalendarDay::whereIn('type', ['dept_dayoff', 'user_leave', 'user_undertime'])
                 ->where(fn ($q) => $q->where('department_id', $dept->id)
@@ -94,7 +110,9 @@ class WorkCalendarController extends Controller
 
     public function storeTeam(Request $request)
     {
-        $dept = $request->user()->department;
+        $user = $request->user();
+        $dept = $user->department
+            ?? \App\Models\Department::find($request->input('department_id'));
         abort_unless($dept, 403);
 
         $data = $request->validate([
@@ -130,10 +148,13 @@ class WorkCalendarController extends Controller
     public function destroyTeam(Request $request, CalendarDay $calendarDay)
     {
         $dept = $request->user()->department;
-        abort_unless($dept, 403);
-        $belongs = $calendarDay->department_id === $dept->id
+        $isTeamType = in_array($calendarDay->type, ['dept_dayoff', 'user_leave', 'user_undertime'], true);
+        // Managers may only remove their own office's entries; users without a fixed
+        // office (Super Admin) may remove any team entry.
+        $belongs = ! $dept
+            || $calendarDay->department_id === $dept->id
             || ($calendarDay->user && $calendarDay->user->department_id === $dept->id);
-        abort_unless($belongs && in_array($calendarDay->type, ['dept_dayoff', 'user_leave', 'user_undertime'], true), 404);
+        abort_unless($belongs && $isTeamType, 404);
 
         \App\Models\ActivityLog::record(
             'calendar.remove',
