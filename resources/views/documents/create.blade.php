@@ -77,10 +77,10 @@
                         </p>
                     </div>
 
-                    {{-- ── Fund (Voucher only) ── --}}
-                    <div class="sm:col-span-2" x-show="isAccounting && docType === 'Voucher'" x-cloak>
+                    {{-- ── Fund (Voucher & Payroll) ── --}}
+                    <div class="sm:col-span-2" x-show="acct" x-cloak>
                         <label class="label">Fund <span class="text-red-500">*</span></label>
-                        <select name="fund_id" class="input" x-bind:required="isAccounting && docType === 'Voucher'">
+                        <select name="fund_id" class="input" x-bind:required="acct">
                             <option value="">— Select fund —</option>
                             @foreach($funds as $f)
                                 <option value="{{ $f->id }}" @selected(old('fund_id')==$f->id)>{{ $f->name }} ({{ $f->code }})</option>
@@ -93,10 +93,30 @@
                     </div>
 
                     {{-- ── Voucher / Payroll details ── --}}
-                    <div x-show="acct" x-cloak>
+                    <div x-show="acct" x-cloak x-data="{
+                            raw: @js((string) old('amount', '')),
+                            display: '',
+                            init() { this.display = this.fmt(this.raw); },
+                            fmt(v) {
+                                if (v === '' || v === null) return '';
+                                const parts = String(v).replace(/[^0-9.]/g, '').split('.');
+                                const intp = (parts[0] || '').replace(/^0+(?=\d)/, '');
+                                const dec = parts.length > 1 ? '.' + parts[1].slice(0, 2) : '';
+                                return (intp ? Number(intp).toLocaleString('en-US') : (dec ? '0' : '')) + dec;
+                            },
+                            onInput(e) {
+                                let s = e.target.value.replace(/[^0-9.]/g, '');
+                                const p = s.split('.');
+                                if (p.length > 2) s = p[0] + '.' + p.slice(1).join('');
+                                const [i, d] = s.split('.');
+                                this.raw = (i || '') + (d !== undefined ? '.' + d.slice(0, 2) : '');
+                                this.display = this.fmt(this.raw);
+                            }
+                         }">
                         <label class="label">Amount (₱) <span class="text-red-500">*</span></label>
-                        <input type="number" step="0.01" min="0" name="amount" value="{{ old('amount') }}" class="input" placeholder="0.00"
-                               x-bind:required="acct">
+                        <input type="text" inputmode="decimal" class="input" placeholder="0.00"
+                               :value="display" @input="onInput($event)" x-bind:required="acct" autocomplete="off">
+                        <input type="hidden" name="amount" :value="raw">
                     </div>
                     <div x-show="acct" x-cloak>
                         <label class="label">OBR No. <span class="text-red-500">*</span></label>

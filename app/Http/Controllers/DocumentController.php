@@ -129,7 +129,7 @@ class DocumentController extends Controller
             'voucher_number' => ['nullable', 'string', 'max:100'],
             'voucher_number_confirmation' => ['nullable', 'string', 'max:100', 'same:voucher_number'],
             // Accounting fields (revealed for Voucher / Payroll in the Accounting office).
-            'fund_id' => ['nullable', $isAccounting ? 'required_if:document_type,Voucher' : 'prohibited', 'exists:funds,id'],
+            'fund_id' => ['nullable', $isAccounting ? 'required_if:document_type,Voucher,Payroll' : 'prohibited', 'exists:funds,id'],
             'amount' => ['nullable', $isAccounting ? 'required_if:document_type,Voucher,Payroll' : 'nullable', 'numeric', 'min:0'],
             'obr_no' => ['nullable', $isAccounting ? 'required_if:document_type,Voucher,Payroll' : 'nullable', 'string', 'max:100'],
             'responsibility_center_id' => ['nullable', $isAccounting ? 'required_if:document_type,Voucher,Payroll' : 'prohibited', 'exists:responsibility_centers,id'],

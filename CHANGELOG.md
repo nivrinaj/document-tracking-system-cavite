@@ -6,6 +6,13 @@ Format based on [Keep a Changelog](https://keepachangelog.com).
 
 ---
 
+## 1.4.2 — 2026-06-25
+**Accounting polish: Payroll funds, RC display, amount masking, cleaner detail layout**
+- **Payroll now uses Funds too** — the Fund picker and fund-based tracking code apply to both Voucher and Payroll. They stay distinct in the database via the `document_type` column, so reports and filters can separate Vouchers from Payrolls.
+- **Responsibility Center** is shown as **`[code]/[office]`** on the document detail page (your typed Code + the Office/Unit/Project name).
+- **Amount field auto-formats** with thousands separators as you type (e.g. `165,000.00` instead of `165000`); the raw number is still what gets stored.
+- **Modernized the document detail panel** — grouped into **Document / Accounting / Timeline** sections with clean cell cards, a prominent Amount, and better spacing now that there are more fields.
+
 ## 1.4.1 — 2026-06-25
 **Fix: Accounting features are now driven by a database toggle, not a hardcoded office code**
 - **Root cause of the missing 1.4.0 features:** the Accounting logic was matched to a hardcoded office code (`PACCO`), but the real office is `OPAcc`, so nothing activated — no Voucher/Payroll-only list, no Fund picker, no Amount/OBR/RC/Nature fields.
