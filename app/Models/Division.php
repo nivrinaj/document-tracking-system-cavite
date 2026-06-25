@@ -16,10 +16,12 @@ class Division extends Model
         'code',
         'description',
         'is_active',
+        'is_hospital',
     ];
 
     protected $casts = [
         'is_active' => 'boolean',
+        'is_hospital' => 'boolean',
     ];
 
     public function department(): \Illuminate\Database\Eloquent\Relations\BelongsTo

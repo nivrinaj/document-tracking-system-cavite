@@ -35,3 +35,12 @@
     <input type="checkbox" name="is_active" value="1" class="rounded text-[color:var(--color-primary)]" @checked(old('is_active', $division?->is_active ?? true))>
     Active
 </label>
+
+<div class="border-t border-gray-100 dark:border-gray-700 pt-4 mt-2">
+    <label class="flex items-center gap-2 text-sm font-medium">
+        <input type="hidden" name="is_hospital" value="0">
+        <input type="checkbox" name="is_hospital" value="1" class="rounded text-[color:var(--color-primary)]" @checked(old('is_hospital', $division?->is_hospital ?? false))>
+        Hospital transactions division
+    </label>
+    <p class="text-xs text-gray-400 ml-6">For an Accounting office only. When on, encoders here see only <strong>General Fund</strong> &amp; <strong>Trust Fund</strong>, run on their own sequence, and every tracking code gets an <strong>“-H”</strong> suffix.</p>
+</div>

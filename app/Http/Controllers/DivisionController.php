@@ -75,6 +75,7 @@ class DivisionController extends Controller
             'code' => ['required', 'string', 'max:50', Rule::unique('divisions', 'code')->ignore($division?->id)],
             'description' => ['nullable', 'string'],
             'is_active' => ['nullable', 'boolean'],
-        ]) + ['is_active' => $request->boolean('is_active')];
+            'is_hospital' => ['nullable', 'boolean'],
+        ]) + ['is_active' => $request->boolean('is_active'), 'is_hospital' => $request->boolean('is_hospital')];
     }
 }

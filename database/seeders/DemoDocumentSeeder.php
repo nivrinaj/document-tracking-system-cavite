@@ -152,7 +152,7 @@ class DemoDocumentSeeder extends Seeder
         $v1 = Document::create([
             'title' => 'Disbursement Voucher - Office Supplies', 'document_type' => 'Voucher', 'voucher_number' => 'DV-2026-0001',
             'tracking_code' => Document::trackingCodeForVoucher('DV-2026-0001'),
-            'description' => 'Payment for office supplies.', 'source' => 'PACCO', 'priority' => 'high', 'status' => 'completed',
+            'description' => 'Payment for office supplies.', 'source' => 'OPAcc', 'priority' => 'high', 'status' => 'completed',
             'division_id' => $acct->division_id, 'department_id' => $acct->department_id, 'created_by' => $acct->id,
             'current_holder_id' => $staff?->id ?? $acct->id,
             'received_at' => now()->subDays(14), 'released_at' => now()->subDays(13), 'completed_at' => now()->subDays(3),
@@ -165,7 +165,7 @@ class DemoDocumentSeeder extends Seeder
         $v2 = Document::create([
             'title' => 'Disbursement Voucher - Travel Reimbursement', 'document_type' => 'Voucher', 'voucher_number' => 'DV-2026-0002',
             'tracking_code' => Document::trackingCodeForVoucher('DV-2026-0002'),
-            'description' => 'Travel reimbursement claim.', 'source' => 'PACCO', 'priority' => 'urgent', 'status' => 'received',
+            'description' => 'Travel reimbursement claim.', 'source' => 'OPAcc', 'priority' => 'urgent', 'status' => 'received',
             'division_id' => $acct->division_id, 'department_id' => $acct->department_id, 'created_by' => $acct->id,
             'current_holder_id' => $staff?->id ?? $acct->id,
             'received_at' => now()->subDays(10), 'released_at' => now()->subDays(10),
@@ -178,7 +178,7 @@ class DemoDocumentSeeder extends Seeder
         $v3 = Document::create([
             'title' => 'Disbursement Voucher - Utility Bills', 'document_type' => 'Voucher', 'voucher_number' => 'DV-2026-0003',
             'tracking_code' => Document::trackingCodeForVoucher('DV-2026-0003'),
-            'description' => 'Payment for monthly electricity and water bills.', 'source' => 'PACCO', 'priority' => 'normal', 'status' => 'completed',
+            'description' => 'Payment for monthly electricity and water bills.', 'source' => 'OPAcc', 'priority' => 'normal', 'status' => 'completed',
             'division_id' => $acct->division_id, 'department_id' => $acct->department_id, 'created_by' => $acct->id,
             'current_holder_id' => $staff?->id ?? $acct->id,
             'received_at' => now()->subDays(9), 'released_at' => now()->subDays(9), 'completed_at' => now()->subDays(5),
@@ -191,7 +191,7 @@ class DemoDocumentSeeder extends Seeder
         $v4 = Document::create([
             'title' => 'Disbursement Voucher - Training Honoraria', 'document_type' => 'Voucher', 'voucher_number' => 'DV-2026-0004',
             'tracking_code' => Document::trackingCodeForVoucher('DV-2026-0004'),
-            'description' => 'Honoraria for resource speakers.', 'source' => 'PACCO', 'priority' => 'high', 'status' => 'received',
+            'description' => 'Honoraria for resource speakers.', 'source' => 'OPAcc', 'priority' => 'high', 'status' => 'received',
             'division_id' => $acct->division_id, 'department_id' => $acct->department_id, 'created_by' => $acct->id,
             'current_holder_id' => $staff?->id ?? $acct->id,
             'received_at' => now()->subDays(2), 'released_at' => now()->subDays(2),

@@ -27,9 +27,9 @@ class UserSeeder extends Seeder
             ['Tech Support Staff', 'tech.staff', 'tech.staff@pgc.test', 'Staff', 'PICTO', 'TECHSUP', 'Technical Support'],
 
             // Accounting office (for SLA / voucher testing)
-            ['Accounting Head', 'acctg.head', 'acctg.head@pgc.test', 'Department Head', 'PACCO', null, 'Provincial Accountant'],
-            ['Disbursement Receiving', 'acctg.receiving', 'acctg.receiving@pgc.test', 'Staff', 'PACCO', 'DISB', 'Disbursement Officer'],
-            ['Disbursement Staff', 'disb.staff', 'disb.staff@pgc.test', 'Staff', 'PACCO', 'DISB', 'Voucher Processor'],
+            ['Accounting Head', 'acctg.head', 'acctg.head@pgc.test', 'Department Head', 'OPAcc', null, 'Provincial Accountant'],
+            ['Disbursement Receiving', 'acctg.receiving', 'acctg.receiving@pgc.test', 'Staff', 'OPAcc', 'DISB', 'Disbursement Officer'],
+            ['Disbursement Staff', 'disb.staff', 'disb.staff@pgc.test', 'Staff', 'OPAcc', 'DISB', 'Voucher Processor'],
 
             // HR office
             ['HR Head', 'hr.head', 'hr.head@pgc.test', 'Department Head', 'PHRMO', null, 'HR Officer'],

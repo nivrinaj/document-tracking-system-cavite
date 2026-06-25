@@ -10,9 +10,24 @@ class Department extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['name', 'code', 'description', 'is_active', 'sla_enabled', 'sla_days', 'sla_document_type'];
+    protected $fillable = ['name', 'code', 'description', 'is_active', 'is_accounting', 'sla_enabled', 'sla_days', 'sla_document_type'];
 
-    protected $casts = ['is_active' => 'boolean', 'sla_enabled' => 'boolean', 'sla_document_type' => 'array'];
+    protected $casts = ['is_active' => 'boolean', 'is_accounting' => 'boolean', 'sla_enabled' => 'boolean', 'sla_document_type' => 'array'];
+
+    /**
+     * Ensure this Accounting department has its Voucher + Payroll document types,
+     * and deactivate them when the flag is turned off (so it falls back to the
+     * global type set). Called whenever the is_accounting flag changes.
+     */
+    public function syncAccountingTypes(): void
+    {
+        foreach (['Voucher', 'Payroll'] as $name) {
+            DocumentType::updateOrCreate(
+                ['name' => $name, 'department_id' => $this->id],
+                ['requires_voucher' => false, 'is_active' => (bool) $this->is_accounting],
+            );
+        }
+    }
 
     public function divisions(): HasMany
     {

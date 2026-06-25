@@ -22,7 +22,8 @@ class DepartmentController extends Controller
 
     public function store(Request $request)
     {
-        Department::create($this->validateData($request));
+        $department = Department::create($this->validateData($request));
+        $department->syncAccountingTypes();
 
         return redirect()->route('departments.index')->with('success', 'Department created.');
     }
@@ -37,6 +38,7 @@ class DepartmentController extends Controller
     public function update(Request $request, Department $department)
     {
         $department->update($this->validateData($request, $department));
+        $department->syncAccountingTypes();
 
         return redirect()->route('departments.index')->with('success', 'Department updated.');
     }
@@ -64,12 +66,14 @@ class DepartmentController extends Controller
             'code' => ['required', 'string', 'max:50', Rule::unique('departments', 'code')->ignore($department?->id)],
             'description' => ['nullable', 'string'],
             'is_active' => ['nullable', 'boolean'],
+            'is_accounting' => ['nullable', 'boolean'],
             'sla_enabled' => ['nullable', 'boolean'],
             'sla_days' => ['nullable', 'integer', 'min:1', 'max:365'],
             'sla_document_type' => ['nullable', 'array'],
             'sla_document_type.*' => ['string', 'max:100'],
         ]) + [
             'is_active' => $request->boolean('is_active'),
+            'is_accounting' => $request->boolean('is_accounting'),
             'sla_enabled' => $request->boolean('sla_enabled'),
         ];
     }

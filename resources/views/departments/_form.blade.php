@@ -18,6 +18,15 @@
     Active
 </label>
 
+<div class="border-t border-gray-100 dark:border-gray-700 pt-4 mt-2">
+    <label class="flex items-center gap-2 text-sm font-medium">
+        <input type="hidden" name="is_accounting" value="0">
+        <input type="checkbox" name="is_accounting" value="1" class="rounded text-[color:var(--color-primary)]" @checked(old('is_accounting', $department?->is_accounting ?? false))>
+        This is the Accounting office
+    </label>
+    <p class="text-xs text-gray-400 ml-6">When on, this office encodes only <strong>Voucher</strong> &amp; <strong>Payroll</strong>, shows the <strong>Fund</strong> picker, generates the fund-based tracking code, and reveals the Amount / OBR / Responsibility Center / Nature fields. Manage funds &amp; lists in <strong>Accounting Setup</strong>.</p>
+</div>
+
 {{-- Completion deadline (turnaround tracking) --}}
 @php $slaSelected = old('sla_document_type', $department?->sla_document_type ?? []); @endphp
 <div class="border-t border-gray-100 dark:border-gray-700 pt-4 mt-2"

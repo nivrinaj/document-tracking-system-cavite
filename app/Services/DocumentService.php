@@ -206,7 +206,7 @@ class DocumentService
             //   [FundCode]-[YYYY]-[MM]-[seq](-H for the Hospital division).
             $trackingCode = null;
             if (! empty($data['fund_id']) && ($fund = \App\Models\Fund::find($data['fund_id']))) {
-                $hospital = optional($actor->division)->code === 'FHTD';
+                $hospital = (bool) optional($actor->division)->is_hospital;
                 $trackingCode = Document::generateFundCode($fund, $hospital);
             } elseif (strtolower($data['document_type'] ?? '') === 'voucher' && ! empty($data['voucher_number'])) {
                 $trackingCode = Document::trackingCodeForVoucher($data['voucher_number']);

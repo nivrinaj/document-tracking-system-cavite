@@ -6,6 +6,14 @@ Format based on [Keep a Changelog](https://keepachangelog.com).
 
 ---
 
+## 1.4.1 — 2026-06-25
+**Fix: Accounting features are now driven by a database toggle, not a hardcoded office code**
+- **Root cause of the missing 1.4.0 features:** the Accounting logic was matched to a hardcoded office code (`PACCO`), but the real office is `OPAcc`, so nothing activated — no Voucher/Payroll-only list, no Fund picker, no Amount/OBR/RC/Nature fields.
+- **New “This is the Accounting office” toggle** on each Department (Departments → edit). Turning it on makes that office encode **only Voucher & Payroll**, show the **Fund** picker, generate the fund-based tracking code, and reveal the **Amount / OBR / Responsibility Center / Nature** fields. Ticking it **auto-creates** that office's Voucher & Payroll types; unticking it falls back to the global type set.
+- **New “Hospital transactions division” toggle** on each Division — replaces the old hardcoded `FHTD` code. When on, encoders there get **General Fund & Trust Fund only**, their **own sequence**, and an **“-H”** suffix.
+- All accounting checks now read these DB flags (`is_accounting`, `is_hospital`) — no magic office/division codes anywhere.
+- **After upgrading:** open **Departments → (your Accounting office) → tick “This is the Accounting office” → Save.** For hospital handling, tick “Hospital transactions division” on its FHTD division.
+
 ## 1.4.0 — 2026-06-25
 **Accounting office: per-office document types, fund-based tracking codes, voucher/payroll fields & a setup module**
 - **Per-office document types.** Each office can now have its own set of document types. The Accounting office (PACCO) starts with **only Voucher and Payroll**; every other office keeps the shared global set unchanged. (Built so more office-specific types can be added later from the Document Types admin.)

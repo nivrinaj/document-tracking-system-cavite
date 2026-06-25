@@ -33,15 +33,16 @@ class AccountingSeeder extends Seeder
         }
 
         // A couple of sample responsibility centers (Office/Unit/Project + code).
-        foreach ([['OPG', 'OPG'], ['OPVG', 'OPVG'], ['PACCO', 'PACCO']] as $i => [$name, $code]) {
+        foreach ([['OPG', 'OPG'], ['OPVG', 'OPVG'], ['OPAcc', 'OPAcc']] as $i => [$name, $code]) {
             ResponsibilityCenter::firstOrCreate(['name' => $name], ['code' => $code, 'sort_order' => $i, 'is_active' => true]);
         }
 
-        // Ensure the Hospital division exists under Accounting (PACCO).
-        if ($pacco = Department::where('code', 'PACCO')->first()) {
+        // Ensure each Accounting office has a Hospital-transactions division.
+        // Driven by the is_accounting flag, never a hardcoded department code.
+        foreach (Department::where('is_accounting', true)->get() as $dept) {
             Division::firstOrCreate(
-                ['code' => 'FHTD'],
-                ['name' => 'For Hospital Transaction Division', 'department_id' => $pacco->id, 'is_active' => true],
+                ['code' => 'FHTD', 'department_id' => $dept->id],
+                ['name' => 'For Hospital Transaction Division', 'is_active' => true, 'is_hospital' => true],
             );
         }
     }

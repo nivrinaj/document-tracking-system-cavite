@@ -85,8 +85,8 @@ class DocumentController extends Controller
 
         $user = Auth::user();
         $types = \App\Models\DocumentType::availableFor($user->department_id);
-        $isAccounting = optional($user->department)->code === 'PACCO';
-        $isHospital = optional($user->division)->code === 'FHTD';
+        $isAccounting = (bool) optional($user->department)->is_accounting;
+        $isHospital = (bool) optional($user->division)->is_hospital;
 
         // Offices with the user's own department listed first (QoL).
         $departments = \App\Models\Department::orderByRaw('id = ? desc', [$user->department_id ?? 0])
@@ -117,9 +117,9 @@ class DocumentController extends Controller
     {
         $this->authorizeAction('documents.create');
 
-        // Accounting fields only apply to the Accounting office (PACCO); other offices
-        // using the global Voucher type keep the legacy voucher-number flow.
-        $isAccounting = optional($request->user()->department)->code === 'PACCO';
+        // Accounting fields only apply to the Accounting office (is_accounting); other
+        // offices using the global Voucher type keep the legacy voucher-number flow.
+        $isAccounting = (bool) optional($request->user()->department)->is_accounting;
 
         $data = $request->validate([
             'title' => ['required', 'string', 'max:255'],

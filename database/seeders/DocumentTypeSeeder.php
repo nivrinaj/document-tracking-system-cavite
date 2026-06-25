@@ -29,15 +29,10 @@ class DocumentTypeSeeder extends Seeder
             );
         }
 
-        // Accounting office (PACCO) — its own set: Voucher + Payroll only. These drive
-        // the Fund + amount/OBR/RC/nature fields and the fund-based tracking code.
-        if ($pacco = \App\Models\Department::where('code', 'PACCO')->first()) {
-            foreach (['Voucher', 'Payroll'] as $name) {
-                DocumentType::firstOrCreate(
-                    ['name' => $name, 'department_id' => $pacco->id],
-                    ['requires_voucher' => false, 'is_active' => true],
-                );
-            }
-        }
+        // Accounting offices (is_accounting) get their own set: Voucher + Payroll only.
+        // These drive the Fund + amount/OBR/RC/nature fields and the fund-based code.
+        // Driven by the DB flag, never a hardcoded department code.
+        \App\Models\Department::where('is_accounting', true)->get()
+            ->each(fn ($dept) => $dept->syncAccountingTypes());
     }
 }
