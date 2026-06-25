@@ -103,76 +103,100 @@
                         $pausedSecs = $document->totalPausedSeconds();
                         $hasAccounting = $document->fund_id || $document->amount !== null || $document->obr_no || $document->responsibility_center_id || $document->nature_of_transaction;
                         $rcParts = array_filter([$document->rc_code, $document->responsibilityCenter?->name]);
-                        // Spec-row helpers: muted label left, value right, hairline divider.
-                        $row = 'flex items-baseline justify-between gap-4 py-2.5 border-b border-gray-100 dark:border-gray-700/50';
-                        $rk  = 'text-xs text-gray-400 dark:text-gray-500 shrink-0';
-                        $rv  = 'text-sm font-medium text-gray-800 dark:text-gray-100 text-right break-words';
-                        $hdr = 'text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-2';
+                        // Bank-grade detail: one panel per section, clean label/value grid inside.
+                        $k = 'text-[11px] uppercase tracking-wide text-gray-400 dark:text-gray-500';
+                        $v = 'mt-1 text-sm font-medium text-gray-800 dark:text-gray-100 break-words';
+                        $card = 'rounded-xl border border-gray-200/90 dark:border-gray-700 bg-white dark:bg-gray-800/40 shadow-sm';
+                        $secHdr = 'flex items-center gap-2.5 px-4 sm:px-5 py-3 border-b border-gray-100 dark:border-gray-700/70';
+                        $secTitle = 'text-xs font-semibold tracking-wide text-gray-700 dark:text-gray-200';
+                        $body = 'p-4 sm:p-5 grid grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-5';
+                        $ico = 'grid place-items-center h-7 w-7 rounded-lg text-white shrink-0 text-[13px]';
                     @endphp
 
-                    {{-- ── Document ── --}}
-                    <section>
-                        <h3 class="{{ $hdr }}">Document</h3>
-                        <dl class="grid sm:grid-cols-2 sm:gap-x-10">
-                            <div class="{{ $row }}"><dt class="{{ $rk }}">Type</dt><dd class="{{ $rv }}">{{ $document->document_type }}</dd></div>
-                            @if($document->voucher_number)
-                                <div class="{{ $row }}"><dt class="{{ $rk }}">Voucher No.</dt><dd class="{{ $rv }} font-mono">{{ $document->voucher_number }}</dd></div>
-                            @endif
-                            <div class="{{ $row }}"><dt class="{{ $rk }}">Reference No.</dt><dd class="{{ $rv }}">{{ $document->reference_no ?? '—' }}</dd></div>
-                            <div class="{{ $row }}"><dt class="{{ $rk }}">Source / Origin</dt><dd class="{{ $rv }}">{{ $document->source ?? '—' }}</dd></div>
-                            <div class="{{ $row }}"><dt class="{{ $rk }}">Current location</dt><dd class="{{ $rv }}">{{ $document->department?->code ?? '—' }}@if($document->division) <span class="text-gray-400 font-normal">· {{ $document->division->name }}</span>@endif</dd></div>
-                        </dl>
-                    </section>
-
-                    {{-- ── Accounting ── --}}
-                    @if($hasAccounting)
-                        <section class="mt-6">
-                            <h3 class="{{ $hdr }}">Accounting</h3>
-                            <dl class="grid sm:grid-cols-2 sm:gap-x-10">
-                                @if($document->amount !== null)
-                                    <div class="{{ $row }}"><dt class="{{ $rk }}">Amount</dt><dd class="{{ $rv }} tabular-nums">₱{{ number_format($document->amount, 2) }}</dd></div>
+                    <div class="space-y-4">
+                        {{-- ── Document ── --}}
+                        <section class="{{ $card }}">
+                            <header class="{{ $secHdr }}">
+                                <span class="{{ $ico }}" style="background: var(--color-primary)">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                                </span>
+                                <h3 class="{{ $secTitle }}">Document</h3>
+                            </header>
+                            <dl class="{{ $body }}">
+                                <div><dt class="{{ $k }}">Type</dt><dd class="{{ $v }}">{{ $document->document_type }}</dd></div>
+                                @if($document->voucher_number)
+                                    <div><dt class="{{ $k }}">Voucher No.</dt><dd class="{{ $v }} font-mono">{{ $document->voucher_number }}</dd></div>
                                 @endif
-                                @if($document->fund)
-                                    <div class="{{ $row }}"><dt class="{{ $rk }}">Fund</dt><dd class="{{ $rv }}">{{ $document->fund->name }} <span class="text-gray-400 font-normal">({{ $document->fund->code }})</span></dd></div>
-                                @endif
-                                @if($document->obr_no)
-                                    <div class="{{ $row }}"><dt class="{{ $rk }}">OBR No.</dt><dd class="{{ $rv }} font-mono">{{ $document->obr_no }}</dd></div>
-                                @endif
-                                @if($rcParts)
-                                    <div class="{{ $row }}"><dt class="{{ $rk }}">Resp. Center</dt><dd class="{{ $rv }}">{{ implode('/', $rcParts) }}</dd></div>
-                                @endif
-                                @if($document->nature_of_transaction)
-                                    <div class="{{ $row }}"><dt class="{{ $rk }}">Nature</dt><dd class="{{ $rv }}">{{ $document->nature_of_transaction }}</dd></div>
-                                @endif
+                                <div><dt class="{{ $k }}">Reference No.</dt><dd class="{{ $v }}">{{ $document->reference_no ?? '—' }}</dd></div>
+                                <div><dt class="{{ $k }}">Source / Origin</dt><dd class="{{ $v }}">{{ $document->source ?? '—' }}</dd></div>
+                                <div class="col-span-2 lg:col-span-1"><dt class="{{ $k }}">Current location</dt><dd class="{{ $v }}">{{ $document->department?->code ?? '—' }}@if($document->division) <span class="text-gray-400 font-normal">· {{ $document->division->name }}</span>@endif</dd></div>
                             </dl>
                         </section>
-                    @endif
 
-                    {{-- ── Timeline ── --}}
-                    <section class="mt-6">
-                        <h3 class="{{ $hdr }}">Timeline</h3>
-                        <dl class="grid sm:grid-cols-2 sm:gap-x-10">
-                            <div class="{{ $row }}"><dt class="{{ $rk }}">Received</dt><dd class="{{ $rv }}">{{ $document->received_at?->format('M d, Y g:i A') ?? '—' }}</dd></div>
-                            <div class="{{ $row }}"><dt class="{{ $rk }}">Age</dt><dd class="{{ $rv }}">{{ $document->age() }}</dd></div>
-                            <div class="{{ $row }}"><dt class="{{ $rk }}">Total paused</dt><dd class="{{ $rv }} {{ $pausedSecs > 0 ? 'text-amber-600 dark:text-amber-400' : '' }}">{{ $pausedSecs > 0 ? \App\Models\Document::humanDuration($pausedSecs) : '—' }}</dd></div>
-                            <div class="{{ $row }}"><dt class="{{ $rk }}">{{ $document->isClosed() ? 'Turnaround' : 'Idle time' }}</dt>
-                                <dd class="{{ $rv }}">
-                                    @if($document->isClosed())
-                                        {{ $document->turnaround() ?? '—' }}
-                                    @else
-                                        <x-badge :color="$document->agingColor()">{{ $document->elapsedSinceLastAction() }}</x-badge>
+                        {{-- ── Accounting ── --}}
+                        @if($hasAccounting)
+                            <section class="{{ $card }}">
+                                <header class="{{ $secHdr }}">
+                                    <span class="{{ $ico }}" style="background: var(--color-primary)">₱</span>
+                                    <h3 class="{{ $secTitle }}">Accounting</h3>
+                                </header>
+                                <dl class="{{ $body }}">
+                                    @if($document->amount !== null)
+                                        <div><dt class="{{ $k }}">Amount</dt><dd class="mt-1 text-base font-semibold tabular-nums text-gray-900 dark:text-white">₱{{ number_format($document->amount, 2) }}</dd></div>
                                     @endif
-                                </dd>
-                            </div>
-                        </dl>
-                    </section>
+                                    @if($document->fund)
+                                        <div><dt class="{{ $k }}">Fund</dt><dd class="{{ $v }}">{{ $document->fund->name }} <span class="text-gray-400 font-normal">({{ $document->fund->code }})</span></dd></div>
+                                    @endif
+                                    @if($document->obr_no)
+                                        <div><dt class="{{ $k }}">OBR No.</dt><dd class="{{ $v }} font-mono">{{ $document->obr_no }}</dd></div>
+                                    @endif
+                                    @if($rcParts)
+                                        <div><dt class="{{ $k }}">Resp. Center</dt><dd class="{{ $v }}">{{ implode('/', $rcParts) }}</dd></div>
+                                    @endif
+                                    @if($document->nature_of_transaction)
+                                        <div><dt class="{{ $k }}">Nature</dt><dd class="{{ $v }}">{{ $document->nature_of_transaction }}</dd></div>
+                                    @endif
+                                </dl>
+                            </section>
+                        @endif
 
-                    @if($document->description)
-                        <div class="mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
-                            <div class="text-[11px] uppercase tracking-wider text-gray-400 mb-1">Description</div>
-                            <p class="text-sm text-gray-700 dark:text-gray-200">{{ $document->description }}</p>
-                        </div>
-                    @endif
+                        {{-- ── Timeline ── --}}
+                        <section class="{{ $card }}">
+                            <header class="{{ $secHdr }}">
+                                <span class="{{ $ico }}" style="background: var(--color-primary)">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                </span>
+                                <h3 class="{{ $secTitle }}">Timeline</h3>
+                            </header>
+                            <dl class="{{ $body }}">
+                                <div><dt class="{{ $k }}">Received</dt><dd class="{{ $v }}">{{ $document->received_at?->format('M d, Y g:i A') ?? '—' }}</dd></div>
+                                <div><dt class="{{ $k }}">Age</dt><dd class="{{ $v }}">{{ $document->age() }}</dd></div>
+                                <div><dt class="{{ $k }}">Total paused</dt><dd class="mt-1 text-sm font-medium {{ $pausedSecs > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-gray-800 dark:text-gray-100' }}">{{ $pausedSecs > 0 ? \App\Models\Document::humanDuration($pausedSecs) : '—' }}</dd></div>
+                                <div><dt class="{{ $k }}">{{ $document->isClosed() ? 'Turnaround' : 'Idle time' }}</dt>
+                                    <dd class="mt-1">
+                                        @if($document->isClosed())
+                                            <span class="{{ $v }} !mt-0">{{ $document->turnaround() ?? '—' }}</span>
+                                        @else
+                                            <x-badge :color="$document->agingColor()">{{ $document->elapsedSinceLastAction() }}</x-badge>
+                                        @endif
+                                    </dd>
+                                </div>
+                            </dl>
+                        </section>
+
+                        {{-- ── Description ── --}}
+                        @if($document->description)
+                            <section class="{{ $card }}">
+                                <header class="{{ $secHdr }}">
+                                    <span class="{{ $ico }}" style="background: var(--color-primary)">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h10"/></svg>
+                                    </span>
+                                    <h3 class="{{ $secTitle }}">Description</h3>
+                                </header>
+                                <div class="p-4 sm:p-5 text-sm text-gray-700 dark:text-gray-200 whitespace-pre-line">{{ $document->description }}</div>
+                            </section>
+                        @endif
+                    </div>
                 </x-card>
 
                 {{-- Route slip items (when enabled and present) --}}

@@ -6,6 +6,11 @@ Format based on [Keep a Changelog](https://keepachangelog.com).
 
 ---
 
+## 1.4.5 — 2026-06-26
+**Bank-grade document detail; tracking slip fund tidy**
+- **Document detail redesigned** into clean bordered section panels (Document / Accounting / Timeline / Description), each with an icon header and a tidy label/value grid — organized and uncrumpled, in keeping with the system theme.
+- **Tracking slip** now shows the Fund name without the code in parentheses (e.g. “General Funds” instead of “General Funds (101)”).
+
 ## 1.4.4 — 2026-06-25
 **Detail layout simplified; form fields no longer hang; live fund-code preview**
 - **Document detail** is now plain and clean — a simple two-column spec list with hairline dividers, no boxes, no oversized Amount. Just organized rows under Document / Accounting / Timeline.
