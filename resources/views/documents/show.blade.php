@@ -103,13 +103,17 @@
                         $pausedSecs = $document->totalPausedSeconds();
                         $hasAccounting = $document->fund_id || $document->amount !== null || $document->obr_no || $document->responsibility_center_id || $document->nature_of_transaction;
                         $rcParts = array_filter([$document->rc_code, $document->responsibilityCenter?->name]);
+                        $showBreakdown = \App\Models\Setting::get('show_daily_breakdown', '0') === '1';
+                        $breakdown = $showBreakdown
+                            ? \App\Services\BusinessHours::dailyBreakdown($document->received_at ?? $document->created_at, $document->completed_at ?? now())
+                            : [];
                         // Bank-grade detail: one panel per section, clean label/value grid inside.
                         $k = 'text-[11px] uppercase tracking-wide text-gray-400 dark:text-gray-500';
                         $v = 'mt-1 text-sm font-medium text-gray-800 dark:text-gray-100 break-words';
                         $card = 'rounded-xl border border-gray-200/90 dark:border-gray-700 bg-white dark:bg-gray-800/40 shadow-sm';
                         $secHdr = 'flex items-center gap-2.5 px-4 sm:px-5 py-3 border-b border-gray-100 dark:border-gray-700/70';
                         $secTitle = 'text-xs font-semibold tracking-wide text-gray-700 dark:text-gray-200';
-                        $body = 'p-4 sm:p-5 grid grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-5';
+                        $body = 'p-4 sm:p-5 grid gap-x-6 gap-y-5 [grid-template-columns:repeat(auto-fit,minmax(150px,1fr))]';
                         $ico = 'grid place-items-center h-7 w-7 rounded-lg text-white shrink-0 text-[13px]';
                     @endphp
 
@@ -129,7 +133,7 @@
                                 @endif
                                 <div><dt class="{{ $k }}">Reference No.</dt><dd class="{{ $v }}">{{ $document->reference_no ?? '—' }}</dd></div>
                                 <div><dt class="{{ $k }}">Source / Origin</dt><dd class="{{ $v }}">{{ $document->source ?? '—' }}</dd></div>
-                                <div class="col-span-2 lg:col-span-1"><dt class="{{ $k }}">Current location</dt><dd class="{{ $v }}">{{ $document->department?->code ?? '—' }}@if($document->division) <span class="text-gray-400 font-normal">· {{ $document->division->name }}</span>@endif</dd></div>
+                                <div><dt class="{{ $k }}">Current location</dt><dd class="{{ $v }}">{{ $document->department?->code ?? '—' }}@if($document->division) <span class="text-gray-400 font-normal">· {{ $document->division->name }}</span>@endif</dd></div>
                             </dl>
                         </section>
 
@@ -183,6 +187,30 @@
                                 </div>
                             </dl>
                         </section>
+
+                        {{-- ── Daily working time (Super-Admin toggle) ── --}}
+                        @if($showBreakdown && count($breakdown))
+                            <section class="{{ $card }}">
+                                <header class="{{ $secHdr }}">
+                                    <span class="{{ $ico }}" style="background: var(--color-primary)">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19V6m6 13v-9m-12 9V9m18 10V3"/></svg>
+                                    </span>
+                                    <h3 class="{{ $secTitle }}">Daily working time</h3>
+                                </header>
+                                <div class="p-4 sm:p-5 space-y-2.5">
+                                    @foreach($breakdown as $date => $secs)
+                                        @php $pct = min(100, (int) round($secs / (8 * 3600) * 100)); @endphp
+                                        <div class="flex items-center gap-3">
+                                            <div class="w-24 sm:w-28 shrink-0 text-xs text-gray-500 dark:text-gray-400">{{ \Carbon\Carbon::parse($date)->format('D, M d') }}</div>
+                                            <div class="flex-1 h-2 rounded-full bg-gray-100 dark:bg-gray-700 overflow-hidden">
+                                                <div class="h-full rounded-full" style="width: {{ $pct }}%; background: var(--color-primary)"></div>
+                                            </div>
+                                            <div class="w-20 sm:w-24 shrink-0 text-right text-sm font-medium tabular-nums">{{ \App\Models\Document::humanDuration($secs) }}</div>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </section>
+                        @endif
 
                         {{-- ── Description ── --}}
                         @if($document->description)

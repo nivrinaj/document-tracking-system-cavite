@@ -333,19 +333,25 @@ class Document extends Model
         return $this->updated_at;
     }
 
-    /** Human elapsed time since the last action, WITHOUT an "ago" suffix (callers add context). */
+    /** Human elapsed (working) time since the last action, WITHOUT an "ago" suffix. */
     public function elapsedSinceLastAction(): string
     {
-        return optional($this->lastActionAt())->diffForHumans([
-            'parts' => 2, 'short' => false, 'syntax' => \Carbon\CarbonInterface::DIFF_ABSOLUTE,
-        ]) ?? '—';
+        if (! $this->lastActionAt()) {
+            return '—';
+        }
+
+        return static::humanDuration(
+            \App\Services\BusinessHours::secondsBetween($this->lastActionAt(), now(), $this->currentPossessor())
+        );
     }
 
-    /** Total turnaround for a finished document (received -> completed). */
+    /** Total turnaround (working time) for a finished document (received -> completed). */
     public function turnaround(): ?string
     {
         if ($this->received_at && $this->completed_at) {
-            return $this->received_at->diffForHumans($this->completed_at, ['parts' => 2, 'syntax' => \Carbon\CarbonInterface::DIFF_ABSOLUTE]);
+            return static::humanDuration(
+                \App\Services\BusinessHours::secondsBetween($this->received_at, $this->completed_at)
+            );
         }
 
         return null;
@@ -380,14 +386,14 @@ class Document extends Model
      | Possession-based timing (who holds it & for how long)
      * ---------------------------------------------------------------- */
 
-    /** Seconds the current holder has physically had the document (0 when paused). */
+    /** Working seconds the current holder has had the document (0 when paused). */
     public function secondsWithCurrentHolder(): int
     {
         if ($this->is_pending || ! $this->possession_started_at) {
             return 0;
         }
 
-        return (int) $this->possession_started_at->diffInSeconds(now());
+        return \App\Services\BusinessHours::secondsBetween($this->possession_started_at, now(), $this->currentPossessor());
     }
 
     /** Human "time with current holder", e.g. "2 days 3 hrs". */

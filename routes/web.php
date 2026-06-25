@@ -12,6 +12,7 @@ use App\Http\Controllers\RoleController;
 use App\Http\Controllers\SettingController;
 use App\Http\Controllers\TrackController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\WorkCalendarController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', fn () => redirect()->route('dashboard'));
@@ -107,6 +108,20 @@ Route::middleware(['auth', 'active'])->group(function () {
         Route::post('/natures', [\App\Http\Controllers\AccountingController::class, 'storeNature'])->name('natures.store');
         Route::put('/natures/{nature}', [\App\Http\Controllers\AccountingController::class, 'updateNature'])->name('natures.update');
         Route::delete('/natures/{nature}', [\App\Http\Controllers\AccountingController::class, 'destroyNature'])->name('natures.destroy');
+    });
+
+    /* -------------------- Work calendar (working hours, holidays, leave) -------------------- */
+    Route::middleware('role:Super Admin')->prefix('work-calendar')->name('work-calendar.')->group(function () {
+        Route::get('/settings', [WorkCalendarController::class, 'settings'])->name('settings');
+        Route::put('/settings', [WorkCalendarController::class, 'saveSettings'])->name('settings.save');
+        Route::get('/holidays', [WorkCalendarController::class, 'holidays'])->name('holidays');
+        Route::post('/holidays', [WorkCalendarController::class, 'storeHoliday'])->name('holidays.store');
+        Route::delete('/holidays/{calendarDay}', [WorkCalendarController::class, 'destroyHoliday'])->name('holidays.destroy');
+    });
+    Route::middleware('permission:calendar.manage')->prefix('work-calendar')->name('work-calendar.')->group(function () {
+        Route::get('/team', [WorkCalendarController::class, 'team'])->name('team');
+        Route::post('/team', [WorkCalendarController::class, 'storeTeam'])->name('team.store');
+        Route::delete('/team/{calendarDay}', [WorkCalendarController::class, 'destroyTeam'])->name('team.destroy');
     });
 
     /* -------------------- System configuration -------------------- */

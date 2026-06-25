@@ -72,6 +72,7 @@
         ['can_encode', 'Can encode documents', 'Add (encode) new documents — and assign &amp; release their own drafts.', old('can_encode', $user?->canEncode() ?? false)],
         ['can_transfer_office', 'Can transfer to another office', 'Send a document they hold to another office\'s claim pool.', old('can_transfer_office', $user ? $user->canTransferOffice() : false)],
         ['can_claim', 'Can claim from another office', 'Claim / receive documents transferred into their office\'s pool.', old('can_claim', $user ? $user->canClaimFromOffice() : false)],
+        ['can_manage_calendar', 'Can manage work calendar', 'Set their department\'s day-offs and colleagues\' leave / undertime (each needs a reason and is logged).', old('can_manage_calendar', $user ? $user->hasDirectPermission('calendar.manage') : false)],
     ];
 @endphp
 <div class="mt-4 border-t border-gray-100 dark:border-gray-700 pt-4">

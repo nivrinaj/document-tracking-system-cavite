@@ -6,9 +6,17 @@ Format based on [Keep a Changelog](https://keepachangelog.com).
 
 ---
 
+## 1.5.0 — 2026-06-26
+**Working-hours engine: pending time counted in real work time + holiday/leave calendars**
+- **Work Hours (Super Admin):** set the office schedule (default 8:00 AM–5:00 PM, Mon–Fri, 12:00–1:00 lunch = 8 hrs/day). A master toggle makes the system count **Holding / Idle / Turnaround** in working hours only — skipping nights, weekends, lunch, holidays and approved leave. Off by default (keeps plain calendar time until you enable it).
+- **Holidays & Suspensions (Super Admin):** manage public holidays and emergency work suspensions; **2026 Philippine holidays preloaded** (run once: `php artisan db:seed --class=PhilippineHolidaySeeder --force`). No working hours are counted on these, for everyone.
+- **Department Work Calendar (per-user toggle “Can manage work calendar”):** lets a trusted staffer record, for their own office, **department day-offs** (seminar/team-building, *additional to* the global holidays), **staff leave**, and **staff undertime** (hours actually worked). Every entry **requires a reason**, is stamped with who set it, and is written to the **activity log** — so exclusions can't be made silently.
+- **Per-document daily breakdown:** optional “Daily working time” panel (e.g. Mon 2h, Tue 8h) on each document — hidden by default, enabled by a Super-Admin toggle.
+- Detail layout reworked into clean full-width bands; tracking slip shows Fund without the code.
+
 ## 1.4.5 — 2026-06-26
 **Bank-grade document detail; tracking slip fund tidy**
-- **Document detail redesigned** into clean bordered section panels (Document / Accounting / Timeline / Description), each with an icon header and a tidy label/value grid — organized and uncrumpled, in keeping with the system theme.
+- **Document detail redesigned** into clean bordered section panels, each with an icon header and a tidy label/value grid — organized and uncrumpled, in keeping with the system theme. On desktop the panels sit **two-up** to use the width well: **Document | Description** and **Accounting | Timeline**; they stack on mobile.
 - **Tracking slip** now shows the Fund name without the code in parentheses (e.g. “General Funds” instead of “General Funds (101)”).
 
 ## 1.4.4 — 2026-06-25

@@ -81,6 +81,7 @@ class UserController extends Controller
         $this->syncEncodePermission($user, $request->boolean('can_encode'));
         $this->syncDirectPermission($user, 'documents.transfer_office', $request->boolean('can_transfer_office'));
         $this->syncDirectPermission($user, 'documents.claim', $request->boolean('can_claim'));
+        $this->syncDirectPermission($user, 'calendar.manage', $request->boolean('can_manage_calendar'));
 
         return redirect()->route('users.index')->with('success', 'User created.');
     }
@@ -129,6 +130,7 @@ class UserController extends Controller
         $this->syncEncodePermission($user, $request->boolean('can_encode'));
         $this->syncDirectPermission($user, 'documents.transfer_office', $request->boolean('can_transfer_office'));
         $this->syncDirectPermission($user, 'documents.claim', $request->boolean('can_claim'));
+        $this->syncDirectPermission($user, 'calendar.manage', $request->boolean('can_manage_calendar'));
 
         return redirect()->route('users.index')->with('success', 'User updated.');
     }
