@@ -52,7 +52,7 @@
                         <input type="text" name="title" value="{{ old('title') }}" class="input" required autofocus>
                     </div>
 
-                    <div>
+                    <div class="sm:col-span-2">
                         <label class="label">Document Type <span class="text-red-500">*</span></label>
                         <select name="document_type" x-model="docType" class="input" required>
                             @forelse($documentTypes as $t)
@@ -63,7 +63,7 @@
                         </select>
                     </div>
 
-                    <div x-show="!isAccounting && voucherTypes.includes(docType)" x-cloak x-data="{ confirmNo: '{{ old('voucher_number_confirmation') }}' }">
+                    <div class="sm:col-span-2" x-show="!isAccounting && voucherTypes.includes(docType)" x-cloak x-data="{ confirmNo: '{{ old('voucher_number_confirmation') }}' }">
                         <label class="label">Voucher Number <span class="text-red-500">*</span></label>
                         <input type="text" name="voucher_number" x-model="voucherNo" class="input" placeholder="e.g. DV-00123" x-bind:required="!isAccounting && voucherTypes.includes(docType)" autocomplete="off">
                         <p class="text-xs text-gray-400 mt-1">Code: <span class="font-mono">{{ \App\Models\Document::trackingPrefix() }}-{{ date('Y') }}-<span x-text="(voucherNo || 'XXXX').toUpperCase().replace(/[^A-Z0-9\-]/g,'')"></span></span></p>
@@ -121,16 +121,18 @@
                                     <input type="hidden" name="amount" :value="raw">
                                 </div>
 
-                                <div>
+                                <div x-data="{ fundCode: @js(optional($funds->firstWhere('id', (int) old('fund_id')))->code ?? '') }">
                                     <label class="label">Fund <span class="text-red-500">*</span></label>
-                                    <select name="fund_id" class="input" x-bind:required="acct">
+                                    <select name="fund_id" class="input" x-bind:required="acct"
+                                            @change="fundCode = $event.target.selectedOptions[0]?.dataset.code || ''">
                                         <option value="">— Select fund —</option>
                                         @foreach($funds as $f)
-                                            <option value="{{ $f->id }}" @selected(old('fund_id')==$f->id)>{{ $f->name }} ({{ $f->code }})</option>
+                                            <option value="{{ $f->id }}" data-code="{{ $f->code }}" @selected(old('fund_id')==$f->id)>{{ $f->name }} ({{ $f->code }})</option>
                                         @endforeach
                                     </select>
                                     <p class="text-[11px] text-gray-400 mt-1">
-                                        Code: <span class="font-mono">[fund]-{{ date('Y') }}-{{ date('m') }}-N{{ $isHospital ? '-H' : '' }}</span>@if($isHospital) <span class="text-amber-600 dark:text-amber-400">· Hospital: Gen &amp; Trust only</span>@endif
+                                        Preview: <span class="font-mono"><span x-text="fundCode || '[fund]'"></span>-{{ date('Y') }}-{{ date('m') }}-N{{ $isHospital ? '-H' : '' }}</span>
+                                        <span class="text-gray-300 dark:text-gray-600">· N = running number assigned on save</span>
                                     </p>
                                 </div>
 
@@ -167,7 +169,7 @@
                         </div>
                     </div>
 
-                    <div>
+                    <div class="{{ $priorityEnabled ? '' : 'sm:col-span-2' }}">
                         <label class="label">Reference No.</label>
                         <input type="text" name="reference_no" value="{{ old('reference_no') }}" class="input" placeholder="e.g. MEMO-2026-001">
                     </div>

@@ -6,6 +6,12 @@ Format based on [Keep a Changelog](https://keepachangelog.com).
 
 ---
 
+## 1.4.4 — 2026-06-25
+**Detail layout simplified; form fields no longer hang; live fund-code preview**
+- **Document detail** is now plain and clean — a simple two-column spec list with hairline dividers, no boxes, no oversized Amount. Just organized rows under Document / Accounting / Timeline.
+- **Encode form** no longer leaves half-width fields stranded: Document Type spans the full width, and Reference No. fills the row when Priority is hidden.
+- **Fund code preview updates live** — picking a fund shows e.g. `221-2026-06-N` (the `N` running number is assigned on save, since the real sequence depends on who saves first).
+
 ## 1.4.3 — 2026-06-25
 **Redesigned document detail & encode form — spec-sheet layout, hero Amount**
 - **Document detail** reworked from labeled boxes into a clean **spec-sheet**: muted labels left, values right, hairline dividers, two columns, with accent-marked **Document / Accounting / Timeline** sections. The **Amount** is now a hero figure with the Fund beside it.

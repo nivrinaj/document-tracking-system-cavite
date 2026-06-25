@@ -107,12 +107,12 @@
                         $row = 'flex items-baseline justify-between gap-4 py-2.5 border-b border-gray-100 dark:border-gray-700/50';
                         $rk  = 'text-xs text-gray-400 dark:text-gray-500 shrink-0';
                         $rv  = 'text-sm font-medium text-gray-800 dark:text-gray-100 text-right break-words';
-                        $hdr = 'flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-1';
+                        $hdr = 'text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-2';
                     @endphp
 
                     {{-- ── Document ── --}}
                     <section>
-                        <h3 class="{{ $hdr }}"><span class="h-1 w-4 rounded-full" style="background: var(--color-primary)"></span> Document</h3>
+                        <h3 class="{{ $hdr }}">Document</h3>
                         <dl class="grid sm:grid-cols-2 sm:gap-x-10">
                             <div class="{{ $row }}"><dt class="{{ $rk }}">Type</dt><dd class="{{ $rv }}">{{ $document->document_type }}</dd></div>
                             @if($document->voucher_number)
@@ -127,28 +127,12 @@
                     {{-- ── Accounting ── --}}
                     @if($hasAccounting)
                         <section class="mt-6">
-                            <h3 class="{{ $hdr }}"><span class="h-1 w-4 rounded-full" style="background: var(--color-primary)"></span> Accounting</h3>
-
-                            @if($document->amount !== null)
-                                <div class="relative overflow-hidden rounded-2xl border border-gray-200/70 dark:border-gray-700 px-5 py-4 mb-1">
-                                    <div class="absolute -right-8 -top-8 h-28 w-28 rounded-full opacity-10" style="background: var(--color-primary)"></div>
-                                    <div class="relative flex items-end justify-between gap-4 flex-wrap">
-                                        <div>
-                                            <div class="text-[10px] font-medium uppercase tracking-wider text-gray-400">Amount</div>
-                                            <div class="text-3xl font-semibold tracking-tight tabular-nums text-gray-900 dark:text-white">₱{{ number_format($document->amount, 2) }}</div>
-                                        </div>
-                                        @if($document->fund)
-                                            <div class="text-right">
-                                                <div class="text-[10px] font-medium uppercase tracking-wider text-gray-400">Fund</div>
-                                                <div class="text-sm font-semibold text-gray-800 dark:text-gray-100">{{ $document->fund->name }} <span class="text-gray-400 font-normal">({{ $document->fund->code }})</span></div>
-                                            </div>
-                                        @endif
-                                    </div>
-                                </div>
-                            @endif
-
+                            <h3 class="{{ $hdr }}">Accounting</h3>
                             <dl class="grid sm:grid-cols-2 sm:gap-x-10">
-                                @if($document->amount === null && $document->fund)
+                                @if($document->amount !== null)
+                                    <div class="{{ $row }}"><dt class="{{ $rk }}">Amount</dt><dd class="{{ $rv }} tabular-nums">₱{{ number_format($document->amount, 2) }}</dd></div>
+                                @endif
+                                @if($document->fund)
                                     <div class="{{ $row }}"><dt class="{{ $rk }}">Fund</dt><dd class="{{ $rv }}">{{ $document->fund->name }} <span class="text-gray-400 font-normal">({{ $document->fund->code }})</span></dd></div>
                                 @endif
                                 @if($document->obr_no)
@@ -166,7 +150,7 @@
 
                     {{-- ── Timeline ── --}}
                     <section class="mt-6">
-                        <h3 class="{{ $hdr }}"><span class="h-1 w-4 rounded-full" style="background: var(--color-primary)"></span> Timeline</h3>
+                        <h3 class="{{ $hdr }}">Timeline</h3>
                         <dl class="grid sm:grid-cols-2 sm:gap-x-10">
                             <div class="{{ $row }}"><dt class="{{ $rk }}">Received</dt><dd class="{{ $rv }}">{{ $document->received_at?->format('M d, Y g:i A') ?? '—' }}</dd></div>
                             <div class="{{ $row }}"><dt class="{{ $rk }}">Age</dt><dd class="{{ $rv }}">{{ $document->age() }}</dd></div>
