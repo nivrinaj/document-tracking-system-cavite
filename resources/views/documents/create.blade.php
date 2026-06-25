@@ -77,74 +77,94 @@
                         </p>
                     </div>
 
-                    {{-- ── Fund (Voucher & Payroll) ── --}}
-                    <div class="sm:col-span-2" x-show="acct" x-cloak>
-                        <label class="label">Fund <span class="text-red-500">*</span></label>
-                        <select name="fund_id" class="input" x-bind:required="acct">
-                            <option value="">— Select fund —</option>
-                            @foreach($funds as $f)
-                                <option value="{{ $f->id }}" @selected(old('fund_id')==$f->id)>{{ $f->name }} ({{ $f->code }})</option>
-                            @endforeach
-                        </select>
-                        <p class="text-xs text-gray-400 mt-1">
-                            A tracking code is auto-generated: <span class="font-mono">[Fund code]-{{ date('Y') }}-{{ date('m') }}-N{{ $isHospital ? '-H' : '' }}</span>.
-                            @if($isHospital)<span class="text-amber-600 dark:text-amber-400">Hospital division: only General &amp; Trust funds, with an “-H” suffix.</span>@endif
-                        </p>
-                    </div>
+                    {{-- ── Accounting details (Voucher & Payroll) ── --}}
+                    <div class="sm:col-span-2" x-show="acct" x-cloak
+                         x-transition:enter="transition ease-out duration-200"
+                         x-transition:enter-start="opacity-0 -translate-y-1"
+                         x-transition:enter-end="opacity-100 translate-y-0">
+                        <div class="rounded-2xl border border-gray-200/80 dark:border-gray-700 bg-gradient-to-b from-gray-50 to-white dark:from-gray-800/40 dark:to-gray-800/10 p-4 sm:p-5">
+                            <div class="flex items-center gap-2 mb-4">
+                                <span class="grid place-items-center h-6 w-6 rounded-lg text-white text-xs" style="background: var(--color-primary)">₱</span>
+                                <h3 class="text-xs font-semibold text-gray-700 dark:text-gray-200">Accounting details</h3>
+                                <span class="ml-auto text-[11px] px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-300" x-text="docType"></span>
+                            </div>
 
-                    {{-- ── Voucher / Payroll details ── --}}
-                    <div x-show="acct" x-cloak x-data="{
-                            raw: @js((string) old('amount', '')),
-                            display: '',
-                            init() { this.display = this.fmt(this.raw); },
-                            fmt(v) {
-                                if (v === '' || v === null) return '';
-                                const parts = String(v).replace(/[^0-9.]/g, '').split('.');
-                                const intp = (parts[0] || '').replace(/^0+(?=\d)/, '');
-                                const dec = parts.length > 1 ? '.' + parts[1].slice(0, 2) : '';
-                                return (intp ? Number(intp).toLocaleString('en-US') : (dec ? '0' : '')) + dec;
-                            },
-                            onInput(e) {
-                                let s = e.target.value.replace(/[^0-9.]/g, '');
-                                const p = s.split('.');
-                                if (p.length > 2) s = p[0] + '.' + p.slice(1).join('');
-                                const [i, d] = s.split('.');
-                                this.raw = (i || '') + (d !== undefined ? '.' + d.slice(0, 2) : '');
-                                this.display = this.fmt(this.raw);
-                            }
-                         }">
-                        <label class="label">Amount (₱) <span class="text-red-500">*</span></label>
-                        <input type="text" inputmode="decimal" class="input" placeholder="0.00"
-                               :value="display" @input="onInput($event)" x-bind:required="acct" autocomplete="off">
-                        <input type="hidden" name="amount" :value="raw">
-                    </div>
-                    <div x-show="acct" x-cloak>
-                        <label class="label">OBR No. <span class="text-red-500">*</span></label>
-                        <input type="text" name="obr_no" value="{{ old('obr_no') }}" class="input" placeholder="OBR number, or N/A"
-                               x-bind:required="acct">
-                    </div>
-                    <div x-show="acct" x-cloak>
-                        <label class="label">Responsibility Center — Office/Unit/Project <span class="text-red-500">*</span></label>
-                        <select name="responsibility_center_id" class="input" x-bind:required="acct">
-                            <option value="">— Select —</option>
-                            @foreach($responsibilityCenters as $rc)
-                                <option value="{{ $rc->id }}" @selected(old('responsibility_center_id')==$rc->id)>{{ $rc->label() }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div x-show="acct" x-cloak>
-                        <label class="label">Responsibility Center — Code <span class="text-red-500">*</span></label>
-                        <input type="text" name="rc_code" value="{{ old('rc_code') }}" class="input" placeholder="e.g. SPA - 20% Development Fund"
-                               x-bind:required="acct">
-                    </div>
-                    <div class="sm:col-span-2" x-show="acct" x-cloak>
-                        <label class="label">Nature of Transaction <span class="text-red-500">*</span></label>
-                        <select name="nature_of_transaction" class="input" x-bind:required="acct">
-                            <option value="">— Select —</option>
-                            @foreach($natures as $n)
-                                <option value="{{ $n->name }}" @selected(old('nature_of_transaction')===$n->name)>{{ $n->name }}</option>
-                            @endforeach
-                        </select>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-5 gap-y-4">
+                                {{-- Amount — hero field, full width --}}
+                                <div class="sm:col-span-2" x-data="{
+                                        raw: @js((string) old('amount', '')),
+                                        display: '',
+                                        init() { this.display = this.fmt(this.raw); },
+                                        fmt(v) {
+                                            if (v === '' || v === null) return '';
+                                            const parts = String(v).replace(/[^0-9.]/g, '').split('.');
+                                            const intp = (parts[0] || '').replace(/^0+(?=\d)/, '');
+                                            const dec = parts.length > 1 ? '.' + parts[1].slice(0, 2) : '';
+                                            return (intp ? Number(intp).toLocaleString('en-US') : (dec ? '0' : '')) + dec;
+                                        },
+                                        onInput(e) {
+                                            let s = e.target.value.replace(/[^0-9.]/g, '');
+                                            const p = s.split('.');
+                                            if (p.length > 2) s = p[0] + '.' + p.slice(1).join('');
+                                            const [i, d] = s.split('.');
+                                            this.raw = (i || '') + (d !== undefined ? '.' + d.slice(0, 2) : '');
+                                            this.display = this.fmt(this.raw);
+                                        }
+                                     }">
+                                    <label class="label">Amount <span class="text-red-500">*</span></label>
+                                    <div class="relative">
+                                        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-lg pointer-events-none">₱</span>
+                                        <input type="text" inputmode="decimal" placeholder="0.00" autocomplete="off"
+                                               :value="display" @input="onInput($event)" x-bind:required="acct"
+                                               class="input pl-8 text-lg font-semibold tabular-nums">
+                                    </div>
+                                    <input type="hidden" name="amount" :value="raw">
+                                </div>
+
+                                <div>
+                                    <label class="label">Fund <span class="text-red-500">*</span></label>
+                                    <select name="fund_id" class="input" x-bind:required="acct">
+                                        <option value="">— Select fund —</option>
+                                        @foreach($funds as $f)
+                                            <option value="{{ $f->id }}" @selected(old('fund_id')==$f->id)>{{ $f->name }} ({{ $f->code }})</option>
+                                        @endforeach
+                                    </select>
+                                    <p class="text-[11px] text-gray-400 mt-1">
+                                        Code: <span class="font-mono">[fund]-{{ date('Y') }}-{{ date('m') }}-N{{ $isHospital ? '-H' : '' }}</span>@if($isHospital) <span class="text-amber-600 dark:text-amber-400">· Hospital: Gen &amp; Trust only</span>@endif
+                                    </p>
+                                </div>
+
+                                <div>
+                                    <label class="label">OBR No. <span class="text-red-500">*</span></label>
+                                    <input type="text" name="obr_no" value="{{ old('obr_no') }}" class="input" placeholder="OBR number, or N/A" x-bind:required="acct">
+                                </div>
+
+                                <div>
+                                    <label class="label">Resp. Center — Office/Unit/Project <span class="text-red-500">*</span></label>
+                                    <select name="responsibility_center_id" class="input" x-bind:required="acct">
+                                        <option value="">— Select —</option>
+                                        @foreach($responsibilityCenters as $rc)
+                                            <option value="{{ $rc->id }}" @selected(old('responsibility_center_id')==$rc->id)>{{ $rc->label() }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <label class="label">Resp. Center — Code <span class="text-red-500">*</span></label>
+                                    <input type="text" name="rc_code" value="{{ old('rc_code') }}" class="input" placeholder="e.g. SPA - 20% Dev Fund" x-bind:required="acct">
+                                </div>
+
+                                <div class="sm:col-span-2">
+                                    <label class="label">Nature of Transaction <span class="text-red-500">*</span></label>
+                                    <select name="nature_of_transaction" class="input" x-bind:required="acct">
+                                        <option value="">— Select —</option>
+                                        @foreach($natures as $n)
+                                            <option value="{{ $n->name }}" @selected(old('nature_of_transaction')===$n->name)>{{ $n->name }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     <div>

@@ -6,6 +6,11 @@ Format based on [Keep a Changelog](https://keepachangelog.com).
 
 ---
 
+## 1.4.3 — 2026-06-25
+**Redesigned document detail & encode form — spec-sheet layout, hero Amount**
+- **Document detail** reworked from labeled boxes into a clean **spec-sheet**: muted labels left, values right, hairline dividers, two columns, with accent-marked **Document / Accounting / Timeline** sections. The **Amount** is now a hero figure with the Fund beside it.
+- **Encode form** groups all the Voucher/Payroll inputs into a single **“Accounting details”** panel that slides in when you pick Voucher or Payroll — so the form no longer reads as an endless stack as fields grow. Amount gets a ₱-prefixed hero input.
+
 ## 1.4.2 — 2026-06-25
 **Accounting polish: Payroll funds, RC display, amount masking, cleaner detail layout**
 - **Payroll now uses Funds too** — the Fund picker and fund-based tracking code apply to both Voucher and Payroll. They stay distinct in the database via the `document_type` column, so reports and filters can separate Vouchers from Payrolls.

@@ -100,70 +100,81 @@
                     @endif
 
                     @php
-                        $kCls = 'text-[10px] font-medium uppercase tracking-wider text-gray-400 dark:text-gray-500';
-                        $vCls = 'mt-1 text-sm font-medium text-gray-800 dark:text-gray-100';
-                        $cellCls = 'rounded-lg bg-gray-50/70 dark:bg-gray-700/30 px-3 py-2.5';
+                        $pausedSecs = $document->totalPausedSeconds();
                         $hasAccounting = $document->fund_id || $document->amount !== null || $document->obr_no || $document->responsibility_center_id || $document->nature_of_transaction;
                         $rcParts = array_filter([$document->rc_code, $document->responsibilityCenter?->name]);
+                        // Spec-row helpers: muted label left, value right, hairline divider.
+                        $row = 'flex items-baseline justify-between gap-4 py-2.5 border-b border-gray-100 dark:border-gray-700/50';
+                        $rk  = 'text-xs text-gray-400 dark:text-gray-500 shrink-0';
+                        $rv  = 'text-sm font-medium text-gray-800 dark:text-gray-100 text-right break-words';
+                        $hdr = 'flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-1';
                     @endphp
 
-                    {{-- Document facts --}}
+                    {{-- ── Document ── --}}
                     <section>
-                        <h3 class="text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-3">Document</h3>
-                        <dl class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-                            <div class="{{ $cellCls }}"><dt class="{{ $kCls }}">Type</dt><dd class="{{ $vCls }}">{{ $document->document_type }}</dd></div>
+                        <h3 class="{{ $hdr }}"><span class="h-1 w-4 rounded-full" style="background: var(--color-primary)"></span> Document</h3>
+                        <dl class="grid sm:grid-cols-2 sm:gap-x-10">
+                            <div class="{{ $row }}"><dt class="{{ $rk }}">Type</dt><dd class="{{ $rv }}">{{ $document->document_type }}</dd></div>
                             @if($document->voucher_number)
-                                <div class="{{ $cellCls }}"><dt class="{{ $kCls }}">Voucher No.</dt><dd class="{{ $vCls }} font-mono">{{ $document->voucher_number }}</dd></div>
+                                <div class="{{ $row }}"><dt class="{{ $rk }}">Voucher No.</dt><dd class="{{ $rv }} font-mono">{{ $document->voucher_number }}</dd></div>
                             @endif
-                            <div class="{{ $cellCls }}"><dt class="{{ $kCls }}">Reference No.</dt><dd class="{{ $vCls }}">{{ $document->reference_no ?? '—' }}</dd></div>
-                            <div class="{{ $cellCls }}"><dt class="{{ $kCls }}">Source / Origin</dt><dd class="{{ $vCls }}">{{ $document->source ?? '—' }}</dd></div>
-                            <div class="{{ $cellCls }}"><dt class="{{ $kCls }}">Current location</dt><dd class="{{ $vCls }}">{{ $document->department?->code ?? '—' }}@if($document->division) <span class="text-gray-400 font-normal">· {{ $document->division->name }}</span>@endif</dd></div>
+                            <div class="{{ $row }}"><dt class="{{ $rk }}">Reference No.</dt><dd class="{{ $rv }}">{{ $document->reference_no ?? '—' }}</dd></div>
+                            <div class="{{ $row }}"><dt class="{{ $rk }}">Source / Origin</dt><dd class="{{ $rv }}">{{ $document->source ?? '—' }}</dd></div>
+                            <div class="{{ $row }}"><dt class="{{ $rk }}">Current location</dt><dd class="{{ $rv }}">{{ $document->department?->code ?? '—' }}@if($document->division) <span class="text-gray-400 font-normal">· {{ $document->division->name }}</span>@endif</dd></div>
                         </dl>
                     </section>
 
-                    {{-- Accounting facts (vouchers & payroll) --}}
+                    {{-- ── Accounting ── --}}
                     @if($hasAccounting)
-                        <section class="mt-5 rounded-xl ring-1 ring-gray-100 dark:ring-gray-700 bg-gray-50/40 dark:bg-gray-800/30 p-4">
-                            <h3 class="text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-3">Accounting</h3>
-                            <dl class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-                                @if($document->amount !== null)
-                                    <div class="{{ $cellCls }} bg-white dark:bg-gray-800 col-span-2 sm:col-span-1">
-                                        <dt class="{{ $kCls }}">Amount</dt>
-                                        <dd class="mt-1 text-lg font-semibold tabular-nums text-gray-900 dark:text-white">₱{{ number_format($document->amount, 2) }}</dd>
+                        <section class="mt-6">
+                            <h3 class="{{ $hdr }}"><span class="h-1 w-4 rounded-full" style="background: var(--color-primary)"></span> Accounting</h3>
+
+                            @if($document->amount !== null)
+                                <div class="relative overflow-hidden rounded-2xl border border-gray-200/70 dark:border-gray-700 px-5 py-4 mb-1">
+                                    <div class="absolute -right-8 -top-8 h-28 w-28 rounded-full opacity-10" style="background: var(--color-primary)"></div>
+                                    <div class="relative flex items-end justify-between gap-4 flex-wrap">
+                                        <div>
+                                            <div class="text-[10px] font-medium uppercase tracking-wider text-gray-400">Amount</div>
+                                            <div class="text-3xl font-semibold tracking-tight tabular-nums text-gray-900 dark:text-white">₱{{ number_format($document->amount, 2) }}</div>
+                                        </div>
+                                        @if($document->fund)
+                                            <div class="text-right">
+                                                <div class="text-[10px] font-medium uppercase tracking-wider text-gray-400">Fund</div>
+                                                <div class="text-sm font-semibold text-gray-800 dark:text-gray-100">{{ $document->fund->name }} <span class="text-gray-400 font-normal">({{ $document->fund->code }})</span></div>
+                                            </div>
+                                        @endif
                                     </div>
-                                @endif
-                                @if($document->fund)
-                                    <div class="{{ $cellCls }}"><dt class="{{ $kCls }}">Fund</dt><dd class="{{ $vCls }}">{{ $document->fund->name }} <span class="text-gray-400 font-normal">({{ $document->fund->code }})</span></dd></div>
+                                </div>
+                            @endif
+
+                            <dl class="grid sm:grid-cols-2 sm:gap-x-10">
+                                @if($document->amount === null && $document->fund)
+                                    <div class="{{ $row }}"><dt class="{{ $rk }}">Fund</dt><dd class="{{ $rv }}">{{ $document->fund->name }} <span class="text-gray-400 font-normal">({{ $document->fund->code }})</span></dd></div>
                                 @endif
                                 @if($document->obr_no)
-                                    <div class="{{ $cellCls }}"><dt class="{{ $kCls }}">OBR No.</dt><dd class="{{ $vCls }} font-mono">{{ $document->obr_no }}</dd></div>
+                                    <div class="{{ $row }}"><dt class="{{ $rk }}">OBR No.</dt><dd class="{{ $rv }} font-mono">{{ $document->obr_no }}</dd></div>
                                 @endif
                                 @if($rcParts)
-                                    <div class="{{ $cellCls }}"><dt class="{{ $kCls }}">Responsibility Center</dt><dd class="{{ $vCls }}">{{ implode('/', $rcParts) }}</dd></div>
+                                    <div class="{{ $row }}"><dt class="{{ $rk }}">Resp. Center</dt><dd class="{{ $rv }}">{{ implode('/', $rcParts) }}</dd></div>
                                 @endif
                                 @if($document->nature_of_transaction)
-                                    <div class="{{ $cellCls }}"><dt class="{{ $kCls }}">Nature of Transaction</dt><dd class="{{ $vCls }}">{{ $document->nature_of_transaction }}</dd></div>
+                                    <div class="{{ $row }}"><dt class="{{ $rk }}">Nature</dt><dd class="{{ $rv }}">{{ $document->nature_of_transaction }}</dd></div>
                                 @endif
                             </dl>
                         </section>
                     @endif
 
-                    {{-- Timeline facts --}}
-                    @php $pausedSecs = $document->totalPausedSeconds(); @endphp
-                    <section class="mt-5">
-                        <h3 class="text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-3">Timeline</h3>
-                        <dl class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-                            <div class="{{ $cellCls }}"><dt class="{{ $kCls }}">Received</dt><dd class="{{ $vCls }}">{{ $document->received_at?->format('M d, Y g:i A') ?? '—' }}</dd></div>
-                            <div class="{{ $cellCls }}"><dt class="{{ $kCls }}">Age</dt><dd class="{{ $vCls }}">{{ $document->age() }}</dd></div>
-                            <div class="{{ $cellCls }}">
-                                <dt class="{{ $kCls }}">Total paused</dt>
-                                <dd class="mt-1 text-sm font-medium {{ $pausedSecs > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-gray-800 dark:text-gray-100' }}">{{ $pausedSecs > 0 ? \App\Models\Document::humanDuration($pausedSecs) : '—' }}</dd>
-                            </div>
-                            <div class="{{ $cellCls }}">
-                                <dt class="{{ $kCls }}">{{ $document->isClosed() ? 'Turnaround' : 'Idle time' }}</dt>
-                                <dd class="mt-1">
+                    {{-- ── Timeline ── --}}
+                    <section class="mt-6">
+                        <h3 class="{{ $hdr }}"><span class="h-1 w-4 rounded-full" style="background: var(--color-primary)"></span> Timeline</h3>
+                        <dl class="grid sm:grid-cols-2 sm:gap-x-10">
+                            <div class="{{ $row }}"><dt class="{{ $rk }}">Received</dt><dd class="{{ $rv }}">{{ $document->received_at?->format('M d, Y g:i A') ?? '—' }}</dd></div>
+                            <div class="{{ $row }}"><dt class="{{ $rk }}">Age</dt><dd class="{{ $rv }}">{{ $document->age() }}</dd></div>
+                            <div class="{{ $row }}"><dt class="{{ $rk }}">Total paused</dt><dd class="{{ $rv }} {{ $pausedSecs > 0 ? 'text-amber-600 dark:text-amber-400' : '' }}">{{ $pausedSecs > 0 ? \App\Models\Document::humanDuration($pausedSecs) : '—' }}</dd></div>
+                            <div class="{{ $row }}"><dt class="{{ $rk }}">{{ $document->isClosed() ? 'Turnaround' : 'Idle time' }}</dt>
+                                <dd class="{{ $rv }}">
                                     @if($document->isClosed())
-                                        <span class="{{ $vCls }}">{{ $document->turnaround() ?? '—' }}</span>
+                                        {{ $document->turnaround() ?? '—' }}
                                     @else
                                         <x-badge :color="$document->agingColor()">{{ $document->elapsedSinceLastAction() }}</x-badge>
                                     @endif
