@@ -7,11 +7,11 @@
         {{-- ───────── Funds ───────── --}}
         <x-card>
             <h2 class="font-semibold mb-1">Funds</h2>
-            <p class="text-xs text-gray-400 mb-3">The fund code prefixes the auto-generated tracking code. Every fund has its own annual sequence (starts at 1, resets each year). Mark “GF 20%” for the General Fund 20% Development Fund, and “Hospital” for funds the Hospital division may use.</p>
+            <p class="text-xs text-gray-400 mb-3">The fund code prefixes the auto-generated tracking code. Every fund has its own annual sequence (starts at 1, resets each year). Add the “Gen. Fund 20% Development Fund” as its own fund (same code 101 is fine — it keeps a separate sequence). Tick “Hospital” for funds the Hospital division may use.</p>
             <div class="overflow-x-auto">
                 <table class="r-table min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                     <thead class="bg-gray-50 dark:bg-gray-700/40"><tr>
-                        <th class="table-th">Name</th><th class="table-th">Code</th><th class="table-th">GF 20%</th><th class="table-th">Hospital</th><th class="table-th">Active</th><th class="table-th text-right">Action</th>
+                        <th class="table-th">Name</th><th class="table-th">Code</th><th class="table-th">Hospital</th><th class="table-th">Active</th><th class="table-th text-right">Action</th>
                     </tr></thead>
                     <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
                         @forelse($funds as $fund)
@@ -20,7 +20,6 @@
                                     <td class="table-td" data-label="Name">{{ $fund->name }}</td>
                                 </template>
                                 <td class="table-td" data-label="Code">{{ $fund->code }}</td>
-                                <td class="table-td" data-label="GF 20%">{!! $fund->is_dev_fund ? '✓' : '<span class="text-gray-300">—</span>' !!}</td>
                                 <td class="table-td" data-label="Hospital">{!! $fund->hospital_available ? '✓' : '<span class="text-gray-300">—</span>' !!}</td>
                                 <td class="table-td" data-label="Active">{!! $fund->is_active ? '<span class="text-green-600">Active</span>' : '<span class="text-gray-400">Off</span>' !!}</td>
                                 <td class="table-td text-right" data-label="Action">
@@ -32,7 +31,6 @@
                                         @csrf @method('PUT')
                                         <input name="name" value="{{ $fund->name }}" class="input" required>
                                         <input name="code" value="{{ $fund->code }}" class="input" required>
-                                        <label class="flex items-center gap-1 text-xs"><input type="hidden" name="is_dev_fund" value="0"><input type="checkbox" name="is_dev_fund" value="1" class="rounded" @checked($fund->is_dev_fund)> GF 20% (Development Fund)</label>
                                         <label class="flex items-center gap-1 text-xs"><input type="hidden" name="hospital_available" value="0"><input type="checkbox" name="hospital_available" value="1" class="rounded" @checked($fund->hospital_available)> Hospital-available</label>
                                         <label class="flex items-center gap-1 text-xs"><input type="hidden" name="is_active" value="0"><input type="checkbox" name="is_active" value="1" class="rounded" @checked($fund->is_active)> Active</label>
                                         <div class="col-span-2"><x-btn type="submit" class="w-full">Save</x-btn></div>
@@ -40,18 +38,17 @@
                                 </td>
                             </tr>
                         @empty
-                            <tr><td colspan="6" class="px-4 py-6 text-center text-sm text-gray-400">No funds yet.</td></tr>
+                            <tr><td colspan="5" class="px-4 py-6 text-center text-sm text-gray-400">No funds yet.</td></tr>
                         @endforelse
                     </tbody>
                 </table>
             </div>
-            <form method="POST" action="{{ route('accounting.funds.store') }}" class="mt-3 grid grid-cols-1 sm:grid-cols-5 gap-2 items-center border-t border-gray-100 dark:border-gray-700 pt-3">
+            <form method="POST" action="{{ route('accounting.funds.store') }}" class="mt-3 grid grid-cols-1 sm:grid-cols-4 gap-2 items-center border-t border-gray-100 dark:border-gray-700 pt-3">
                 @csrf
                 <input name="name" class="input sm:col-span-2" placeholder="Fund name" required>
                 <input name="code" class="input" placeholder="Code (e.g. 101)" required>
-                <label class="flex items-center gap-1 text-xs"><input type="checkbox" name="is_dev_fund" value="1" class="rounded"> GF 20%</label>
                 <label class="flex items-center gap-1 text-xs"><input type="checkbox" name="hospital_available" value="1" class="rounded"> Hospital</label>
-                <div class="sm:col-span-5"><x-btn type="submit">Add fund</x-btn></div>
+                <div class="sm:col-span-4"><x-btn type="submit">Add fund</x-btn></div>
             </form>
         </x-card>
 

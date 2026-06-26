@@ -15,10 +15,14 @@
                px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[color:var(--color-primary)] focus:border-[color:var(--color-primary)];
     }
     .label {
-        @apply block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1;
+        @apply block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1;
     }
     .table-th {
-        @apply px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400;
+        @apply px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-300;
+    }
+    /* Small "field caption" label used on detail pages — kept legible for older staff. */
+    .field-k {
+        @apply text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-300;
     }
     .table-td {
         @apply px-4 py-3 text-sm align-top text-left;

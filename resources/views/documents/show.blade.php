@@ -108,8 +108,8 @@
                             ? \App\Services\BusinessHours::dailyDetail($document->received_at ?? $document->created_at, $document->completed_at ?? now())
                             : [];
                         // Bank-grade detail: one panel per section, clean label/value grid inside.
-                        $k = 'text-[11px] uppercase tracking-wide text-gray-400 dark:text-gray-500';
-                        $v = 'mt-1 text-sm font-medium text-gray-800 dark:text-gray-100 break-words';
+                        $k = 'field-k';
+                        $v = 'mt-1 text-sm font-semibold text-gray-800 dark:text-gray-100 break-words';
                         $card = 'rounded-xl border border-gray-200/90 dark:border-gray-700 bg-white dark:bg-gray-800/40 shadow-sm';
                         $secHdr = 'flex items-center gap-2.5 px-4 sm:px-5 py-3 border-b border-gray-100 dark:border-gray-700/70';
                         $secTitle = 'text-xs font-semibold tracking-wide text-gray-700 dark:text-gray-200';

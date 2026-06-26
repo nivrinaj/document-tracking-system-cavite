@@ -24,12 +24,10 @@ class AccountingController extends Controller
         $data = $request->validate([
             'name' => ['required', 'string', 'max:150'],
             'code' => ['required', 'string', 'max:20'],
-            'is_dev_fund' => ['nullable', 'boolean'],
             'hospital_available' => ['nullable', 'boolean'],
         ]);
         Fund::create([
             'name' => $data['name'], 'code' => $data['code'],
-            'is_dev_fund' => $request->boolean('is_dev_fund'),
             'hospital_available' => $request->boolean('hospital_available'),
             'sort_order' => Fund::max('sort_order') + 1,
         ]);
@@ -42,13 +40,11 @@ class AccountingController extends Controller
         $data = $request->validate([
             'name' => ['required', 'string', 'max:150'],
             'code' => ['required', 'string', 'max:20'],
-            'is_dev_fund' => ['nullable', 'boolean'],
             'hospital_available' => ['nullable', 'boolean'],
             'is_active' => ['nullable', 'boolean'],
         ]);
         $fund->update([
             'name' => $data['name'], 'code' => $data['code'],
-            'is_dev_fund' => $request->boolean('is_dev_fund'),
             'hospital_available' => $request->boolean('hospital_available'),
             'is_active' => $request->boolean('is_active'),
         ]);

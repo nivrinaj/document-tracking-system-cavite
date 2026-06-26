@@ -45,7 +45,7 @@
                   x-data="{ type: '{{ old('type', 'dept_dayoff') }}' }">
                 @csrf
                 @if($canChoose)<input type="hidden" name="department_id" value="{{ $department->id }}">@endif
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                         <label class="label">What</label>
                         <select name="type" x-model="type" class="input" required>
@@ -59,26 +59,30 @@
                         <input type="date" name="date" value="{{ old('date') }}" class="input" required
                                x-on:cal-pick.window="$el.value = $event.detail">
                     </div>
-                    <div x-show="type !== 'dept_dayoff'" x-cloak>
+
+                    {{-- Staff slides in for leave / undertime — full width for leave, paired with hours for undertime --}}
+                    <div x-show="type !== 'dept_dayoff'" x-cloak x-transition.opacity
+                         :class="type === 'user_undertime' ? '' : 'sm:col-span-2'">
                         <label class="label">Staff</label>
                         <select name="user_id" class="input" x-bind:required="type !== 'dept_dayoff'">
-                            <option value="">— Select —</option>
+                            <option value="">— Select staff —</option>
                             @foreach($staff as $s)
                                 <option value="{{ $s->id }}" @selected(old('user_id')==$s->id)>{{ $s->name }}</option>
                             @endforeach
                         </select>
                     </div>
-                    <div x-show="type === 'user_undertime'" x-cloak>
+                    <div x-show="type === 'user_undertime'" x-cloak x-transition.opacity>
                         <label class="label">Hours actually worked</label>
                         <input type="number" step="0.5" min="0" max="24" name="worked_hours" value="{{ old('worked_hours') }}" class="input" placeholder="e.g. 6" x-bind:required="type === 'user_undertime'">
                     </div>
-                    <div :class="type === 'user_undertime' ? '' : 'sm:col-span-2'">
+
+                    <div class="sm:col-span-2">
                         <label class="label">Reason <span class="text-red-500">*</span></label>
                         <input type="text" name="reason" value="{{ old('reason') }}" class="input" placeholder="e.g. Team building / medical leave" required>
                     </div>
-                </div>
-                <div class="flex justify-end">
-                    <x-btn type="submit">Record</x-btn>
+                    <div class="sm:col-span-2 flex justify-end">
+                        <x-btn type="submit">Record</x-btn>
+                    </div>
                 </div>
             </form>
         </x-card>

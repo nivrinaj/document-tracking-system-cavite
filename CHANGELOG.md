@@ -6,6 +6,12 @@ Format based on [Keep a Changelog](https://keepachangelog.com).
 
 ---
 
+## 1.5.3 — 2026-06-26
+**Clarity & readability: removed redundant fund flag, cleaner leave form, bolder labels**
+- **Removed the confusing “GF 20%” checkbox** from the Funds panel. It no longer does anything now that every fund has its own sequence — the 20% Development Fund is simply its own fund (its name says so), distinguished behind the scenes by its record, even though it shares code 101.
+- **Redesigned the Department Work Calendar form** — full-width fields; choosing “Staff on leave” or “Staff undertime” now slides the staff dropdown (and hours) in cleanly instead of the cramped 3-column layout.
+- **More readable labels** — detail-page captions (Type, Amount, Received, …) and table headers are darker and slightly larger in both light and dark mode, for easier reading.
+
 ## 1.5.2 — 2026-06-26
 **Working-time accuracy + fund-sequence and label fixes**
 - **Every fund now has its own annual sequence** (starts at 1, resets each year) — including each hospital fund, which runs on its own separate sequence. No more shared counters.
