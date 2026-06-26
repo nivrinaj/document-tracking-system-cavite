@@ -128,8 +128,8 @@ class ReportController extends Controller
         $to = $request->filled('date_to') ? Carbon::parse($data['date_to']) : null;
         $deptId = $user->canViewAllDepartments() ? null : $user->department_id;
         $hospital = $data['hospital'] ?? 'exclude';
-        $hospIds = \App\Models\Division::where('is_hospital', true)->pluck('id')->all();
 
+        // A hospital transaction is one whose division (FK) is flagged is_hospital.
         $rows = Document::query()
             ->with(['fund', 'responsibilityCenter'])
             ->where('document_type', $data['document_type'])
@@ -137,12 +137,13 @@ class ReportController extends Controller
             ->when($from, fn ($q) => $q->where('created_at', '>=', $from))
             ->when($to, fn ($q) => $q->where('created_at', '<=', $to))
             ->when($deptId, fn ($q) => $q->where('department_id', $deptId))
-            ->when($hospital === 'only' && $hospIds, fn ($q) => $q->whereIn('division_id', $hospIds))
-            ->when($hospital === 'exclude' && $hospIds, fn ($q) => $q->where(fn ($w) => $w->whereNull('division_id')->orWhereNotIn('division_id', $hospIds)))
+            ->when($hospital === 'only', fn ($q) => $q->whereHas('division', fn ($d) => $d->where('is_hospital', true)))
+            ->when($hospital === 'exclude', fn ($q) => $q->whereDoesntHave('division', fn ($d) => $d->where('is_hospital', true)))
             ->orderBy('created_at')
             ->get();
 
         $fund = \App\Models\Fund::find($data['fund_id']);
+        $orientation = Setting::get('erecord_orientation', 'landscape');
 
         $payload = [
             'reportTitle' => Setting::get('erecord_title', 'E-Record'),
@@ -154,6 +155,7 @@ class ReportController extends Controller
             'to' => $to,
             'hospital' => $hospital,
             'align' => $this->erecordAlign(),
+            'perPage' => $orientation === 'portrait' ? 26 : 16,
             'natureCodes' => \App\Models\NatureOfTransaction::pluck('report_code', 'name'),
             'org' => Setting::get('organization', ''),
             'appName' => Setting::get('app_name', config('app.name')),
@@ -166,7 +168,8 @@ class ReportController extends Controller
         }
 
         return Pdf::loadView('reports.erecord', $payload)
-            ->setPaper(Setting::get('erecord_paper', 'a4'), Setting::get('erecord_orientation', 'landscape'))
+            ->setPaper(Setting::get('erecord_paper', 'a4'), $orientation)
+            ->setOption('isPhpEnabled', true)
             ->stream('e-record-'.$fund->reportCode().'-'.now()->format('Ymd-His').'.pdf');
     }
 

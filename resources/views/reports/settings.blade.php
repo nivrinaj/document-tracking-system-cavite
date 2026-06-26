@@ -3,9 +3,19 @@
 
     <div class="max-w-2xl mx-auto space-y-6">
         <a href="{{ route('reports.index') }}" class="text-sm link">← Back to Reports</a>
-        <p class="text-sm text-gray-500 dark:text-gray-400">Configure how the E-Record report prints and which offices may run it. Staff only generate — they don't set these.</p>
+        <p class="text-sm text-gray-500 dark:text-gray-400">Configure how each report prints and which offices may run it. Staff only generate — they don't set these.</p>
 
-        <form method="POST" action="{{ route('reports.settings.save') }}" class="space-y-6">
+        <div>
+            <label class="label">Report type</label>
+            <select x-data x-on:change="$dispatch('report-type', $event.target.value)" class="input sm:max-w-sm">
+                <option value="erecord">E-Record</option>
+            </select>
+            <p class="text-xs text-gray-400 mt-1">Settings below apply to the selected report.</p>
+        </div>
+
+        {{-- ───────── E-Record settings ───────── --}}
+        <form method="POST" action="{{ route('reports.settings.save') }}" class="space-y-6"
+              x-data="{ rpt: 'erecord' }" x-on:report-type.window="rpt = $event.detail" x-show="rpt === 'erecord'">
             @csrf @method('PUT')
 
             <x-card>

@@ -6,6 +6,14 @@ Format based on [Keep a Changelog](https://keepachangelog.com).
 
 ---
 
+## 1.7.3 — 2026-06-26
+**E-Record fixes: hospital filter, pagination, totals, true column widths**
+- **Hospital filter now uses the division relationship** (a document's `division_id` → `is_hospital`), not the tracking-code text — so Exclude/Include/Only are correct. *(Requires the hospital division to have the “Hospital transactions division” toggle on.)*
+- **Per-page subtotal + grand total** — each page shows its subtotal; the last page shows the grand total.
+- **Fixed “Page 1 of 0”** — page numbering now renders correctly (Page X of Y).
+- **Preview now matches the PDF widths** — fixed table layout with set column widths: **Particulars widest, then Payee**, the rest sized to fit. No more columns collapsing in the PDF.
+- **Report Settings has a report-type selector** so its settings are dedicated to the chosen report (ready for more report types).
+
 ## 1.7.2 — 2026-06-26
 **E-Record refinements**
 - **Compact Report selector** moved into the filters column (no more empty hanging row).
