@@ -105,7 +105,7 @@
                         $rcParts = array_filter([$document->rc_code, $document->responsibilityCenter?->name]);
                         $showBreakdown = \App\Models\Setting::get('show_daily_breakdown', '0') === '1';
                         $breakdown = $showBreakdown
-                            ? \App\Services\BusinessHours::dailyBreakdown($document->received_at ?? $document->created_at, $document->completed_at ?? now())
+                            ? \App\Services\BusinessHours::dailyDetail($document->received_at ?? $document->created_at, $document->completed_at ?? now())
                             : [];
                         // Bank-grade detail: one panel per section, clean label/value grid inside.
                         $k = 'text-[11px] uppercase tracking-wide text-gray-400 dark:text-gray-500';
@@ -197,15 +197,20 @@
                                     </span>
                                     <h3 class="{{ $secTitle }}">Daily working time</h3>
                                 </header>
-                                <div class="p-4 sm:p-5 space-y-2.5">
-                                    @foreach($breakdown as $date => $secs)
-                                        @php $pct = min(100, (int) round($secs / (8 * 3600) * 100)); @endphp
+                                <div class="p-4 sm:p-5 space-y-3">
+                                    @foreach($breakdown as $date => $info)
+                                        @php $pct = min(100, (int) round($info['seconds'] / (8 * 3600) * 100)); @endphp
                                         <div class="flex items-center gap-3">
-                                            <div class="w-24 sm:w-28 shrink-0 text-xs text-gray-500 dark:text-gray-400">{{ \Carbon\Carbon::parse($date)->format('D, M d') }}</div>
-                                            <div class="flex-1 h-2 rounded-full bg-gray-100 dark:bg-gray-700 overflow-hidden">
-                                                <div class="h-full rounded-full" style="width: {{ $pct }}%; background: var(--color-primary)"></div>
+                                            <div class="w-20 sm:w-24 shrink-0 text-xs font-medium text-gray-600 dark:text-gray-300">{{ \Carbon\Carbon::parse($date)->format('D, M d') }}</div>
+                                            <div class="flex-1 min-w-0">
+                                                <div class="flex items-center justify-between text-[11px] text-gray-400 mb-1">
+                                                    <span class="tabular-nums">{{ $info['from']->format('g:i A') }} – {{ $info['to']->format('g:i A') }}</span>
+                                                    <span class="font-medium text-gray-600 dark:text-gray-300 tabular-nums">{{ \App\Models\Document::humanDuration($info['seconds']) }}</span>
+                                                </div>
+                                                <div class="h-2 rounded-full bg-gray-100 dark:bg-gray-700 overflow-hidden">
+                                                    <div class="h-full rounded-full" style="width: {{ $pct }}%; background: var(--color-primary)"></div>
+                                                </div>
                                             </div>
-                                            <div class="w-20 sm:w-24 shrink-0 text-right text-sm font-medium tabular-nums">{{ \App\Models\Document::humanDuration($secs) }}</div>
                                         </div>
                                     @endforeach
                                 </div>
@@ -300,11 +305,14 @@
                     $ackedCount = $ackRequestedCount ? $requested->filter(fn ($p) => $p->pivot->acknowledged_at)->count() : null;
                     // The instant timers stop when the document is paused (pending).
                     $clockUntil = ($document->is_pending && $document->pending_at) ? $document->pending_at : now();
-                    // Total possession time per holder (from the ledger).
+                    // Total possession time per holder (from the ledger), counted in
+                    // working hours so time held outside office hours isn't charged.
                     $heldSeconds = [];
                     foreach ($document->possessions as $seg) {
                         if ($seg->holder_id) {
-                            $heldSeconds[$seg->holder_id] = ($heldSeconds[$seg->holder_id] ?? 0) + $seg->seconds();
+                            $segEnd = $seg->ended_at ?? $clockUntil;
+                            $heldSeconds[$seg->holder_id] = ($heldSeconds[$seg->holder_id] ?? 0)
+                                + \App\Services\BusinessHours::secondsBetween($seg->started_at, $segEnd, $seg->holder);
                         }
                     }
                     // Who physically holds it right now (open ledger segment). During transit

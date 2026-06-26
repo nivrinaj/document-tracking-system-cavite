@@ -6,6 +6,15 @@ Format based on [Keep a Changelog](https://keepachangelog.com).
 
 ---
 
+## 1.5.2 — 2026-06-26
+**Working-time accuracy + fund-sequence and label fixes**
+- **Every fund now has its own annual sequence** (starts at 1, resets each year) — including each hospital fund, which runs on its own separate sequence. No more shared counters.
+- **Renamed “Dev” → “GF 20%”** across the Accounting funds panel (column, checkboxes, hints), now that all funds have their own sequence.
+- **Held time is now working-time** — the Concerned-staff “(holding now)” figure and per-person held totals only count office hours. (Fixes e.g. a document received at 10 PM showing 11 hrs held overnight; it now shows the real working time from 8 AM.)
+- **Daily working time** now shows the **actual window per day** (e.g. “8:00 AM – 5:00 PM”, or a mid-day start/stop) alongside the hours.
+- **Holidays:** added an **“Other”** type (with your own label) for non-working days that aren't a holiday or suspension.
+- **Fixed:** the Calendar-display selector's chosen option was unreadable (blue-on-blue); it's now clear.
+
 ## 1.5.1 — 2026-06-26
 **Work-calendar polish: month-grid view, Super-Admin access fix, display toggle**
 - **Modern month-grid calendar** for the Holidays and Department calendars — colored entry chips, month navigation, click a day to add an entry on that date.

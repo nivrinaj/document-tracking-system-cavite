@@ -17,10 +17,10 @@ class CalendarDay extends Model
         'worked_hours' => 'decimal:2',
     ];
 
-    public const TYPES = ['holiday', 'suspension', 'dept_dayoff', 'user_leave', 'user_undertime'];
+    public const TYPES = ['holiday', 'suspension', 'other', 'dept_dayoff', 'user_leave', 'user_undertime'];
 
-    /** Global, everyone-off entries (holidays + work suspensions). */
-    public const GLOBAL_TYPES = ['holiday', 'suspension'];
+    /** Global, everyone-off entries (holidays, work suspensions, other non-working days). */
+    public const GLOBAL_TYPES = ['holiday', 'suspension', 'other'];
 
     public function department(): BelongsTo
     {
@@ -42,6 +42,7 @@ class CalendarDay extends Model
         return match ($this->type) {
             'holiday' => 'Holiday',
             'suspension' => 'Work suspension',
+            'other' => 'Other',
             'dept_dayoff' => 'Department day-off',
             'user_leave' => 'Leave',
             'user_undertime' => 'Undertime',

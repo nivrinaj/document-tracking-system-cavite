@@ -31,7 +31,8 @@
       "Bash(php _smoke2.php)",
       "Bash(php _mkdoc.php)",
       "Bash(php _chk.php)",
-      "Bash(php _upd.php)"
+      "Bash(php _upd.php)",
+      "Bash(php _seq.php)"
     ]
   }
 }

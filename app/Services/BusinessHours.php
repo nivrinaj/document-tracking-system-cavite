@@ -57,6 +57,16 @@ class BusinessHours
      */
     public static function dailyBreakdown($start, $end = null, ?User $user = null): array
     {
+        return array_map(fn ($d) => $d['seconds'], static::dailyDetail($start, $end, $user));
+    }
+
+    /**
+     * Per-day detail: [ 'Y-m-d' => ['seconds' => int, 'from' => Carbon, 'to' => Carbon] ].
+     * "from"/"to" are the actual working window the range covered that day (e.g. 8:00 AM
+     * if it started at open, or mid-morning if picked up late; 5:00 PM at close, or earlier).
+     */
+    public static function dailyDetail($start, $end = null, ?User $user = null): array
+    {
         $start = Carbon::parse($start);
         $end = $end ? Carbon::parse($end) : Carbon::now();
         $cfg = static::config();
@@ -68,9 +78,9 @@ class BusinessHours
         $cursor = $start->copy()->startOfDay();
         $guard = 0;
         while ($cursor->lessThanOrEqualTo($end) && $guard++ < 3660) {
-            $secs = static::secondsForDay($cursor, $start, $end, $cfg, $user);
-            if ($secs > 0) {
-                $out[$cursor->format('Y-m-d')] = $secs;
+            $info = static::dayDetail($cursor, $start, $end, $cfg, $user);
+            if ($info && $info['seconds'] > 0) {
+                $out[$cursor->format('Y-m-d')] = $info;
             }
             $cursor->addDay();
         }
@@ -78,15 +88,15 @@ class BusinessHours
         return $out;
     }
 
-    protected static function secondsForDay(Carbon $day, Carbon $rangeStart, Carbon $rangeEnd, array $cfg, ?User $user): int
+    protected static function dayDetail(Carbon $day, Carbon $rangeStart, Carbon $rangeEnd, array $cfg, ?User $user): ?array
     {
         if (! in_array((int) $day->isoWeekday(), $cfg['days'], true)) {
-            return 0;
+            return null;
         }
 
         $ex = CalendarDay::resolve($day, $user);
         if ($ex['off']) {
-            return 0;
+            return null;
         }
 
         $ws = $day->copy()->setTimeFromTimeString($cfg['start']);
@@ -97,14 +107,14 @@ class BusinessHours
             $we = static::undertimeEnd($ws, $cfg, $ex['worked_minutes']);
         }
         if ($we->lessThanOrEqualTo($ws)) {
-            return 0;
+            return null;
         }
 
         // Clip the working window to the requested range.
         $s = $rangeStart->greaterThan($ws) ? $rangeStart->copy() : $ws;
         $e = $rangeEnd->lessThan($we) ? $rangeEnd->copy() : $we;
         if ($e->lessThanOrEqualTo($s)) {
-            return 0;
+            return null;
         }
 
         $seconds = $s->diffInSeconds($e);
@@ -114,7 +124,7 @@ class BusinessHours
         $le = $day->copy()->setTimeFromTimeString($cfg['lunch_end']);
         $seconds -= static::overlapSeconds($s, $e, $ls, $le);
 
-        return max(0, (int) $seconds);
+        return ['seconds' => max(0, (int) $seconds), 'from' => $s, 'to' => $e];
     }
 
     /** End of a capped undertime window: start + worked minutes, pushed past lunch if crossed. */

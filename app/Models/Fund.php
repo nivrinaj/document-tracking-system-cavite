@@ -14,13 +14,12 @@ class Fund extends Model
         'is_active' => 'boolean',
     ];
 
-    /** Which sequence group this fund + encoder fall into (STD / DEV / HOSP). */
+    /**
+     * Each fund has its OWN annual sequence (starts at 1, resets each year).
+     * Hospital usage of a fund runs on a separate sequence from its regular usage.
+     */
     public function sequenceKey(bool $hospital): string
     {
-        if ($hospital) {
-            return 'HOSP';
-        }
-
-        return $this->is_dev_fund ? 'DEV' : 'STD';
+        return 'F'.$this->id.($hospital ? 'H' : '');
     }
 }

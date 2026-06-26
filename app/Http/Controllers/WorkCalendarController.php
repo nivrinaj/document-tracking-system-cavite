@@ -62,12 +62,12 @@ class WorkCalendarController extends Controller
     {
         $data = $request->validate([
             'date' => ['required', 'date'],
-            'type' => ['required', Rule::in(['holiday', 'suspension'])],
+            'type' => ['required', Rule::in(['holiday', 'suspension', 'other'])],
             'label' => ['required', 'string', 'max:150'],
         ]);
         CalendarDay::create($data + ['created_by' => $request->user()->id]);
 
-        return back()->with('success', ucfirst($data['type']).' added.');
+        return back()->with('success', 'Entry added.');
     }
 
     public function destroyHoliday(CalendarDay $calendarDay)

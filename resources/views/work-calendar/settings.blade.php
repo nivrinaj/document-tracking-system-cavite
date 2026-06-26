@@ -37,7 +37,7 @@
                     @foreach($names as $iso => $name)
                         <label class="cursor-pointer">
                             <input type="checkbox" name="work_days[]" value="{{ $iso }}" class="peer sr-only" @checked(in_array($iso, old('work_days', $cfg['days'])))>
-                            <span class="inline-flex px-3.5 py-1.5 rounded-lg text-sm border border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300 peer-checked:text-white peer-checked:border-transparent transition" style="--tw-bg:var(--color-primary)" :class="''">{{ $name }}</span>
+                            <span class="inline-flex px-3.5 py-1.5 rounded-lg text-sm border border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300 transition peer-checked:text-white peer-checked:border-transparent peer-checked:[background:var(--color-primary)]">{{ $name }}</span>
                         </label>
                     @endforeach
                 </div>
@@ -71,8 +71,8 @@
                     @foreach($modes as $val => [$title, $desc])
                         <label class="cursor-pointer">
                             <input type="radio" name="calendar_display" value="{{ $val }}" class="peer sr-only" @checked(old('calendar_display', $displayMode) === $val)>
-                            <span class="block rounded-xl border border-gray-200 dark:border-gray-600 p-3 transition peer-checked:border-[color:var(--color-primary)] peer-checked:ring-2 peer-checked:ring-[color:var(--color-primary)]/30">
-                                <span class="block text-sm font-medium">{{ $title }}</span>
+                            <span class="block rounded-xl border border-gray-200 dark:border-gray-600 p-3 transition peer-checked:border-[color:var(--color-primary)] peer-checked:ring-2 peer-checked:ring-[color:var(--color-primary)]/30 peer-checked:bg-[color:var(--color-primary)]/5">
+                                <span class="block text-sm font-medium text-gray-800 dark:text-gray-100">{{ $title }}</span>
                                 <span class="block text-xs text-gray-400">{{ $desc }}</span>
                             </span>
                         </label>
@@ -85,9 +85,4 @@
             </div>
         </form>
     </div>
-
-    <style>
-        /* Selected working-day pill uses the theme primary colour. */
-        label > input.peer:checked + span { background: var(--color-primary); }
-    </style>
 </x-app-layout>

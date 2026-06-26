@@ -2,12 +2,15 @@
     <x-slot name="header">Holidays &amp; Work Suspensions</x-slot>
 
     @php
+        $hueBg = ['holiday' => '#eef2ff', 'suspension' => '#fffbeb', 'other' => '#f3f4f6'];
+        $hueFg = ['holiday' => '#4338ca', 'suspension' => '#b45309', 'other' => '#374151'];
+        $badge = ['holiday' => 'indigo', 'suspension' => 'amber', 'other' => 'gray'];
         $events = [];
         foreach ($days as $d) {
             $events[$d->date->format('Y-m-d')][] = [
                 'text' => $d->label,
-                'bg' => $d->type === 'suspension' ? '#fffbeb' : '#eef2ff',
-                'fg' => $d->type === 'suspension' ? '#b45309' : '#4338ca',
+                'bg' => $hueBg[$d->type] ?? '#f3f4f6',
+                'fg' => $hueFg[$d->type] ?? '#374151',
             ];
         }
     @endphp
@@ -40,6 +43,7 @@
                     <select name="type" class="input" required>
                         <option value="holiday">Holiday</option>
                         <option value="suspension">Work suspension</option>
+                        <option value="other">Other</option>
                     </select>
                 </div>
                 <div class="sm:col-span-4">
@@ -68,7 +72,7 @@
                                     </div>
                                     <div class="flex-1 min-w-0">
                                         <div class="text-sm font-medium truncate">{{ $d->label }}</div>
-                                        <x-badge :color="$d->type === 'suspension' ? 'amber' : 'indigo'">{{ $d->typeLabel() }}</x-badge>
+                                        <x-badge :color="$badge[$d->type] ?? 'gray'">{{ $d->typeLabel() }}</x-badge>
                                     </div>
                                     <form method="POST" action="{{ route('work-calendar.holidays.destroy', $d) }}" data-confirm="Remove “{{ $d->label }}”?">
                                         @csrf @method('DELETE')
@@ -93,7 +97,7 @@
                         <div class="flex items-center gap-3 py-2">
                             <span class="text-xs tabular-nums text-gray-500 w-24 shrink-0">{{ $d->date->format('M d, D') }}</span>
                             <span class="flex-1 text-sm truncate">{{ $d->label }}</span>
-                            <x-badge :color="$d->type === 'suspension' ? 'amber' : 'indigo'">{{ $d->typeLabel() }}</x-badge>
+                            <x-badge :color="$badge[$d->type] ?? 'gray'">{{ $d->typeLabel() }}</x-badge>
                             <form method="POST" action="{{ route('work-calendar.holidays.destroy', $d) }}" data-confirm="Remove “{{ $d->label }}”?">
                                 @csrf @method('DELETE')
                                 <button class="act-del shrink-0">Delete</button>
