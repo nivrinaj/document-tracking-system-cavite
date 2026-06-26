@@ -6,6 +6,12 @@ Format based on [Keep a Changelog](https://keepachangelog.com).
 
 ---
 
+## 1.7.4 — 2026-06-26
+**Hospital classification persisted on the document (correct exclude/only)**
+- A document's **hospital status is now recorded on the document itself at encode time** (`is_hospital`, set from the encoding/owning division) and queried as a real column. Previously it was inferred from the *current* division, which changes as a document moves — so a hospital `-H` voucher wrongly appeared under “Exclude hospital”. Fixed.
+- **Existing documents are backfilled** (one-time) from their historical `-H` codes, so old hospital records classify correctly too.
+- Date Received remains the **encoded date** (when the owning division encoded it).
+
 ## 1.7.3 — 2026-06-26
 **E-Record fixes: hospital filter, pagination, totals, true column widths**
 - **Hospital filter now uses the division relationship** (a document's `division_id` → `is_hospital`), not the tracking-code text — so Exclude/Include/Only are correct. *(Requires the hospital division to have the “Hospital transactions division” toggle on.)*

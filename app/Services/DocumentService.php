@@ -202,12 +202,16 @@ class DocumentService
                 ->values();
             unset($data['items']);
 
+            // Whether the encoder belongs to a hospital-transactions division —
+            // persisted on the document so reports can rely on it regardless of
+            // where the document later moves.
+            $isHospital = (bool) optional($actor->division)->is_hospital;
+
             // Accounting funds drive an auto-generated fund-based tracking code:
             //   [FundCode]-[YYYY]-[MM]-[seq](-H for the Hospital division).
             $trackingCode = null;
             if (! empty($data['fund_id']) && ($fund = \App\Models\Fund::find($data['fund_id']))) {
-                $hospital = (bool) optional($actor->division)->is_hospital;
-                $trackingCode = Document::generateFundCode($fund, $hospital);
+                $trackingCode = Document::generateFundCode($fund, $isHospital);
             } elseif (strtolower($data['document_type'] ?? '') === 'voucher' && ! empty($data['voucher_number'])) {
                 $trackingCode = Document::trackingCodeForVoucher($data['voucher_number']);
             }
@@ -217,6 +221,7 @@ class DocumentService
             ]), [
                 'status' => 'draft',
                 'created_by' => $actor->id,
+                'is_hospital' => $isHospital,
                 'division_id' => $data['division_id'] ?? $actor->division_id,
                 'department_id' => $data['department_id'] ?? $actor->department_id,
                 'received_at' => $data['received_at'] ?? now(),

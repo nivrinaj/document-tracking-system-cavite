@@ -25,6 +25,7 @@ class Document extends Model
         'responsibility_center_id',
         'rc_code',
         'nature_of_transaction',
+        'is_hospital',
         'description',
         'source',
         'priority',
@@ -51,6 +52,7 @@ class Document extends Model
         'possession_started_at' => 'datetime',
         'is_broadcast' => 'boolean',
         'is_pending' => 'boolean',
+        'is_hospital' => 'boolean',
         'amount' => 'decimal:2',
     ];
 

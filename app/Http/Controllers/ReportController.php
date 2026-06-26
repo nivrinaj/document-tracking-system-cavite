@@ -129,7 +129,7 @@ class ReportController extends Controller
         $deptId = $user->canViewAllDepartments() ? null : $user->department_id;
         $hospital = $data['hospital'] ?? 'exclude';
 
-        // A hospital transaction is one whose division (FK) is flagged is_hospital.
+        // Hospital transactions are flagged on the document at encode time (is_hospital).
         $rows = Document::query()
             ->with(['fund', 'responsibilityCenter'])
             ->where('document_type', $data['document_type'])
@@ -137,8 +137,8 @@ class ReportController extends Controller
             ->when($from, fn ($q) => $q->where('created_at', '>=', $from))
             ->when($to, fn ($q) => $q->where('created_at', '<=', $to))
             ->when($deptId, fn ($q) => $q->where('department_id', $deptId))
-            ->when($hospital === 'only', fn ($q) => $q->whereHas('division', fn ($d) => $d->where('is_hospital', true)))
-            ->when($hospital === 'exclude', fn ($q) => $q->whereDoesntHave('division', fn ($d) => $d->where('is_hospital', true)))
+            ->when($hospital === 'only', fn ($q) => $q->where('is_hospital', true))
+            ->when($hospital === 'exclude', fn ($q) => $q->where('is_hospital', false))
             ->orderBy('created_at')
             ->get();
 
