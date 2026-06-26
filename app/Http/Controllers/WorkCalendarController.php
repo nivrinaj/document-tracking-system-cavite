@@ -100,12 +100,53 @@ class WorkCalendarController extends Controller
             'canChoose' => $canChoose,
             'year' => $year,
             'displayMode' => Setting::get('calendar_display', 'grid'),
-            'staff' => User::where('department_id', $dept->id)->orderBy('name')->get(),
+            'staffGroups' => $this->groupedStaff($dept),
             'days' => CalendarDay::whereIn('type', ['dept_dayoff', 'user_leave', 'user_undertime'])
                 ->where(fn ($q) => $q->where('department_id', $dept->id)
                     ->orWhereIn('user_id', User::where('department_id', $dept->id)->pluck('id')))
                 ->whereYear('date', $year)->with(['user', 'creator'])->orderBy('date')->get(),
         ]);
+    }
+
+    /**
+     * Staff of an office grouped for a searchable dropdown:
+     * Office heads first (Dept Head, then Assistant), then each division
+     * (alphabetical) with its Division Head first, then staff (alphabetical).
+     *
+     * @return array<int,array{label:string,items:array<int,array{id:int,name:string}>}>
+     */
+    private function groupedStaff(\App\Models\Department $dept): array
+    {
+        $users = User::where('department_id', $dept->id)->with(['roles:id,name', 'division:id,code,name'])->get();
+        $isHead = fn ($u) => $u->hasRole('Department Head');
+        $isAsst = fn ($u) => $u->hasRole('Assistant Department Head');
+        $isDivHead = fn ($u) => $u->hasRole('Division Head');
+
+        $groups = [];
+
+        $heads = $users->filter(fn ($u) => $isHead($u) || $isAsst($u))
+            ->sortBy(fn ($u) => ($isHead($u) ? '0' : '1').'_'.$u->name)->values();
+        if ($heads->isNotEmpty()) {
+            $groups[] = ['label' => 'Office heads', 'items' => $heads->map(fn ($u) => [
+                'id' => $u->id,
+                'name' => $u->name.($isHead($u) ? ' · Dept Head' : ' · Asst. Head'),
+            ])->all()];
+        }
+
+        $rest = $users->reject(fn ($u) => $isHead($u) || $isAsst($u));
+        foreach ($rest->groupBy(fn ($u) => $u->division?->name ?? 'No division')->sortKeys() as $divName => $members) {
+            $code = $members->first()->division?->code;
+            $sorted = $members->sortBy(fn ($u) => ($isDivHead($u) ? '0' : '1').'_'.$u->name)->values();
+            $groups[] = [
+                'label' => $code ? "{$code} — {$divName}" : $divName,
+                'items' => $sorted->map(fn ($u) => [
+                    'id' => $u->id,
+                    'name' => $u->name.($isDivHead($u) ? ' · Div Head' : ''),
+                ])->all(),
+            ];
+        }
+
+        return $groups;
     }
 
     public function storeTeam(Request $request)

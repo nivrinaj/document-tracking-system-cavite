@@ -60,16 +60,35 @@
                                x-on:cal-pick.window="$el.value = $event.detail">
                     </div>
 
-                    {{-- Staff slides in for leave / undertime — full width for leave, paired with hours for undertime --}}
+                    {{-- Staff slides in for leave / undertime — searchable, grouped by division --}}
                     <div x-show="type !== 'dept_dayoff'" x-cloak x-transition.opacity
-                         :class="type === 'user_undertime' ? '' : 'sm:col-span-2'">
+                         :class="type === 'user_undertime' ? '' : 'sm:col-span-2'"
+                         x-data="staffPicker(@js($staffGroups), '{{ old('user_id') }}')">
                         <label class="label">Staff</label>
-                        <select name="user_id" class="input" x-bind:required="type !== 'dept_dayoff'">
-                            <option value="">— Select staff —</option>
-                            @foreach($staff as $s)
-                                <option value="{{ $s->id }}" @selected(old('user_id')==$s->id)>{{ $s->name }}</option>
-                            @endforeach
-                        </select>
+                        <input type="hidden" name="user_id" :value="selected" x-bind:required="type !== 'dept_dayoff'">
+                        <div class="relative" @click.outside="open=false">
+                            <button type="button" @click="open=!open" class="input flex items-center justify-between text-left">
+                                <span :class="selected ? '' : 'text-gray-400'" x-text="selectedLabel || '— Select staff —'"></span>
+                                <svg class="w-4 h-4 text-gray-400 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+                            </button>
+                            <div x-show="open" x-cloak class="absolute z-30 mt-1 w-full rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 shadow-lg max-h-72 overflow-auto">
+                                <div class="sticky top-0 bg-white dark:bg-gray-800 p-2 border-b border-gray-100 dark:border-gray-700">
+                                    <input type="text" x-model="q" @click.stop placeholder="Search staff…" class="input py-1.5 text-sm">
+                                </div>
+                                <template x-for="g in groups" :key="g.label">
+                                    <div x-show="g.items.some(i => match(i))">
+                                        <div class="px-3 py-1 text-[10px] font-semibold uppercase tracking-wide text-gray-400 bg-gray-50 dark:bg-gray-700/40" x-text="g.label"></div>
+                                        <template x-for="i in g.items.filter(match)" :key="i.id">
+                                            <button type="button" @click="pick(i)"
+                                                    class="block w-full text-left px-3 py-1.5 text-sm hover:bg-gray-100 dark:hover:bg-gray-700"
+                                                    :class="String(i.id) === String(selected) ? 'text-[color:var(--color-primary)] font-medium' : ''"
+                                                    x-text="i.name"></button>
+                                        </template>
+                                    </div>
+                                </template>
+                                <div x-show="!groups.some(g => g.items.some(i => match(i)))" class="px-3 py-3 text-sm text-gray-400">No staff found.</div>
+                            </div>
+                        </div>
                     </div>
                     <div x-show="type === 'user_undertime'" x-cloak x-transition.opacity>
                         <label class="label">Hours actually worked</label>
@@ -126,4 +145,26 @@
             </x-card>
         @endif
     </div>
+
+    <script>
+        document.addEventListener('alpine:init', () => {
+            if (window.__staffPickerRegistered) return;
+            window.__staffPickerRegistered = true;
+            Alpine.data('staffPicker', (groups, initial) => ({
+                groups: groups || [],
+                open: false,
+                q: '',
+                selected: initial || '',
+                get selectedLabel() {
+                    for (const g of this.groups) {
+                        const f = g.items.find(i => String(i.id) === String(this.selected));
+                        if (f) return f.name;
+                    }
+                    return '';
+                },
+                match(i) { return ! this.q || i.name.toLowerCase().includes(this.q.toLowerCase()); },
+                pick(i) { this.selected = String(i.id); this.open = false; this.q = ''; },
+            }));
+        });
+    </script>
 </x-app-layout>

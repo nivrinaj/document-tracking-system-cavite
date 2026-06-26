@@ -382,6 +382,42 @@ class Document extends Model
         };
     }
 
+    /**
+     * Overdue state for the office's tracked document types, measured in working time.
+     * Returns 'overdue' (past the limit), 'warning' (within 2 working days of it), or null.
+     * The office sets its own limit (working days) and which types it tracks.
+     */
+    public function overdueState(): ?string
+    {
+        if ($this->isClosed()) {
+            return null;
+        }
+        $dept = $this->department;
+        if (! $dept || ! $dept->sla_enabled || ! $dept->sla_days) {
+            return null;
+        }
+        $tracked = $dept->sla_document_type ?? [];
+        if (! empty($tracked) && ! in_array($this->document_type, $tracked, true)) {
+            return null;
+        }
+
+        $age = \App\Services\BusinessHours::secondsBetween($this->received_at ?? $this->created_at, now());
+        $dayLen = \App\Services\BusinessHours::enabled()
+            ? \App\Services\BusinessHours::dailyCapacitySeconds()
+            : 86400; // wall-clock days when the working-hours engine is off
+        $limit = $dept->sla_days * $dayLen;
+        $warnAt = max(0, $dept->sla_days - 2) * $dayLen;
+
+        if ($age >= $limit) {
+            return 'overdue';
+        }
+        if ($age >= $warnAt) {
+            return 'warning';
+        }
+
+        return null;
+    }
+
     /* ----------------------------------------------------------------
      | Possession-based timing (who holds it & for how long)
      * ---------------------------------------------------------------- */

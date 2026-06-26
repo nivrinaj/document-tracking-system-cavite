@@ -4,6 +4,43 @@
     <div class="max-w-4xl mx-auto space-y-6">
         <p class="text-sm text-gray-500 dark:text-gray-400">Reference data used when encoding Vouchers and Payroll — funds, responsibility centers and natures of transaction.</p>
 
+        {{-- ───────── Overdue tracking ───────── --}}
+        @if($department)
+        <x-card>
+            <h2 class="font-semibold mb-1">Overdue tracking</h2>
+            <p class="text-xs text-gray-400 mb-3">Highlights documents in the tracking list once they pass a working-time limit — <span class="text-rose-600 dark:text-rose-400 font-medium">red</span> when overdue, <span class="text-amber-600 dark:text-amber-400 font-medium">orange</span> within 2 working days before. Counts working hours only (skips nights, weekends, holidays, leave).</p>
+            <form method="POST" action="{{ route('accounting.overdue.update') }}" x-data="{ on: {{ $department->sla_enabled ? 'true' : 'false' }} }">
+                @csrf @method('PUT')
+                <label class="flex items-center gap-2 text-sm">
+                    <input type="hidden" name="sla_enabled" value="0">
+                    <input type="checkbox" name="sla_enabled" value="1" x-model="on" class="rounded text-[color:var(--color-primary)]">
+                    Enable overdue highlighting for <strong>{{ $department->code }}</strong>
+                </label>
+                <div x-show="on" x-cloak class="mt-4 space-y-4">
+                    <div class="max-w-xs">
+                        <label class="label">Overdue after (working days)</label>
+                        <input type="number" name="sla_days" min="1" max="365" value="{{ old('sla_days', $department->sla_days ?? 7) }}" class="input" x-bind:required="on">
+                    </div>
+                    <div>
+                        <label class="label">Track these document types <span class="text-gray-400 text-xs font-normal">— none ticked = all</span></label>
+                        @php $tracked = (array) ($department->sla_document_type ?? []); @endphp
+                        <div class="flex flex-wrap gap-2">
+                            @forelse($trackableTypes as $tn)
+                                <label class="cursor-pointer">
+                                    <input type="checkbox" name="sla_document_type[]" value="{{ $tn }}" class="peer sr-only" @checked(in_array($tn, $tracked))>
+                                    <span class="inline-flex px-3 py-1.5 rounded-lg text-sm border border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300 transition peer-checked:text-white peer-checked:border-transparent peer-checked:[background:var(--color-primary)]">{{ $tn }}</span>
+                                </label>
+                            @empty
+                                <span class="text-xs text-gray-400">No document types available for this office yet.</span>
+                            @endforelse
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-4"><x-btn type="submit">Save overdue settings</x-btn></div>
+            </form>
+        </x-card>
+        @endif
+
         {{-- ───────── Funds ───────── --}}
         <x-card>
             <h2 class="font-semibold mb-1">Funds</h2>

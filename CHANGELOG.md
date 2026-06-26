@@ -6,6 +6,12 @@ Format based on [Keep a Changelog](https://keepachangelog.com).
 
 ---
 
+## 1.6.0 — 2026-06-26
+**Single per-office document types, searchable staff picker, overdue tracking**
+- **One document type, office-restricted.** No more duplicate “Voucher”. Each type is a single record with an availability setting — **All offices** or **Only selected offices** (multi-select). Accounting offices still see only their Voucher/Payroll; this is separate from the amount-fields behaviour (which follows the office's Accounting flag). Existing duplicates are consolidated automatically on upgrade — documents are unaffected (they store the type name).
+- **Searchable, grouped staff picker** on the Department Work Calendar — type to filter; staff grouped by division and ordered **Dept Head → Assistant Head → each division's Division Head → staff** (alphabetical).
+- **Overdue tracking (per office).** In Accounting Setup, set the **overdue limit in working days** and which document types to track. The document tracking list then highlights rows **red when overdue** and **orange within 2 working days** of the limit, counting working hours only. Built to work for any office (each with its own tracked types and limit).
+
 ## 1.5.3 — 2026-06-26
 **Clarity & readability: removed redundant fund flag, cleaner leave form, bolder labels**
 - **Removed the confusing “GF 20%” checkbox** from the Funds panel. It no longer does anything now that every fund has its own sequence — the 20% Development Fund is simply its own fund (its name says so), distinguished behind the scenes by its record, even though it shares code 101.

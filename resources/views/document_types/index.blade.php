@@ -3,7 +3,7 @@
 
     <div class="space-y-5">
         <div class="flex items-center justify-between gap-3">
-            <p class="text-sm text-gray-500 dark:text-gray-400">Types available when encoding. Leave the department blank to make a type available to all.</p>
+            <p class="text-sm text-gray-500 dark:text-gray-400">Types available when encoding. Choose “All offices”, or restrict a type to selected offices.</p>
             <x-btn :href="route('document-types.create')">+ Add Type</x-btn>
         </div>
 
@@ -16,7 +16,14 @@
                     @forelse($types as $type)
                         <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/40">
                             <td class="table-td font-medium" data-label="Name">{{ $type->name }}</td>
-                            <td class="table-td" data-label="Available to">{{ $type->department?->code ?? 'All departments' }}</td>
+                            <td class="table-td" data-label="Available to">
+                                @if($type->availability === 'restricted')
+                                    @php $codes = $type->departments->pluck('code'); @endphp
+                                    @if($codes->isEmpty())<span class="text-gray-400">No offices</span>@else<span class="text-sm">{{ $codes->implode(', ') }}</span>@endif
+                                @else
+                                    <x-badge color="gray">All offices</x-badge>
+                                @endif
+                            </td>
                             <td class="table-td" data-label="Voucher field">@if($type->requires_voucher)<x-badge color="indigo">Yes</x-badge>@else<span class="text-gray-400">—</span>@endif</td>
                             <td class="table-td" data-label="Status">@if($type->is_active)<x-badge color="green">Active</x-badge>@else<x-badge color="gray">Inactive</x-badge>@endif</td>
                             <td class="table-td text-right whitespace-nowrap" data-label="">

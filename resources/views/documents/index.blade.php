@@ -77,10 +77,19 @@
                     </thead>
                     <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
                         @forelse($documents as $doc)
-                            <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/40">
+                            @php $od = $doc->overdueState(); @endphp
+                            <tr @class([
+                                'hover:bg-gray-50 dark:hover:bg-gray-700/40' => ! $od,
+                                'bg-rose-50/70 dark:bg-rose-900/15 hover:bg-rose-50 dark:hover:bg-rose-900/25' => $od === 'overdue',
+                                'bg-amber-50/70 dark:bg-amber-900/15 hover:bg-amber-50 dark:hover:bg-amber-900/25' => $od === 'warning',
+                            ])>
                                 <td class="table-td font-mono text-xs" data-label="Tracking Code">{{ $doc->tracking_code }}</td>
                                 <td class="table-td" data-label="Title">
-                                    <div class="font-medium">{{ $doc->title }}</div>
+                                    <div class="font-medium flex items-center gap-2">
+                                        {{ $doc->title }}
+                                        @if($od === 'overdue')<span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wide bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300">Overdue</span>
+                                        @elseif($od === 'warning')<span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wide bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300">Due soon</span>@endif
+                                    </div>
                                     <div class="text-xs text-gray-400">{{ $doc->document_type }} @if($doc->reference_no) · {{ $doc->reference_no }} @endif</div>
                                 </td>
                                 @if(\App\Models\Document::priorityEnabled())<td class="table-td" data-label="Priority"><x-priority-badge :priority="$doc->priority" /></td>@endif

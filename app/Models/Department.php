@@ -22,10 +22,18 @@ class Department extends Model
     public function syncAccountingTypes(): void
     {
         foreach (['Voucher', 'Payroll'] as $name) {
-            DocumentType::updateOrCreate(
-                ['name' => $name, 'department_id' => $this->id],
-                ['requires_voucher' => false, 'is_active' => (bool) $this->is_accounting],
+            $type = DocumentType::firstOrCreate(
+                ['name' => $name],
+                ['availability' => 'restricted', 'requires_voucher' => false, 'is_active' => true],
             );
+            if ($type->availability !== 'restricted') {
+                $type->update(['availability' => 'restricted']);
+            }
+            if ($this->is_accounting) {
+                $type->departments()->syncWithoutDetaching([$this->id]);
+            } else {
+                $type->departments()->detach($this->id);
+            }
         }
     }
 

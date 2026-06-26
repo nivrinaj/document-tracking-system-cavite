@@ -11,11 +11,37 @@ class AccountingController extends Controller
 {
     public function index()
     {
+        $dept = auth()->user()->department;
+
         return view('accounting.index', [
             'funds' => Fund::orderBy('sort_order')->orderBy('name')->get(),
             'centers' => ResponsibilityCenter::orderBy('sort_order')->orderBy('name')->get(),
             'natures' => NatureOfTransaction::orderBy('sort_order')->orderBy('name')->get(),
+            'department' => $dept,
+            'trackableTypes' => $dept ? \App\Models\DocumentType::availableFor($dept->id)->pluck('name') : collect(),
         ]);
+    }
+
+    /* ---------------- Overdue tracking (this office) ---------------- */
+    public function updateOverdue(Request $request)
+    {
+        $dept = $request->user()->department;
+        abort_unless($dept, 403, 'You are not assigned to an office.');
+
+        $data = $request->validate([
+            'sla_enabled' => ['nullable', 'boolean'],
+            'sla_days' => ['nullable', 'required_if:sla_enabled,1', 'integer', 'min:1', 'max:365'],
+            'sla_document_type' => ['nullable', 'array'],
+            'sla_document_type.*' => ['string', 'max:100'],
+        ]);
+
+        $dept->update([
+            'sla_enabled' => $request->boolean('sla_enabled'),
+            'sla_days' => $data['sla_days'] ?? $dept->sla_days,
+            'sla_document_type' => $data['sla_document_type'] ?? [],
+        ]);
+
+        return back()->with('success', 'Overdue tracking updated.');
     }
 
     /* ---------------- Funds ---------------- */

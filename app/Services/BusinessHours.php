@@ -33,6 +33,19 @@ class BusinessHours
         ];
     }
 
+    /** Productive seconds in one full working day (e.g. 8h with a 1h lunch). */
+    public static function dailyCapacitySeconds(): int
+    {
+        $cfg = static::config();
+        $ws = Carbon::parse($cfg['start']);
+        $we = Carbon::parse($cfg['end']);
+        $ls = Carbon::parse($cfg['lunch_start']);
+        $le = Carbon::parse($cfg['lunch_end']);
+        $secs = $ws->diffInSeconds($we) - max(0, (int) $ls->diffInSeconds($le));
+
+        return max(1, (int) $secs);
+    }
+
     /** Productive seconds between two instants (wall-clock when the feature is off). */
     public static function secondsBetween($start, $end = null, ?User $user = null): int
     {

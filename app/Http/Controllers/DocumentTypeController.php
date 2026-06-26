@@ -11,7 +11,7 @@ class DocumentTypeController extends Controller
     public function index()
     {
         return view('document_types.index', [
-            'types' => DocumentType::with('department')->orderBy('name')->paginate(20),
+            'types' => DocumentType::with('departments')->orderBy('name')->paginate(20),
         ]);
     }
 
@@ -22,7 +22,9 @@ class DocumentTypeController extends Controller
 
     public function store(Request $request)
     {
-        DocumentType::create($this->validateData($request));
+        [$data, $deptIds] = $this->validated($request);
+        $type = DocumentType::create($data);
+        $type->departments()->sync($data['availability'] === 'restricted' ? $deptIds : []);
 
         return redirect()->route('document-types.index')->with('success', 'Document type created.');
     }
@@ -30,14 +32,16 @@ class DocumentTypeController extends Controller
     public function edit(DocumentType $documentType)
     {
         return view('document_types.edit', [
-            'type' => $documentType,
+            'type' => $documentType->load('departments'),
             'departments' => Department::orderBy('name')->get(),
         ]);
     }
 
     public function update(Request $request, DocumentType $documentType)
     {
-        $documentType->update($this->validateData($request));
+        [$data, $deptIds] = $this->validated($request);
+        $documentType->update($data);
+        $documentType->departments()->sync($data['availability'] === 'restricted' ? $deptIds : []);
 
         return redirect()->route('document-types.index')->with('success', 'Document type updated.');
     }
@@ -49,16 +53,23 @@ class DocumentTypeController extends Controller
         return back()->with('success', 'Document type deleted.');
     }
 
-    private function validateData(Request $request): array
+    /** @return array{0: array<string,mixed>, 1: array<int>} validated attributes + selected department ids */
+    private function validated(Request $request): array
     {
-        return $request->validate([
+        $request->validate([
             'name' => ['required', 'string', 'max:100'],
-            'department_id' => ['nullable', 'exists:departments,id'],
+            'availability' => ['required', 'in:all,restricted'],
+            'departments' => ['nullable', 'array'],
+            'departments.*' => ['integer', 'exists:departments,id'],
             'requires_voucher' => ['nullable', 'boolean'],
             'is_active' => ['nullable', 'boolean'],
-        ]) + [
+        ]);
+
+        return [[
+            'name' => $request->input('name'),
+            'availability' => $request->input('availability'),
             'requires_voucher' => $request->boolean('requires_voucher'),
             'is_active' => $request->boolean('is_active'),
-        ];
+        ], array_map('intval', $request->input('departments', []))];
     }
 }
