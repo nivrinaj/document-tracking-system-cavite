@@ -6,6 +6,14 @@ Format based on [Keep a Changelog](https://keepachangelog.com).
 
 ---
 
+## 1.7.2 — 2026-06-26
+**E-Record refinements**
+- **Compact Report selector** moved into the filters column (no more empty hanging row).
+- **Placeholder options** on the report/document-type/fund dropdowns (“— Select … —”).
+- **Hospital Division filter** — Exclude (default) / Include / Hospital-only for the encoded transactions.
+- **Office name in the header** — the generating office's full name prints between “Provincial Government of Cavite” and the report title.
+- **Column alignment** set per your spec (Date/DV#/Fund/Nature centered, OBR/RC/Payee/Particulars left, Amount right; Payee widest, Particulars next) — and now **customizable in Report Settings** (per-column left/center/right).
+
 ## 1.7.1 — 2026-06-26
 **Reports module: full-width layout, live preview, date-range filter, Super-Admin report settings**
 - **Full-width Reports page** with a live **preview pane** that refreshes as you change filters (so you can see the report before printing). Added a “Filters” heading and fixed the floating report dropdown.

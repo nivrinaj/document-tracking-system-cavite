@@ -57,6 +57,24 @@ class ReportController extends Controller
         return Division::where('department_id', $user->department_id)->orderBy('name')->get();
     }
 
+    /** E-Record columns and their default alignment (overridable in Report Settings). */
+    public const ERECORD_COLS = [
+        'date' => 'Date Received', 'dv' => 'DV #', 'obr' => 'OBR No.', 'rc' => 'Responsibility Center',
+        'fund' => 'Fund', 'payee' => 'Payee', 'nature' => 'Nature', 'particulars' => 'Particulars', 'amount' => 'Amount',
+    ];
+
+    private const ERECORD_ALIGN_DEFAULT = [
+        'date' => 'center', 'dv' => 'center', 'obr' => 'left', 'rc' => 'left', 'fund' => 'center',
+        'payee' => 'left', 'nature' => 'center', 'particulars' => 'left', 'amount' => 'right',
+    ];
+
+    private function erecordAlign(): array
+    {
+        $saved = json_decode((string) Setting::get('erecord_align', ''), true) ?: [];
+
+        return array_merge(self::ERECORD_ALIGN_DEFAULT, array_intersect_key($saved, self::ERECORD_ALIGN_DEFAULT));
+    }
+
     /** Offices allowed to run the E-Record report — Super Admin, the configured offices, else accounting offices. */
     private function canRunERecord(User $user): bool
     {
@@ -102,12 +120,15 @@ class ReportController extends Controller
             'fund_id' => ['required', 'exists:funds,id'],
             'date_from' => ['nullable', 'date'],
             'date_to' => ['nullable', 'date', 'after_or_equal:date_from'],
+            'hospital' => ['nullable', 'in:exclude,include,only'],
             'format' => ['nullable', 'in:html,pdf'],
         ]);
 
         $from = $request->filled('date_from') ? Carbon::parse($data['date_from']) : null;
         $to = $request->filled('date_to') ? Carbon::parse($data['date_to']) : null;
         $deptId = $user->canViewAllDepartments() ? null : $user->department_id;
+        $hospital = $data['hospital'] ?? 'exclude';
+        $hospIds = \App\Models\Division::where('is_hospital', true)->pluck('id')->all();
 
         $rows = Document::query()
             ->with(['fund', 'responsibilityCenter'])
@@ -116,6 +137,8 @@ class ReportController extends Controller
             ->when($from, fn ($q) => $q->where('created_at', '>=', $from))
             ->when($to, fn ($q) => $q->where('created_at', '<=', $to))
             ->when($deptId, fn ($q) => $q->where('department_id', $deptId))
+            ->when($hospital === 'only' && $hospIds, fn ($q) => $q->whereIn('division_id', $hospIds))
+            ->when($hospital === 'exclude' && $hospIds, fn ($q) => $q->where(fn ($w) => $w->whereNull('division_id')->orWhereNotIn('division_id', $hospIds)))
             ->orderBy('created_at')
             ->get();
 
@@ -123,11 +146,14 @@ class ReportController extends Controller
 
         $payload = [
             'reportTitle' => Setting::get('erecord_title', 'E-Record'),
+            'officeName' => optional($user->department)->name,
             'rows' => $rows,
             'fund' => $fund,
             'documentType' => $data['document_type'],
             'from' => $from,
             'to' => $to,
+            'hospital' => $hospital,
+            'align' => $this->erecordAlign(),
             'natureCodes' => \App\Models\NatureOfTransaction::pluck('report_code', 'name'),
             'org' => Setting::get('organization', ''),
             'appName' => Setting::get('app_name', config('app.name')),
@@ -153,6 +179,8 @@ class ReportController extends Controller
             'orientation' => Setting::get('erecord_orientation', 'landscape'),
             'offices' => array_values(array_filter(explode(',', (string) Setting::get('erecord_offices', '')))),
             'departments' => \App\Models\Department::orderBy('name')->get(),
+            'cols' => self::ERECORD_COLS,
+            'align' => $this->erecordAlign(),
         ]);
     }
 
@@ -164,11 +192,14 @@ class ReportController extends Controller
             'erecord_orientation' => ['required', 'in:landscape,portrait'],
             'erecord_offices' => ['nullable', 'array'],
             'erecord_offices.*' => ['integer', 'exists:departments,id'],
+            'align' => ['nullable', 'array'],
+            'align.*' => ['in:left,center,right'],
         ]);
         Setting::put('erecord_title', $data['erecord_title']);
         Setting::put('erecord_paper', $data['erecord_paper']);
         Setting::put('erecord_orientation', $data['erecord_orientation']);
         Setting::put('erecord_offices', implode(',', $data['erecord_offices'] ?? []));
+        Setting::put('erecord_align', json_encode(array_intersect_key($data['align'] ?? [], self::ERECORD_COLS)));
 
         return back()->with('success', 'Report settings saved.');
     }

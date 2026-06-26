@@ -49,6 +49,23 @@
                 </div>
             </x-card>
 
+            <x-card>
+                <h2 class="font-semibold text-sm mb-1">Column alignment</h2>
+                <p class="text-xs text-gray-400 mb-3">How each column is aligned on the E-Record.</p>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2">
+                    @foreach($cols as $key => $label)
+                        <div class="flex items-center justify-between gap-3 py-1">
+                            <span class="text-sm text-gray-600 dark:text-gray-300">{{ $label }}</span>
+                            <select name="align[{{ $key }}]" class="input py-1.5 max-w-[140px]">
+                                @foreach(['left' => 'Left', 'center' => 'Center', 'right' => 'Right'] as $v => $l)
+                                    <option value="{{ $v }}" @selected(($align[$key] ?? 'left') === $v)>{{ $l }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                    @endforeach
+                </div>
+            </x-card>
+
             <div class="flex justify-end">
                 <x-btn type="submit">Save report settings</x-btn>
             </div>
