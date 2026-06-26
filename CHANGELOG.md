@@ -6,6 +6,12 @@ Format based on [Keep a Changelog](https://keepachangelog.com).
 
 ---
 
+## 1.6.1 — 2026-06-26
+**Document types reworked to per-office; type-driven accounting fields; staff dropdown fix**
+- **Per-office limits, not per-type.** All document types are global again; an office is limited to a subset via Departments → edit (Accounting offices auto-limit to Voucher/Payroll). Result: **OPAcc sees only Voucher/Payroll; PICTO sees every type including Voucher/Payroll** — which the 1.6.0 approach got wrong.
+- **Accounting fields follow the document type, not the office.** Any office encoding a **Voucher** or **Payroll** now gets the Amount / Fund / OBR / Responsibility Center / Nature fields and the fund-based tracking code.
+- **Fixed staff dropdown** on the Department Work Calendar — it had no padding (used the wrong helper class).
+
 ## 1.6.0 — 2026-06-26
 **Single per-office document types, searchable staff picker, overdue tracking**
 - **One document type, office-restricted.** No more duplicate “Voucher”. Each type is a single record with an availability setting — **All offices** or **Only selected offices** (multi-select). Accounting offices still see only their Voucher/Payroll; this is separate from the amount-fields behaviour (which follows the office's Accounting flag). Existing duplicates are consolidated automatically on upgrade — documents are unaffected (they store the type name).

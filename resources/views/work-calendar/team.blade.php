@@ -67,7 +67,7 @@
                         <label class="label">Staff</label>
                         <input type="hidden" name="user_id" :value="selected" x-bind:required="type !== 'dept_dayoff'">
                         <div class="relative" @click.outside="open=false">
-                            <button type="button" @click="open=!open" class="input flex items-center justify-between text-left">
+                            <button type="button" @click="open=!open" class="input-btn flex items-center justify-between text-left">
                                 <span :class="selected ? '' : 'text-gray-400'" x-text="selectedLabel || '— Select staff —'"></span>
                                 <svg class="w-4 h-4 text-gray-400 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
                             </button>

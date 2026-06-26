@@ -32,7 +32,9 @@
       "Bash(php _mkdoc.php)",
       "Bash(php _chk.php)",
       "Bash(php _upd.php)",
-      "Bash(php _seq.php)"
+      "Bash(php _seq.php)",
+      "Bash(php _v.php)",
+      "Bash(git checkout *)"
     ]
   }
 }

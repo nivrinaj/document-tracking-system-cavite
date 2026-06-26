@@ -117,24 +117,17 @@ class DocumentController extends Controller
     {
         $this->authorizeAction('documents.create');
 
-        // Accounting fields only apply to the Accounting office (is_accounting); other
-        // offices using the global Voucher type keep the legacy voucher-number flow.
-        $isAccounting = (bool) optional($request->user()->department)->is_accounting;
-
         $data = $request->validate([
             'title' => ['required', 'string', 'max:255'],
             'reference_no' => ['nullable', 'string', 'max:255'],
             'document_type' => ['required', 'string', 'max:100'],
-            // Legacy voucher-number flow (offices using the global Voucher type with requires_voucher).
-            'voucher_number' => ['nullable', 'string', 'max:100'],
-            'voucher_number_confirmation' => ['nullable', 'string', 'max:100', 'same:voucher_number'],
-            // Accounting fields (revealed for Voucher / Payroll in the Accounting office).
-            'fund_id' => ['nullable', $isAccounting ? 'required_if:document_type,Voucher,Payroll' : 'prohibited', 'exists:funds,id'],
-            'amount' => ['nullable', $isAccounting ? 'required_if:document_type,Voucher,Payroll' : 'nullable', 'numeric', 'min:0'],
-            'obr_no' => ['nullable', $isAccounting ? 'required_if:document_type,Voucher,Payroll' : 'nullable', 'string', 'max:100'],
-            'responsibility_center_id' => ['nullable', $isAccounting ? 'required_if:document_type,Voucher,Payroll' : 'prohibited', 'exists:responsibility_centers,id'],
-            'rc_code' => ['nullable', $isAccounting ? 'required_if:document_type,Voucher,Payroll' : 'nullable', 'string', 'max:150'],
-            'nature_of_transaction' => ['nullable', $isAccounting ? 'required_if:document_type,Voucher,Payroll' : 'nullable', 'string', 'max:150'],
+            // Accounting fields — triggered by the document type (Voucher/Payroll), any office.
+            'fund_id' => ['nullable', 'required_if:document_type,Voucher,Payroll', 'exists:funds,id'],
+            'amount' => ['nullable', 'required_if:document_type,Voucher,Payroll', 'numeric', 'min:0'],
+            'obr_no' => ['nullable', 'required_if:document_type,Voucher,Payroll', 'string', 'max:100'],
+            'responsibility_center_id' => ['nullable', 'required_if:document_type,Voucher,Payroll', 'exists:responsibility_centers,id'],
+            'rc_code' => ['nullable', 'required_if:document_type,Voucher,Payroll', 'string', 'max:150'],
+            'nature_of_transaction' => ['nullable', 'required_if:document_type,Voucher,Payroll', 'string', 'max:150'],
             'description' => ['nullable', 'string'],
             'source_department_id' => ['nullable', 'string', 'max:50'],
             'source_division_id' => ['nullable', 'exists:divisions,id'],

@@ -18,13 +18,38 @@
     Active
 </label>
 
-<div class="border-t border-gray-100 dark:border-gray-700 pt-4 mt-2">
+@php $restrictSelected = old('restricted_doc_types', $department?->restricted_doc_types ?? []); @endphp
+<div class="border-t border-gray-100 dark:border-gray-700 pt-4 mt-2"
+     x-data="{ acct: {{ old('is_accounting', $department?->is_accounting) ? 'true' : 'false' }}, limit: {{ !empty($restrictSelected) ? 'true' : 'false' }}, types: @js(array_values((array) $restrictSelected)) }">
     <label class="flex items-center gap-2 text-sm font-medium">
         <input type="hidden" name="is_accounting" value="0">
-        <input type="checkbox" name="is_accounting" value="1" class="rounded text-[color:var(--color-primary)]" @checked(old('is_accounting', $department?->is_accounting ?? false))>
+        <input type="checkbox" name="is_accounting" value="1" x-model="acct" class="rounded text-[color:var(--color-primary)]">
         This is the Accounting office
     </label>
-    <p class="text-xs text-gray-400 ml-6">When on, this office encodes only <strong>Voucher</strong> &amp; <strong>Payroll</strong>, shows the <strong>Fund</strong> picker, generates the fund-based tracking code, and reveals the Amount / OBR / Responsibility Center / Nature fields. Manage funds &amp; lists in <strong>Accounting Setup</strong>.</p>
+    <p class="text-xs text-gray-400 ml-6">When on, this office is limited to <strong>Voucher</strong> &amp; <strong>Payroll</strong> only. (Voucher/Payroll trigger the Amount / Fund / OBR / RC / Nature fields for any office that encodes them.)</p>
+
+    {{-- Limit to document types (for non-accounting offices) --}}
+    <div x-show="!acct" x-cloak class="mt-4">
+        <label class="flex items-center gap-2 text-sm font-medium">
+            <input type="checkbox" x-model="limit" class="rounded text-[color:var(--color-primary)]">
+            Limit this office to specific document types
+        </label>
+        <p class="text-xs text-gray-400 ml-6 mb-2">Leave off to allow all document types. Turn on to pick the only types this office may encode.</p>
+        <div x-show="limit" x-cloak class="ml-6 flex flex-wrap gap-2">
+            @forelse($documentTypes as $t)
+                <button type="button"
+                    @click="types.includes(@js($t)) ? types = types.filter(x => x !== @js($t)) : types.push(@js($t))"
+                    class="px-3 py-1.5 rounded-lg text-sm border transition"
+                    :class="types.includes(@js($t)) ? 'text-white border-transparent' : 'bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300'"
+                    :style="types.includes(@js($t)) ? 'background: var(--color-primary)' : ''">
+                    <span x-show="types.includes(@js($t))">✓ </span>{{ $t }}
+                </button>
+            @empty
+                <span class="text-xs text-gray-400">No document types yet.</span>
+            @endforelse
+        </div>
+        <template x-if="limit"><div><template x-for="t in types" :key="t"><input type="hidden" name="restricted_doc_types[]" :value="t"></template></div></template>
+    </div>
 </div>
 
 {{-- Completion deadline (turnaround tracking) --}}

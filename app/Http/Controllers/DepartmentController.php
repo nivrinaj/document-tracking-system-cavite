@@ -23,7 +23,7 @@ class DepartmentController extends Controller
     public function store(Request $request)
     {
         $department = Department::create($this->validateData($request));
-        $department->syncAccountingTypes();
+        $this->applyTypeRestriction($request, $department);
 
         return redirect()->route('departments.index')->with('success', 'Department created.');
     }
@@ -38,9 +38,26 @@ class DepartmentController extends Controller
     public function update(Request $request, Department $department)
     {
         $department->update($this->validateData($request, $department));
-        $department->syncAccountingTypes();
+        $this->applyTypeRestriction($request, $department);
 
         return redirect()->route('departments.index')->with('success', 'Department updated.');
+    }
+
+    /**
+     * Ensure accounting types exist, then set which document types this office may
+     * encode. Accounting offices are auto-limited to Voucher/Payroll; otherwise use
+     * the chosen subset (none chosen = all types).
+     */
+    private function applyTypeRestriction(Request $request, Department $department): void
+    {
+        $department->syncAccountingTypes();
+        if ($request->boolean('is_accounting')) {
+            $department->update(['restricted_doc_types' => ['Voucher', 'Payroll']]);
+
+            return;
+        }
+        $types = array_values(array_filter((array) $request->input('restricted_doc_types', [])));
+        $department->update(['restricted_doc_types' => $types ?: null]);
     }
 
     public function destroy(Department $department)
@@ -71,6 +88,8 @@ class DepartmentController extends Controller
             'sla_days' => ['nullable', 'integer', 'min:1', 'max:365'],
             'sla_document_type' => ['nullable', 'array'],
             'sla_document_type.*' => ['string', 'max:100'],
+            'restricted_doc_types' => ['nullable', 'array'],
+            'restricted_doc_types.*' => ['string', 'max:100'],
         ]) + [
             'is_active' => $request->boolean('is_active'),
             'is_accounting' => $request->boolean('is_accounting'),
