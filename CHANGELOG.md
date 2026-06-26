@@ -6,11 +6,14 @@ Format based on [Keep a Changelog](https://keepachangelog.com).
 
 ---
 
-## 1.6.3 — 2026-06-26
-**UI polish ahead of the Reports work**
-- **Prominent tracking code** on the Document Details page — shown in a labeled, bordered chip with larger bold monospace and a one-click copy button.
-- **Renamed the “Accounting office” toggle to “Voucher & Payroll office”** (clearer about what it does and not tied to one office).
-- **Header now shows the office code** (e.g. PICTO, OPAcc · division) beneath the user's name.
+## 1.7.0 — 2026-06-26
+**E-Record report + reports module reorganized; UI polish**
+- **New Reports module:** pick a report type, set its filters, generate. Older reports are hidden for now (kept in code).
+- **E-Record report (accounting):** filter by **Document Type → Fund → Month / Day / Year**, with an editable **report title**; prints **A4 landscape**. Columns exactly: Date Received (e.g. 6-Jun) · DV # (the fund sequence) · OBR No. · Responsibility Center (code/name) · Fund · Payee (title) · Nature · Particulars (description) · Amount, with a grand total. Includes all encoded documents matching the filters, **any status**. Available to accounting offices (extendable to others later).
+- **Configurable report codes:** each **Fund** (GF/SEF/TF/GFDF) and **Nature** (Payt./Reimb.) has an editable “report code” in Accounting Setup that drives how it prints.
+- **Prominent tracking code** on the Document Details page — labeled bordered chip, bold monospace, one-click copy.
+- **Renamed the “Accounting office” toggle to “Voucher & Payroll office.”**
+- **Header shows the office code** (e.g. PICTO, OPAcc · division) beneath the user's name.
 
 ## 1.6.2 — 2026-06-26
 **Per-office toggle for the Voucher/Payroll extra fields**

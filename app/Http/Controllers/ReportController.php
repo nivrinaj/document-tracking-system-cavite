@@ -57,24 +57,77 @@ class ReportController extends Controller
         return Division::where('department_id', $user->department_id)->orderBy('name')->get();
     }
 
+    /** Offices allowed to run the E-Record report (accounting offices, for now). */
+    private function canRunERecord(User $user): bool
+    {
+        return $user->canViewAllDepartments() || (bool) optional($user->department)->is_accounting;
+    }
+
     public function index()
     {
         $user = Auth::user();
 
-        // Quick numbers — scoped to what this user is allowed to see.
-        $openBase = fn () => Document::visibleTo($user)->whereIn('status', ['draft', 'released', 'received', 'forwarded']);
-        $quick = [
-            'total'     => Document::visibleTo($user)->count(),
-            'active'    => (clone $openBase())->where('is_pending', false)->count(),
-            'pending'   => Document::visibleTo($user)->where('is_pending', true)->count(),
-            'completed' => Document::visibleTo($user)->whereIn('status', ['archived', 'completed'])->count(),
+        return view('reports.index', [
+            'canERecord' => $this->canRunERecord($user),
+            'eDocTypes' => \App\Models\DocumentType::availableFor($user->department_id)->pluck('name'),
+            'eFunds' => \App\Models\Fund::where('is_active', true)->orderBy('sort_order')->orderBy('name')->get(),
+            'defaultTitle' => Setting::get('erecord_title', 'E-Record'),
+        ]);
+    }
+
+    /**
+     * E-Record — encoded Vouchers/Payroll for a chosen Document Type + Fund and
+     * month/day/year, regardless of status. Printed on A4 landscape.
+     */
+    public function erecord(Request $request)
+    {
+        $user = Auth::user();
+        abort_unless($this->canRunERecord($user), 403, 'This report is for accounting offices.');
+
+        $data = $request->validate([
+            'document_type' => ['required', 'string', 'max:100'],
+            'fund_id' => ['required', 'exists:funds,id'],
+            'year' => ['required', 'integer', 'min:2000', 'max:2100'],
+            'month' => ['required', 'integer', 'between:1,12'],
+            'day' => ['nullable', 'integer', 'between:1,31'],
+            'title' => ['nullable', 'string', 'max:150'],
+            'format' => ['nullable', 'in:html,pdf'],
+        ]);
+
+        // Scope to the accounting office running it (all offices for view-all users).
+        $deptId = $user->canViewAllDepartments() ? null : $user->department_id;
+
+        $rows = Document::query()
+            ->with(['fund', 'responsibilityCenter'])
+            ->where('document_type', $data['document_type'])
+            ->where('fund_id', $data['fund_id'])
+            ->whereYear('created_at', $data['year'])
+            ->whereMonth('created_at', $data['month'])
+            ->when(! empty($data['day']), fn ($q) => $q->whereDay('created_at', $data['day']))
+            ->when($deptId, fn ($q) => $q->where('department_id', $deptId))
+            ->orderBy('created_at')
+            ->get();
+
+        $fund = \App\Models\Fund::find($data['fund_id']);
+        $natureCodes = \App\Models\NatureOfTransaction::pluck('report_code', 'name');
+
+        $payload = [
+            'reportTitle' => $data['title'] ?: Setting::get('erecord_title', 'E-Record'),
+            'rows' => $rows,
+            'fund' => $fund,
+            'documentType' => $data['document_type'],
+            'year' => $data['year'],
+            'month' => $data['month'],
+            'day' => $data['day'] ?? null,
+            'natureCodes' => $natureCodes,
+            'org' => Setting::get('organization', ''),
+            'appName' => Setting::get('app_name', config('app.name')),
+            'generatedAt' => now(),
+            'total' => $rows->sum('amount'),
         ];
 
-        return view('reports.index', [
-            'types' => $this->availableTypes($user),
-            'divisions' => $this->visibleDivisions($user),
-            'quick' => $quick,
-        ]);
+        return Pdf::loadView('reports.erecord', $payload)->setPaper('a4', 'landscape')
+            ->stream('e-record-'.$fund->reportCode().'-'.$data['year'].sprintf('%02d', $data['month']).'.pdf');
     }
 
     public function generate(Request $request)

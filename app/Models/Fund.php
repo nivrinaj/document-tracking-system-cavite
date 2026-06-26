@@ -6,7 +6,13 @@ use Illuminate\Database\Eloquent\Model;
 
 class Fund extends Model
 {
-    protected $fillable = ['name', 'code', 'is_dev_fund', 'hospital_available', 'sort_order', 'is_active'];
+    protected $fillable = ['name', 'code', 'report_code', 'is_dev_fund', 'hospital_available', 'sort_order', 'is_active'];
+
+    /** Short code shown on reports (falls back to the numeric fund code). */
+    public function reportCode(): string
+    {
+        return $this->report_code ?: $this->code;
+    }
 
     protected $casts = [
         'is_dev_fund' => 'boolean',

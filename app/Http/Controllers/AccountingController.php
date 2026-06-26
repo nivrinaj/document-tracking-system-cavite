@@ -50,10 +50,11 @@ class AccountingController extends Controller
         $data = $request->validate([
             'name' => ['required', 'string', 'max:150'],
             'code' => ['required', 'string', 'max:20'],
+            'report_code' => ['nullable', 'string', 'max:20'],
             'hospital_available' => ['nullable', 'boolean'],
         ]);
         Fund::create([
-            'name' => $data['name'], 'code' => $data['code'],
+            'name' => $data['name'], 'code' => $data['code'], 'report_code' => $data['report_code'] ?? null,
             'hospital_available' => $request->boolean('hospital_available'),
             'sort_order' => Fund::max('sort_order') + 1,
         ]);
@@ -66,11 +67,12 @@ class AccountingController extends Controller
         $data = $request->validate([
             'name' => ['required', 'string', 'max:150'],
             'code' => ['required', 'string', 'max:20'],
+            'report_code' => ['nullable', 'string', 'max:20'],
             'hospital_available' => ['nullable', 'boolean'],
             'is_active' => ['nullable', 'boolean'],
         ]);
         $fund->update([
-            'name' => $data['name'], 'code' => $data['code'],
+            'name' => $data['name'], 'code' => $data['code'], 'report_code' => $data['report_code'] ?? null,
             'hospital_available' => $request->boolean('hospital_available'),
             'is_active' => $request->boolean('is_active'),
         ]);
@@ -119,7 +121,10 @@ class AccountingController extends Controller
     /* ---------------- Nature of Transaction ---------------- */
     public function storeNature(Request $request)
     {
-        $data = $request->validate(['name' => ['required', 'string', 'max:150']]);
+        $data = $request->validate([
+            'name' => ['required', 'string', 'max:150'],
+            'report_code' => ['nullable', 'string', 'max:20'],
+        ]);
         NatureOfTransaction::create($data + ['sort_order' => NatureOfTransaction::max('sort_order') + 1]);
 
         return back()->with('success', 'Nature of transaction added.');
@@ -129,6 +134,7 @@ class AccountingController extends Controller
     {
         $data = $request->validate([
             'name' => ['required', 'string', 'max:150'],
+            'report_code' => ['nullable', 'string', 'max:20'],
             'is_active' => ['nullable', 'boolean'],
         ]);
         $nature->update($data + ['is_active' => $request->boolean('is_active')]);

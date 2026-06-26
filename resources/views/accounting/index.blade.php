@@ -48,7 +48,7 @@
             <div class="overflow-x-auto">
                 <table class="r-table min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                     <thead class="bg-gray-50 dark:bg-gray-700/40"><tr>
-                        <th class="table-th">Name</th><th class="table-th">Code</th><th class="table-th">Hospital</th><th class="table-th">Active</th><th class="table-th text-right">Action</th>
+                        <th class="table-th">Name</th><th class="table-th">Code</th><th class="table-th">Report code</th><th class="table-th">Hospital</th><th class="table-th">Active</th><th class="table-th text-right">Action</th>
                     </tr></thead>
                     <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
                         @forelse($funds as $fund)
@@ -57,6 +57,7 @@
                                     <td class="table-td" data-label="Name">{{ $fund->name }}</td>
                                 </template>
                                 <td class="table-td" data-label="Code">{{ $fund->code }}</td>
+                                <td class="table-td font-mono" data-label="Report code">{{ $fund->report_code ?: '—' }}</td>
                                 <td class="table-td" data-label="Hospital">{!! $fund->hospital_available ? '✓' : '<span class="text-gray-300">—</span>' !!}</td>
                                 <td class="table-td" data-label="Active">{!! $fund->is_active ? '<span class="text-green-600">Active</span>' : '<span class="text-gray-400">Off</span>' !!}</td>
                                 <td class="table-td text-right" data-label="Action">
@@ -68,6 +69,7 @@
                                         @csrf @method('PUT')
                                         <input name="name" value="{{ $fund->name }}" class="input" required>
                                         <input name="code" value="{{ $fund->code }}" class="input" required>
+                                        <input name="report_code" value="{{ $fund->report_code }}" class="input" placeholder="Report code (e.g. GF)">
                                         <label class="flex items-center gap-1 text-xs"><input type="hidden" name="hospital_available" value="0"><input type="checkbox" name="hospital_available" value="1" class="rounded" @checked($fund->hospital_available)> Hospital-available</label>
                                         <label class="flex items-center gap-1 text-xs"><input type="hidden" name="is_active" value="0"><input type="checkbox" name="is_active" value="1" class="rounded" @checked($fund->is_active)> Active</label>
                                         <div class="col-span-2"><x-btn type="submit" class="w-full">Save</x-btn></div>
@@ -75,17 +77,18 @@
                                 </td>
                             </tr>
                         @empty
-                            <tr><td colspan="5" class="px-4 py-6 text-center text-sm text-gray-400">No funds yet.</td></tr>
+                            <tr><td colspan="6" class="px-4 py-6 text-center text-sm text-gray-400">No funds yet.</td></tr>
                         @endforelse
                     </tbody>
                 </table>
             </div>
-            <form method="POST" action="{{ route('accounting.funds.store') }}" class="mt-3 grid grid-cols-1 sm:grid-cols-4 gap-2 items-center border-t border-gray-100 dark:border-gray-700 pt-3">
+            <form method="POST" action="{{ route('accounting.funds.store') }}" class="mt-3 grid grid-cols-1 sm:grid-cols-5 gap-2 items-center border-t border-gray-100 dark:border-gray-700 pt-3">
                 @csrf
                 <input name="name" class="input sm:col-span-2" placeholder="Fund name" required>
                 <input name="code" class="input" placeholder="Code (e.g. 101)" required>
+                <input name="report_code" class="input" placeholder="Report code (e.g. GF)">
                 <label class="flex items-center gap-1 text-xs"><input type="checkbox" name="hospital_available" value="1" class="rounded"> Hospital</label>
-                <div class="sm:col-span-4"><x-btn type="submit">Add fund</x-btn></div>
+                <div class="sm:col-span-5"><x-btn type="submit">Add fund</x-btn></div>
             </form>
         </x-card>
 
@@ -120,19 +123,27 @@
         {{-- ───────── Nature of Transaction ───────── --}}
         <x-card>
             <h2 class="font-semibold mb-1">Nature of Transaction</h2>
-            <p class="text-xs text-gray-400 mb-3">Options for the “Nature of Transaction” dropdown.</p>
-            <div class="flex flex-wrap gap-2">
+            <p class="text-xs text-gray-400 mb-3">Options for the “Nature of Transaction” dropdown. The <strong>report code</strong> is the short form shown on reports (e.g. Payt., Reimb.).</p>
+            <div class="divide-y divide-gray-100 dark:divide-gray-700">
                 @forelse($natures as $n)
-                    <span class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gray-100 dark:bg-gray-700 text-sm">
-                        {{ $n->name }}
-                        <form method="POST" action="{{ route('accounting.natures.destroy', $n) }}" data-confirm="Remove “{{ $n->name }}”?">@csrf @method('DELETE')<button class="text-gray-400 hover:text-red-500">&times;</button></form>
-                    </span>
+                    <div class="flex items-center gap-2 py-2" x-data="{ edit: false }">
+                        <div class="flex-1 min-w-0" x-show="!edit"><span class="font-medium text-sm">{{ $n->name }}</span> @if($n->report_code)<span class="text-xs text-gray-400 font-mono">· {{ $n->report_code }}</span>@endif @unless($n->is_active)<span class="text-[10px] text-gray-400">(off)</span>@endunless</div>
+                        <form x-show="edit" x-cloak method="POST" action="{{ route('accounting.natures.update', $n) }}" class="flex-1 flex gap-2">@csrf @method('PUT')
+                            <input name="name" value="{{ $n->name }}" class="input" required>
+                            <input name="report_code" value="{{ $n->report_code }}" class="input max-w-[140px]" placeholder="Report code">
+                            <input type="hidden" name="is_active" value="1">
+                            <x-btn type="submit" class="shrink-0">Save</x-btn>
+                        </form>
+                        <button type="button" @click="edit=!edit" class="act-edit shrink-0">Edit</button>
+                        <form method="POST" action="{{ route('accounting.natures.destroy', $n) }}" data-confirm="Remove “{{ $n->name }}”?">@csrf @method('DELETE')<button class="act-del shrink-0">Delete</button></form>
+                    </div>
                 @empty
-                    <p class="text-sm text-gray-400">None yet.</p>
+                    <p class="py-3 text-sm text-gray-400">None yet.</p>
                 @endforelse
             </div>
             <form method="POST" action="{{ route('accounting.natures.store') }}" class="mt-3 flex gap-2 border-t border-gray-100 dark:border-gray-700 pt-3">@csrf
                 <input name="name" class="input" placeholder="e.g. Payment" required>
+                <input name="report_code" class="input max-w-[140px]" placeholder="Report code">
                 <x-btn type="submit" class="shrink-0">Add</x-btn>
             </form>
         </x-card>

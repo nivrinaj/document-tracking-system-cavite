@@ -1,59 +1,90 @@
 <x-app-layout>
     <x-slot name="header">Reports</x-slot>
 
-    <div class="space-y-6">
-        {{-- Quick numbers --}}
-        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <x-stat-card label="Total documents" :value="$quick['total']" color="primary"><x-slot:icon><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></x-slot:icon></x-stat-card>
-            <x-stat-card label="Active (ongoing)" :value="$quick['active']" color="blue"><x-slot:icon><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></x-slot:icon></x-stat-card>
-            <x-stat-card label="Pending (paused)" :value="$quick['pending']" color="amber"><x-slot:icon><path stroke-linecap="round" stroke-linejoin="round" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z"/></x-slot:icon></x-stat-card>
-            <x-stat-card label="Completed / Archived" :value="$quick['completed']" color="green"><x-slot:icon><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></x-slot:icon></x-stat-card>
+    <div class="max-w-3xl mx-auto space-y-6">
+        <div>
+            <label class="label">Report</label>
+            <select id="reportType" class="input sm:max-w-sm" onchange="document.querySelectorAll('[data-report]').forEach(el => el.classList.toggle('hidden', el.dataset.report !== this.value))">
+                <option value="erecord">E-Record</option>
+            </select>
+            <p class="text-xs text-gray-400 mt-1">Choose a report; its filters appear below.</p>
         </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {{-- Generator --}}
-            <div class="lg:col-span-2">
-                <x-card title="Generate a report">
-                    <form method="GET" action="{{ route('reports.generate') }}" class="space-y-4">
+        {{-- ───────── E-Record ───────── --}}
+        <div data-report="erecord">
+            @if($canERecord)
+                <x-card>
+                    <form method="GET" action="{{ route('reports.erecord') }}" target="_blank" class="space-y-5">
+                        <input type="hidden" name="format" value="pdf">
                         <div>
-                            <label class="label">Report type</label>
-                            <select name="type" class="input" required>
-                                @foreach($types as $key => $label)<option value="{{ $key }}">{{ $label }}</option>@endforeach
-                            </select>
+                            <label class="label">Report title</label>
+                            <input type="text" name="title" value="{{ old('title', $defaultTitle) }}" class="input sm:max-w-sm" placeholder="E-Record">
                         </div>
-                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                            <div><label class="label">Date from</label><input type="date" name="date_from" class="input"></div>
-                            <div><label class="label">Date to</label><input type="date" name="date_to" class="input"></div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
-                                <label class="label">Division</label>
-                                <select name="division_id" class="input">
-                                    <option value="">All divisions</option>
-                                    @foreach($divisions as $d)<option value="{{ $d->id }}">{{ $d->code }} — {{ $d->name }}</option>@endforeach
+                                <label class="label">Document Type <span class="text-red-500">*</span></label>
+                                <select name="document_type" class="input" required>
+                                    @forelse($eDocTypes as $t)
+                                        <option value="{{ $t }}">{{ $t }}</option>
+                                    @empty
+                                        <option value="">— none available —</option>
+                                    @endforelse
+                                </select>
+                            </div>
+                            <div>
+                                <label class="label">Fund <span class="text-red-500">*</span></label>
+                                <select name="fund_id" class="input" required>
+                                    <option value="">— Select fund —</option>
+                                    @foreach($eFunds as $f)
+                                        <option value="{{ $f->id }}">{{ $f->name }} ({{ $f->reportCode() }})</option>
+                                    @endforeach
                                 </select>
                             </div>
                         </div>
-                        <div class="flex flex-wrap gap-2 pt-2">
-                            <x-btn type="submit" name="format" value="html">View Report</x-btn>
-                            <x-btn type="submit" name="format" value="pdf" variant="secondary">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-                                Download PDF
+
+                        <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                            <div>
+                                <label class="label">Month <span class="text-red-500">*</span></label>
+                                <select name="month" class="input" required>
+                                    @foreach(range(1, 12) as $m)
+                                        <option value="{{ $m }}" @selected($m == now()->month)>{{ \Carbon\Carbon::create()->month($m)->format('F') }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div>
+                                <label class="label">Year <span class="text-red-500">*</span></label>
+                                <select name="year" class="input" required>
+                                    @foreach(range(now()->year, now()->year - 5) as $y)
+                                        <option value="{{ $y }}">{{ $y }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div>
+                                <label class="label">Day <span class="text-gray-400 text-xs font-normal">(optional)</span></label>
+                                <select name="day" class="input">
+                                    <option value="">All days</option>
+                                    @foreach(range(1, 31) as $d)
+                                        <option value="{{ $d }}">{{ $d }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center gap-3 pt-1">
+                            <x-btn type="submit">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                                Generate PDF (A4 landscape)
                             </x-btn>
+                            <span class="text-xs text-gray-400">Opens in a new tab. All encoded documents matching the filters, any status.</span>
                         </div>
                     </form>
                 </x-card>
-            </div>
-
-            {{-- Recommended --}}
-            <x-card title="Recommended reports">
-                <ul class="space-y-2 text-sm">
-                    @foreach($types as $key => $label)
-                        <li class="flex gap-2">
-                            <span class="text-[color:var(--color-primary)]">•</span>
-                            <a href="{{ route('reports.generate', ['type' => $key, 'format' => 'html']) }}" class="hover:underline">{{ $label }}</a>
-                        </li>
-                    @endforeach
-                </ul>
-            </x-card>
+            @else
+                <x-card>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">The E-Record report is available to accounting offices. Ask a Super Admin to enable the “Voucher &amp; Payroll office” toggle for your office.</p>
+                </x-card>
+            @endif
         </div>
     </div>
 </x-app-layout>

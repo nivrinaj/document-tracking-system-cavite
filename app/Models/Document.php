@@ -322,6 +322,14 @@ class Document extends Model
         return in_array($this->status, ['archived', 'completed']);
     }
 
+    /** The running sequence portion of a fund-based tracking code (e.g. 221-2026-06-8 → "8"). */
+    public function dvNumber(): string
+    {
+        $parts = explode('-', (string) $this->tracking_code);
+
+        return isset($parts[3]) ? preg_replace('/\D/', '', $parts[3]) : '';
+    }
+
     public function isVoucher(): bool
     {
         return strtolower($this->document_type) === 'voucher';

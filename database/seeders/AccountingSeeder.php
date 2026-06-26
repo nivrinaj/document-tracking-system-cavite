@@ -13,23 +13,24 @@ class AccountingSeeder extends Seeder
 {
     public function run(): void
     {
-        // Funds: [name, code, is_dev_fund, hospital_available]
+        // Funds: [name, code, report_code, is_dev_fund, hospital_available]
         $funds = [
-            ['General Funds', '101', false, true],
-            ['SEF', '221', false, false],
-            ['Trust Fund', '401', false, true],
-            ['Gen. Fund 20% Development Fund', '101', true, false],
+            ['General Funds', '101', 'GF', false, true],
+            ['SEF', '221', 'SEF', false, false],
+            ['Trust Fund', '401', 'TF', false, true],
+            ['Gen. Fund 20% Development Fund', '101', 'GFDF', true, false],
         ];
-        foreach ($funds as $i => [$name, $code, $dev, $hosp]) {
+        foreach ($funds as $i => [$name, $code, $reportCode, $dev, $hosp]) {
             Fund::firstOrCreate(
                 ['name' => $name],
-                ['code' => $code, 'is_dev_fund' => $dev, 'hospital_available' => $hosp, 'sort_order' => $i, 'is_active' => true],
+                ['code' => $code, 'report_code' => $reportCode, 'is_dev_fund' => $dev, 'hospital_available' => $hosp, 'sort_order' => $i, 'is_active' => true],
             );
         }
 
-        // Nature of transaction options.
-        foreach (['Payment', 'Reimbursement', 'Liquidation', 'Cash Advance', 'Refund'] as $i => $name) {
-            NatureOfTransaction::firstOrCreate(['name' => $name], ['sort_order' => $i, 'is_active' => true]);
+        // Nature of transaction options: [name => report code].
+        $i = 0;
+        foreach (['Payment' => 'Payt.', 'Reimbursement' => 'Reimb.', 'Liquidation' => 'Liq.', 'Cash Advance' => 'CA', 'Refund' => 'Refund'] as $name => $reportCode) {
+            NatureOfTransaction::firstOrCreate(['name' => $name], ['report_code' => $reportCode, 'sort_order' => $i++, 'is_active' => true]);
         }
 
         // A couple of sample responsibility centers (Office/Unit/Project + code).
