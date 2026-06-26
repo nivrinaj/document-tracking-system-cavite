@@ -10,7 +10,17 @@
                     <x-status-badge :status="$document->status" />
                     <x-priority-badge :priority="$document->priority" />
                 </div>
-                <p class="text-sm text-gray-400 font-mono mt-1">{{ $document->tracking_code }}</p>
+                <div class="mt-2 inline-flex items-center gap-1.5" x-data="{ copied: false }">
+                    <span class="inline-flex items-center gap-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 pl-3 pr-2 py-1.5">
+                        <span class="text-[10px] font-medium uppercase tracking-wider text-gray-400">Tracking code</span>
+                        <span class="font-mono text-base font-semibold tracking-wide text-gray-900 dark:text-white">{{ $document->tracking_code }}</span>
+                        <button type="button" @click="navigator.clipboard?.writeText('{{ $document->tracking_code }}'); copied = true; setTimeout(() => copied = false, 1500)"
+                                class="ml-0.5 p-1 rounded text-gray-400 hover:text-[color:var(--color-primary)]" :title="copied ? 'Copied!' : 'Copy'">
+                            <svg x-show="!copied" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7v8a2 2 0 002 2h6m-6-4V5a2 2 0 012-2h4.586a1 1 0 01.707.293l2.414 2.414a1 1 0 01.293.707V13a2 2 0 01-2 2h-2"/></svg>
+                            <svg x-show="copied" x-cloak class="w-4 h-4 text-green-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                        </button>
+                    </span>
+                </div>
             </div>
             <div class="flex items-center gap-2">
                 <a href="{{ route('documents.index') }}" class="text-sm link">← Back to list</a>

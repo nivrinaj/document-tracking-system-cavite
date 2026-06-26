@@ -245,7 +245,10 @@
                 <div class="relative" x-data="{ open: false }">
                     <button @click="open = !open" class="flex items-center gap-2 p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">
                         <img src="{{ auth()->user()->avatar_url }}" class="w-8 h-8 rounded-full object-cover" alt="">
-                        <span class="hidden sm:block text-sm font-medium">{{ auth()->user()->name }}</span>
+                        <span class="hidden sm:block text-left leading-tight">
+                            <span class="block text-sm font-medium">{{ auth()->user()->name }}</span>
+                            @if(auth()->user()->department)<span class="block text-[11px] text-gray-400">{{ auth()->user()->department->code }}@if(auth()->user()->division) · {{ auth()->user()->division->code }}@endif</span>@endif
+                        </span>
                         <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                     </button>
                     <div x-show="open" x-cloak @click.outside="open = false"

@@ -24,7 +24,7 @@
     <label class="flex items-center gap-2 text-sm font-medium">
         <input type="hidden" name="is_accounting" value="0">
         <input type="checkbox" name="is_accounting" value="1" x-model="acct" class="rounded text-[color:var(--color-primary)]">
-        This is the Accounting office
+        Voucher &amp; Payroll office
     </label>
     <p class="text-xs text-gray-400 ml-6">When on, this office is limited to <strong>Voucher</strong> &amp; <strong>Payroll</strong>, and encoding either shows the extra <strong>Amount / Fund / OBR / RC / Nature</strong> fields. When off, an office encoding a Voucher/Payroll sees only the regular fields.</p>
 

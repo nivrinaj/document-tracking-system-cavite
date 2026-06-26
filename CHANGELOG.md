@@ -6,6 +6,12 @@ Format based on [Keep a Changelog](https://keepachangelog.com).
 
 ---
 
+## 1.6.3 — 2026-06-26
+**UI polish ahead of the Reports work**
+- **Prominent tracking code** on the Document Details page — shown in a labeled, bordered chip with larger bold monospace and a one-click copy button.
+- **Renamed the “Accounting office” toggle to “Voucher & Payroll office”** (clearer about what it does and not tied to one office).
+- **Header now shows the office code** (e.g. PICTO, OPAcc · division) beneath the user's name.
+
 ## 1.6.2 — 2026-06-26
 **Per-office toggle for the Voucher/Payroll extra fields**
 - The Amount / Fund / OBR / Responsibility Center / Nature fields now appear **only for offices with the “Accounting office” toggle on** (e.g. OPAcc). An office without it (e.g. PICTO) encoding a Voucher/Payroll sees just the regular fields. Set it per office in Departments → edit.
