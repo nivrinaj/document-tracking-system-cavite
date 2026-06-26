@@ -117,17 +117,23 @@ class DocumentController extends Controller
     {
         $this->authorizeAction('documents.create');
 
+        // The extra accounting fields (amount/fund/OBR/RC/nature) apply only when the
+        // encoder's office has the Accounting toggle on; other offices encode a
+        // Voucher/Payroll with the regular fields only.
+        $acct = (bool) optional($request->user()->department)->is_accounting;
+        $acctRule = $acct ? 'required_if:document_type,Voucher,Payroll' : 'nullable';
+
         $data = $request->validate([
             'title' => ['required', 'string', 'max:255'],
             'reference_no' => ['nullable', 'string', 'max:255'],
             'document_type' => ['required', 'string', 'max:100'],
-            // Accounting fields — triggered by the document type (Voucher/Payroll), any office.
-            'fund_id' => ['nullable', 'required_if:document_type,Voucher,Payroll', 'exists:funds,id'],
-            'amount' => ['nullable', 'required_if:document_type,Voucher,Payroll', 'numeric', 'min:0'],
-            'obr_no' => ['nullable', 'required_if:document_type,Voucher,Payroll', 'string', 'max:100'],
-            'responsibility_center_id' => ['nullable', 'required_if:document_type,Voucher,Payroll', 'exists:responsibility_centers,id'],
-            'rc_code' => ['nullable', 'required_if:document_type,Voucher,Payroll', 'string', 'max:150'],
-            'nature_of_transaction' => ['nullable', 'required_if:document_type,Voucher,Payroll', 'string', 'max:150'],
+            // Accounting fields — only for offices flagged is_accounting (e.g. OPAcc).
+            'fund_id' => ['nullable', $acctRule, 'exists:funds,id'],
+            'amount' => ['nullable', $acctRule, 'numeric', 'min:0'],
+            'obr_no' => ['nullable', $acctRule, 'string', 'max:100'],
+            'responsibility_center_id' => ['nullable', $acctRule, 'exists:responsibility_centers,id'],
+            'rc_code' => ['nullable', $acctRule, 'string', 'max:150'],
+            'nature_of_transaction' => ['nullable', $acctRule, 'string', 'max:150'],
             'description' => ['nullable', 'string'],
             'source_department_id' => ['nullable', 'string', 'max:50'],
             'source_division_id' => ['nullable', 'exists:divisions,id'],

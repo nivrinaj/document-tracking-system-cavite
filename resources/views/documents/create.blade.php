@@ -8,7 +8,7 @@
                   voucherNo: '{{ old('voucher_number') }}',
                   voucherTypes: @js($voucherTypeNames),
                   isAccounting: {{ ($isAccounting ?? false) ? 'true' : 'false' }},
-                  get acct() { return this.docType === 'Voucher' || this.docType === 'Payroll'; },
+                  get acct() { return this.isAccounting && (this.docType === 'Voucher' || this.docType === 'Payroll'); },
                   srcOffice: '{{ old('source_department_id') }}',
                   srcDiv: '{{ old('source_division_id') }}',
                   scope: '{{ old('broadcast_scope', 'none') }}',

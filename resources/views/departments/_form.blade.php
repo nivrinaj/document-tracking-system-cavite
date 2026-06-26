@@ -26,7 +26,7 @@
         <input type="checkbox" name="is_accounting" value="1" x-model="acct" class="rounded text-[color:var(--color-primary)]">
         This is the Accounting office
     </label>
-    <p class="text-xs text-gray-400 ml-6">When on, this office is limited to <strong>Voucher</strong> &amp; <strong>Payroll</strong> only. (Voucher/Payroll trigger the Amount / Fund / OBR / RC / Nature fields for any office that encodes them.)</p>
+    <p class="text-xs text-gray-400 ml-6">When on, this office is limited to <strong>Voucher</strong> &amp; <strong>Payroll</strong>, and encoding either shows the extra <strong>Amount / Fund / OBR / RC / Nature</strong> fields. When off, an office encoding a Voucher/Payroll sees only the regular fields.</p>
 
     {{-- Limit to document types (for non-accounting offices) --}}
     <div x-show="!acct" x-cloak class="mt-4">

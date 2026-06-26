@@ -6,6 +6,10 @@ Format based on [Keep a Changelog](https://keepachangelog.com).
 
 ---
 
+## 1.6.2 — 2026-06-26
+**Per-office toggle for the Voucher/Payroll extra fields**
+- The Amount / Fund / OBR / Responsibility Center / Nature fields now appear **only for offices with the “Accounting office” toggle on** (e.g. OPAcc). An office without it (e.g. PICTO) encoding a Voucher/Payroll sees just the regular fields. Set it per office in Departments → edit.
+
 ## 1.6.1 — 2026-06-26
 **Document types reworked to per-office; type-driven accounting fields; staff dropdown fix**
 - **Per-office limits, not per-type.** All document types are global again; an office is limited to a subset via Departments → edit (Accounting offices auto-limit to Voucher/Payroll). Result: **OPAcc sees only Voucher/Payroll; PICTO sees every type including Voucher/Payroll** — which the 1.6.0 approach got wrong.
