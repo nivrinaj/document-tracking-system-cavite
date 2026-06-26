@@ -23,7 +23,16 @@
 <body>
     @php
         $fundLabel = $fund ? $fund->name.' ('.$fund->reportCode().')' : '';
-        $period = \Carbon\Carbon::create()->month($month)->format('F').($day ? ' '.$day : '').', '.$year;
+        $fmt = fn ($d) => $d->format('M j, Y'.($d->format('H:i') !== '00:00' ? ' g:i A' : ''));
+        if ($from && $to) {
+            $period = $fmt($from).' – '.$fmt($to);
+        } elseif ($from) {
+            $period = 'From '.$fmt($from);
+        } elseif ($to) {
+            $period = 'Up to '.$fmt($to);
+        } else {
+            $period = 'All dates';
+        }
     @endphp
 
     <div class="head">

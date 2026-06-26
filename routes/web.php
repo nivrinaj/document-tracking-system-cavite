@@ -98,7 +98,7 @@ Route::middleware(['auth', 'active'])->group(function () {
     Route::get('/logs', [LogController::class, 'index'])->name('logs.index');
 
     /* -------------------- Accounting setup (funds, RC, nature) -------------------- */
-    Route::middleware('permission:accounting.manage')->prefix('accounting')->name('accounting.')->group(function () {
+    Route::middleware('role:Super Admin')->prefix('accounting')->name('accounting.')->group(function () {
         Route::get('/setup', [\App\Http\Controllers\AccountingController::class, 'index'])->name('index');
         Route::post('/funds', [\App\Http\Controllers\AccountingController::class, 'storeFund'])->name('funds.store');
         Route::put('/funds/{fund}', [\App\Http\Controllers\AccountingController::class, 'updateFund'])->name('funds.update');
@@ -133,6 +133,8 @@ Route::middleware(['auth', 'active'])->group(function () {
 
     /* -------------------- Documentation & Changelog (Super Admin only) -------------------- */
     Route::middleware('role:Super Admin')->group(function () {
+        Route::get('/reports/settings', [ReportController::class, 'settings'])->name('reports.settings');
+        Route::put('/reports/settings', [ReportController::class, 'saveSettings'])->name('reports.settings.save');
         Route::resource('document-types', \App\Http\Controllers\DocumentTypeController::class)->except('show');
         Route::get('/changelog', [\App\Http\Controllers\ChangelogController::class, 'index'])->name('changelog.index');
         Route::get('/documentation', [DocumentationController::class, 'index'])->name('documentation.index');

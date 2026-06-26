@@ -6,6 +6,14 @@ Format based on [Keep a Changelog](https://keepachangelog.com).
 
 ---
 
+## 1.7.1 — 2026-06-26
+**Reports module: full-width layout, live preview, date-range filter, Super-Admin report settings**
+- **Full-width Reports page** with a live **preview pane** that refreshes as you change filters (so you can see the report before printing). Added a “Filters” heading and fixed the floating report dropdown.
+- **Report list is office-aware** — a report only appears for offices allowed to run it (E-Record shows for accounting offices / configured offices / Super Admin; hidden otherwise).
+- **Date & time range filter** (From / To, either or both) replacing the fixed month/day/year.
+- **Report title & paper size are no longer set by staff.** A new **Super Admin → Report settings** page configures the E-Record title, paper size, orientation, and which offices may run it.
+- **Accounting Setup is now Super-Admin only** (it was wrongly visible to all department heads).
+
 ## 1.7.0 — 2026-06-26
 **E-Record report + reports module reorganized; UI polish**
 - **New Reports module:** pick a report type, set its filters, generate. Older reports are hidden for now (kept in code).

@@ -57,27 +57,40 @@ class ReportController extends Controller
         return Division::where('department_id', $user->department_id)->orderBy('name')->get();
     }
 
-    /** Offices allowed to run the E-Record report (accounting offices, for now). */
+    /** Offices allowed to run the E-Record report — Super Admin, the configured offices, else accounting offices. */
     private function canRunERecord(User $user): bool
     {
-        return $user->canViewAllDepartments() || (bool) optional($user->department)->is_accounting;
+        if ($user->canViewAllDepartments()) {
+            return true;
+        }
+        $offices = array_values(array_filter(explode(',', (string) Setting::get('erecord_offices', ''))));
+        if (! empty($offices)) {
+            return in_array((string) $user->department_id, $offices, true);
+        }
+
+        return (bool) optional($user->department)->is_accounting;
     }
 
     public function index()
     {
         $user = Auth::user();
 
+        // Only list reports relevant to this user's office.
+        $reports = [];
+        if ($this->canRunERecord($user)) {
+            $reports['erecord'] = 'E-Record';
+        }
+
         return view('reports.index', [
-            'canERecord' => $this->canRunERecord($user),
+            'reports' => $reports,
             'eDocTypes' => \App\Models\DocumentType::availableFor($user->department_id)->pluck('name'),
             'eFunds' => \App\Models\Fund::where('is_active', true)->orderBy('sort_order')->orderBy('name')->get(),
-            'defaultTitle' => Setting::get('erecord_title', 'E-Record'),
         ]);
     }
 
     /**
-     * E-Record — encoded Vouchers/Payroll for a chosen Document Type + Fund and
-     * month/day/year, regardless of status. Printed on A4 landscape.
+     * E-Record — encoded Vouchers/Payroll for a chosen Document Type + Fund within a
+     * date/time range, regardless of status. Title & paper come from report settings.
      */
     public function erecord(Request $request)
     {
@@ -87,47 +100,77 @@ class ReportController extends Controller
         $data = $request->validate([
             'document_type' => ['required', 'string', 'max:100'],
             'fund_id' => ['required', 'exists:funds,id'],
-            'year' => ['required', 'integer', 'min:2000', 'max:2100'],
-            'month' => ['required', 'integer', 'between:1,12'],
-            'day' => ['nullable', 'integer', 'between:1,31'],
-            'title' => ['nullable', 'string', 'max:150'],
+            'date_from' => ['nullable', 'date'],
+            'date_to' => ['nullable', 'date', 'after_or_equal:date_from'],
             'format' => ['nullable', 'in:html,pdf'],
         ]);
 
-        // Scope to the accounting office running it (all offices for view-all users).
+        $from = $request->filled('date_from') ? Carbon::parse($data['date_from']) : null;
+        $to = $request->filled('date_to') ? Carbon::parse($data['date_to']) : null;
         $deptId = $user->canViewAllDepartments() ? null : $user->department_id;
 
         $rows = Document::query()
             ->with(['fund', 'responsibilityCenter'])
             ->where('document_type', $data['document_type'])
             ->where('fund_id', $data['fund_id'])
-            ->whereYear('created_at', $data['year'])
-            ->whereMonth('created_at', $data['month'])
-            ->when(! empty($data['day']), fn ($q) => $q->whereDay('created_at', $data['day']))
+            ->when($from, fn ($q) => $q->where('created_at', '>=', $from))
+            ->when($to, fn ($q) => $q->where('created_at', '<=', $to))
             ->when($deptId, fn ($q) => $q->where('department_id', $deptId))
             ->orderBy('created_at')
             ->get();
 
         $fund = \App\Models\Fund::find($data['fund_id']);
-        $natureCodes = \App\Models\NatureOfTransaction::pluck('report_code', 'name');
 
         $payload = [
-            'reportTitle' => $data['title'] ?: Setting::get('erecord_title', 'E-Record'),
+            'reportTitle' => Setting::get('erecord_title', 'E-Record'),
             'rows' => $rows,
             'fund' => $fund,
             'documentType' => $data['document_type'],
-            'year' => $data['year'],
-            'month' => $data['month'],
-            'day' => $data['day'] ?? null,
-            'natureCodes' => $natureCodes,
+            'from' => $from,
+            'to' => $to,
+            'natureCodes' => \App\Models\NatureOfTransaction::pluck('report_code', 'name'),
             'org' => Setting::get('organization', ''),
             'appName' => Setting::get('app_name', config('app.name')),
             'generatedAt' => now(),
             'total' => $rows->sum('amount'),
         ];
 
-        return Pdf::loadView('reports.erecord', $payload)->setPaper('a4', 'landscape')
-            ->stream('e-record-'.$fund->reportCode().'-'.$data['year'].sprintf('%02d', $data['month']).'.pdf');
+        if ($request->input('format') === 'html') {
+            return view('reports.erecord', $payload + ['preview' => true]);
+        }
+
+        return Pdf::loadView('reports.erecord', $payload)
+            ->setPaper(Setting::get('erecord_paper', 'a4'), Setting::get('erecord_orientation', 'landscape'))
+            ->stream('e-record-'.$fund->reportCode().'-'.now()->format('Ymd-His').'.pdf');
+    }
+
+    /* ───────────── Report settings (Super Admin) ───────────── */
+    public function settings()
+    {
+        return view('reports.settings', [
+            'title' => Setting::get('erecord_title', 'E-Record'),
+            'paper' => Setting::get('erecord_paper', 'a4'),
+            'orientation' => Setting::get('erecord_orientation', 'landscape'),
+            'offices' => array_values(array_filter(explode(',', (string) Setting::get('erecord_offices', '')))),
+            'departments' => \App\Models\Department::orderBy('name')->get(),
+        ]);
+    }
+
+    public function saveSettings(Request $request)
+    {
+        $data = $request->validate([
+            'erecord_title' => ['required', 'string', 'max:150'],
+            'erecord_paper' => ['required', 'in:a4,letter,legal'],
+            'erecord_orientation' => ['required', 'in:landscape,portrait'],
+            'erecord_offices' => ['nullable', 'array'],
+            'erecord_offices.*' => ['integer', 'exists:departments,id'],
+        ]);
+        Setting::put('erecord_title', $data['erecord_title']);
+        Setting::put('erecord_paper', $data['erecord_paper']);
+        Setting::put('erecord_orientation', $data['erecord_orientation']);
+        Setting::put('erecord_offices', implode(',', $data['erecord_offices'] ?? []));
+
+        return back()->with('success', 'Report settings saved.');
     }
 
     public function generate(Request $request)
