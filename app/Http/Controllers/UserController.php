@@ -83,6 +83,9 @@ class UserController extends Controller
         $this->syncDirectPermission($user, 'documents.claim', $request->boolean('can_claim'));
         $this->syncDirectPermission($user, 'calendar.manage', $request->boolean('can_manage_calendar'));
 
+        $dept = optional(\App\Models\Department::find($data['department_id'] ?? null))->code ?? '(none)';
+        \App\Models\ActivityLog::record('users.store', "Created user: {$data['name']} ({$data['username']}), Role: {$data['role']}, Dept: {$dept}", $user);
+
         return redirect()->route('users.index')->with('success', 'User created.');
     }
 
@@ -111,6 +114,36 @@ class UserController extends Controller
             'is_active' => ['nullable', 'boolean'],
         ]);
 
+        $oldRole = $user->roles->first()?->name ?? '';
+        $oldDeptCode = optional($user->department)->code ?? '(none)';
+        $oldDivCode = optional($user->division)->code ?? '(none)';
+        $oldActive = $user->is_active;
+
+        $changes = [];
+        if ($user->name !== $data['name']) $changes[] = 'Name "' . $user->name . '" → "' . $data['name'] . '"';
+        if ($user->username !== $data['username']) $changes[] = 'Username "' . $user->username . '" → "' . $data['username'] . '"';
+        if (($user->email ?? '') !== ($data['email'] ?? '')) $changes[] = 'Email "' . ($user->email ?: '(none)') . '" → "' . ($data['email'] ?: '(none)') . '"';
+        if ((string) ($user->department_id ?? '') !== (string) ($data['department_id'] ?? '')) {
+            $newDeptCode = optional(\App\Models\Department::find($data['department_id'] ?? null))->code ?? '(none)';
+            $changes[] = 'Dept ' . $oldDeptCode . ' → ' . $newDeptCode;
+        }
+        if ((string) ($user->division_id ?? '') !== (string) ($data['division_id'] ?? '')) {
+            $newDivCode = optional(Division::find($data['division_id'] ?? null))->code ?? '(none)';
+            $changes[] = 'Division ' . $oldDivCode . ' → ' . $newDivCode;
+        }
+        if ($oldRole !== $data['role']) $changes[] = 'Role ' . ($oldRole ?: '(none)') . ' → ' . $data['role'];
+        if ($oldActive !== $request->boolean('is_active')) $changes[] = 'Active ' . ($oldActive ? 'ON' : 'OFF') . ' → ' . ($request->boolean('is_active') ? 'ON' : 'OFF');
+        if (($user->position ?? '') !== ($data['position'] ?? '')) $changes[] = 'Position changed';
+        if (! empty($data['password'])) $changes[] = 'Password changed';
+
+        $capLabels = ['can_encode' => 'Can encode', 'can_transfer_office' => 'Can transfer', 'can_claim' => 'Can claim', 'can_manage_calendar' => 'Can manage calendar'];
+        $capPerms = ['can_encode' => 'documents.create', 'can_transfer_office' => 'documents.transfer_office', 'can_claim' => 'documents.claim', 'can_manage_calendar' => 'calendar.manage'];
+        foreach ($capLabels as $field => $label) {
+            $old = $user->hasDirectPermission($capPerms[$field]);
+            $new = $request->boolean($field);
+            if ($old !== $new) $changes[] = $label . ' ' . ($old ? 'ON' : 'OFF') . ' → ' . ($new ? 'ON' : 'OFF');
+        }
+
         $user->update([
             'name' => $data['name'],
             'username' => $data['username'],
@@ -131,6 +164,9 @@ class UserController extends Controller
         $this->syncDirectPermission($user, 'documents.transfer_office', $request->boolean('can_transfer_office'));
         $this->syncDirectPermission($user, 'documents.claim', $request->boolean('can_claim'));
         $this->syncDirectPermission($user, 'calendar.manage', $request->boolean('can_manage_calendar'));
+
+        $desc = 'Updated user: ' . $data['name'] . (count($changes) ? ' — ' . implode('; ', $changes) : ' (no changes)');
+        \App\Models\ActivityLog::record('users.update', $desc, $user);
 
         return redirect()->route('users.index')->with('success', 'User updated.');
     }

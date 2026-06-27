@@ -379,15 +379,34 @@ class ReportController extends Controller
                 'labels' => ['nullable', 'array'],
                 'labels.*' => ['nullable', 'string', 'max:50'],
             ]);
+
+            $deptCodes = \App\Models\Department::pluck('code', 'id');
+            $divCodes = Division::pluck('code', 'id');
+            $newOffices = implode(',', $data['transmittal_offices'] ?? []);
+            $newDivisions = implode(',', $data['transmittal_divisions'] ?? []);
+
+            $changes = $this->diffSettings([
+                'Title' => ['transmittal_title', $data['transmittal_title']],
+                'ISO code' => ['transmittal_iso', $data['transmittal_iso'] ?? ''],
+                'Date source' => ['transmittal_date_source', $data['transmittal_date_source']],
+                'Page number' => ['transmittal_page_number', $request->boolean('transmittal_page_number') ? '1' : '0', true],
+                'Show totals' => ['transmittal_show_totals', $request->boolean('transmittal_show_totals') ? '1' : '0', true],
+                'Offices' => ['transmittal_offices', $newOffices, false, $deptCodes],
+                'Divisions' => ['transmittal_divisions', $newDivisions, false, $divCodes],
+            ]);
+
             Setting::put('transmittal_title', $data['transmittal_title']);
             Setting::put('transmittal_iso', $data['transmittal_iso'] ?? '');
-            Setting::put('transmittal_offices', implode(',', $data['transmittal_offices'] ?? []));
-            Setting::put('transmittal_divisions', implode(',', $data['transmittal_divisions'] ?? []));
+            Setting::put('transmittal_offices', $newOffices);
+            Setting::put('transmittal_divisions', $newDivisions);
             Setting::put('transmittal_date_source', $data['transmittal_date_source']);
             Setting::put('transmittal_page_number', $request->boolean('transmittal_page_number') ? '1' : '0');
             Setting::put('transmittal_show_totals', $request->boolean('transmittal_show_totals') ? '1' : '0');
             Setting::put('transmittal_align', json_encode(array_intersect_key($data['align'] ?? [], self::TRANSMITTAL_COLS)));
             Setting::put('transmittal_labels', json_encode(array_intersect_key($data['labels'] ?? [], self::TRANSMITTAL_COLS)));
+
+            $desc = 'Report settings (Transmittal)' . ($changes ? ': ' . $changes : ' saved (no changes)');
+            \App\Models\ActivityLog::record('reports.settings.save', $desc);
 
             return back()->with('success', 'Transmittal settings saved.');
         }
@@ -405,16 +424,55 @@ class ReportController extends Controller
             'labels' => ['nullable', 'array'],
             'labels.*' => ['nullable', 'string', 'max:50'],
         ]);
+
+        $deptCodes = \App\Models\Department::pluck('code', 'id');
+        $newOffices = implode(',', $data['erecord_offices'] ?? []);
+
+        $changes = $this->diffSettings([
+            'Title' => ['erecord_title', $data['erecord_title']],
+            'Paper' => ['erecord_paper', $data['erecord_paper']],
+            'Orientation' => ['erecord_orientation', $data['erecord_orientation']],
+            'Page number' => ['erecord_page_number', $request->boolean('erecord_page_number') ? '1' : '0', true],
+            'Show totals' => ['erecord_show_totals', $request->boolean('erecord_show_totals') ? '1' : '0', true],
+            'Offices' => ['erecord_offices', $newOffices, false, $deptCodes],
+        ]);
+
         Setting::put('erecord_title', $data['erecord_title']);
         Setting::put('erecord_paper', $data['erecord_paper']);
         Setting::put('erecord_orientation', $data['erecord_orientation']);
-        Setting::put('erecord_offices', implode(',', $data['erecord_offices'] ?? []));
+        Setting::put('erecord_offices', $newOffices);
         Setting::put('erecord_show_totals', $request->boolean('erecord_show_totals') ? '1' : '0');
         Setting::put('erecord_page_number', $request->boolean('erecord_page_number') ? '1' : '0');
         Setting::put('erecord_align', json_encode(array_intersect_key($data['align'] ?? [], self::ERECORD_COLS)));
         Setting::put('erecord_labels', json_encode(array_intersect_key($data['labels'] ?? [], self::ERECORD_COLS)));
 
+        $desc = 'Report settings (E-Record)' . ($changes ? ': ' . $changes : ' saved (no changes)');
+        \App\Models\ActivityLog::record('reports.settings.save', $desc);
+
         return back()->with('success', 'Report settings saved.');
+    }
+
+    private function diffSettings(array $fields): string
+    {
+        $parts = [];
+        foreach ($fields as $label => [$key, $newVal, $isBool = false, $lookup = null]) {
+            $oldVal = (string) Setting::get($key, '');
+            if ($oldVal === $newVal) continue;
+
+            if ($isBool) {
+                $parts[] = $label . ' ' . ($oldVal === '1' ? 'ON' : 'OFF') . ' → ' . ($newVal === '1' ? 'ON' : 'OFF');
+            } elseif ($lookup) {
+                $resolve = function ($csv) use ($lookup) {
+                    $ids = array_filter(explode(',', $csv));
+                    if (empty($ids)) return '(none)';
+                    return implode(', ', array_map(fn ($id) => $lookup[$id] ?? $id, $ids));
+                };
+                $parts[] = $label . ' [' . $resolve($oldVal) . '] → [' . $resolve($newVal) . ']';
+            } else {
+                $parts[] = $label . ' "' . ($oldVal ?: '(empty)') . '" → "' . $newVal . '"';
+            }
+        }
+        return implode('; ', $parts);
     }
 
     public function generate(Request $request)

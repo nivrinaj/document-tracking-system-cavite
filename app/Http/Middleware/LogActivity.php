@@ -37,6 +37,7 @@ class LogActivity
         'roles.update' => 'Updated a role',
         'roles.destroy' => 'Deleted a role',
         'settings.update' => 'Updated system settings',
+        'reports.settings.save' => 'Updated report settings',
         'documentation.store' => 'Created a documentation page',
         'documentation.update' => 'Updated a documentation page',
         'documentation.destroy' => 'Deleted a documentation page',
@@ -44,8 +45,8 @@ class LogActivity
         'profile.destroy' => 'Deleted their account',
     ];
 
-    /** Auth flows are logged via events, so skip them here. */
-    private array $ignore = ['login', 'logout', 'register', 'password.email', 'password.store', 'password.update', 'password.confirm', 'notifications.read', 'notifications.readAll'];
+    /** Auth flows are logged via events; routes with inline ActivityLog::record() calls are skipped to avoid duplicates. */
+    private array $ignore = ['login', 'logout', 'register', 'password.email', 'password.store', 'password.update', 'password.confirm', 'notifications.read', 'notifications.readAll', 'settings.update', 'reports.settings.save', 'users.store', 'users.update'];
 
     public function handle(Request $request, Closure $next): Response
     {

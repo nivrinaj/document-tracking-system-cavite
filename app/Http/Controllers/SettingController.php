@@ -48,33 +48,66 @@ class SettingController extends Controller
             'announcement' => ['nullable', 'string', 'max:500'],
         ]);
 
+        $boolKeys = [
+            'allow_desktop_receive' => 'Desktop receive',
+            'allow_cross_department' => 'Cross-dept transfer',
+            'enable_priority' => 'Priority',
+            'enable_route_items' => 'Route items',
+            'enable_batch_receive' => 'Batch receive',
+            'enable_document_linking' => 'Document linking',
+            'enable_attachments' => 'Attachments',
+            'enable_digital_copy' => 'Digital copy',
+            'enable_messaging' => 'Messaging',
+        ];
+
+        $changes = [];
+        foreach (['app_name' => 'App name', 'app_short_name' => 'Short name', 'organization' => 'Organization', 'primary_color' => 'Color', 'footer_text' => 'Footer', 'support_contact' => 'Support contact', 'announcement' => 'Announcement', 'records_per_page' => 'Records/page'] as $key => $label) {
+            $old = (string) Setting::get($key, '');
+            $new = (string) ($data[$key] ?? '');
+            if ($old !== $new) $changes[] = $label . ' "' . ($old ?: '(empty)') . '" → "' . $new . '"';
+        }
+        $oldPrefix = (string) Setting::get('tracking_prefix', '');
+        $newPrefix = strtoupper($data['tracking_prefix']);
+        if ($oldPrefix !== $newPrefix) $changes[] = 'Prefix "' . $oldPrefix . '" → "' . $newPrefix . '"';
+
+        foreach ($boolKeys as $key => $label) {
+            $old = (string) Setting::get($key, '0');
+            $new = $request->boolean($key) ? '1' : '0';
+            if ($old !== $new) $changes[] = $label . ' ' . ($old === '1' ? 'ON' : 'OFF') . ' → ' . ($new === '1' ? 'ON' : 'OFF');
+        }
+        $oldScope = (string) Setting::get('messaging_scope', 'all');
+        $newScope = $request->input('messaging_scope') === 'office' ? 'office' : 'all';
+        if ($oldScope !== $newScope) $changes[] = 'Messaging scope "' . $oldScope . '" → "' . $newScope . '"';
+
         foreach (['app_name', 'app_short_name', 'organization', 'primary_color', 'footer_text', 'support_contact', 'announcement', 'records_per_page'] as $key) {
             Setting::put($key, $data[$key] ?? '');
         }
 
-        Setting::put('tracking_prefix', strtoupper($data['tracking_prefix']));
-        Setting::put('allow_desktop_receive', $request->boolean('allow_desktop_receive') ? '1' : '0');
-        Setting::put('allow_cross_department', $request->boolean('allow_cross_department') ? '1' : '0');
-        Setting::put('enable_priority', $request->boolean('enable_priority') ? '1' : '0');
-        Setting::put('enable_route_items', $request->boolean('enable_route_items') ? '1' : '0');
-        Setting::put('enable_batch_receive', $request->boolean('enable_batch_receive') ? '1' : '0');
-        Setting::put('enable_document_linking', $request->boolean('enable_document_linking') ? '1' : '0');
-        Setting::put('enable_attachments', $request->boolean('enable_attachments') ? '1' : '0');
-        Setting::put('enable_digital_copy', $request->boolean('enable_digital_copy') ? '1' : '0');
-        Setting::put('enable_messaging', $request->boolean('enable_messaging') ? '1' : '0');
-        Setting::put('messaging_scope', $request->input('messaging_scope') === 'office' ? 'office' : 'all');
+        Setting::put('tracking_prefix', $newPrefix);
+        foreach ($boolKeys as $key => $_) {
+            Setting::put($key, $request->boolean($key) ? '1' : '0');
+        }
+        Setting::put('messaging_scope', $newScope);
         Setting::put('messaging_excluded_roles', json_encode(array_values($request->input('messaging_excluded_roles', []))));
 
         // Image fields: [setting key => [form field, remove field]]
         $images = [
-            'logo_path'     => ['logo', 'remove_logo'],
-            'favicon_path'  => ['favicon', 'remove_favicon'],
-            'login_bg_path' => ['login_bg', 'remove_login_bg'],
+            'logo_path'     => ['logo', 'remove_logo', 'Logo'],
+            'favicon_path'  => ['favicon', 'remove_favicon', 'Favicon'],
+            'login_bg_path' => ['login_bg', 'remove_login_bg', 'Login background'],
         ];
 
-        foreach ($images as $settingKey => [$field, $removeField]) {
+        foreach ($images as $settingKey => [$field, $removeField, $imageLabel]) {
+            if ($request->boolean($removeField)) {
+                $changes[] = $imageLabel . ' removed';
+            } elseif ($request->hasFile($field) && $request->file($field)->isValid()) {
+                $changes[] = $imageLabel . ' uploaded';
+            }
             $this->handleImage($request, $settingKey, $field, $removeField);
         }
+
+        $desc = 'System settings' . (count($changes) ? ': ' . implode('; ', $changes) : ' saved (no changes)');
+        \App\Models\ActivityLog::record('settings.update', $desc);
 
         return back()->with('success', 'System settings updated.');
     }

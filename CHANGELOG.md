@@ -6,6 +6,15 @@ Format based on [Keep a Changelog](https://keepachangelog.com).
 
 ---
 
+## 1.8.3 — 2026-06-27
+**Multi-select pill redesign + detailed audit logging for settings & user changes**
+- **Multi-select pill styling** — redesigned selected-item chips with indigo background, ring border, and semibold text. Clearly visible in both light and dark mode. Remove button has a hover state.
+- **Dropdown list highlight** — selected items in the dropdown use indigo tint with solid indigo checkboxes for clear contrast.
+- **Detailed audit logs for report settings** — saves now log exactly what changed, e.g. `Report settings (E-Record): Title "E-Record" → "My Title"; Paper a4 → letter; Show totals ON → OFF; Offices [OPAcc] → [OPAcc, PACCO]`. If nothing changed, logs "(no changes)".
+- **Detailed audit logs for system settings** — same diff format: `System settings: App name "DTS" → "PGC DTS"; Desktop receive OFF → ON; Logo uploaded`.
+- **Detailed audit logs for user create/update** — user creation logs name, username, role, and department. User update logs every field that changed: name, username, email, department, division, role, active status, capabilities, and password (as "Password changed").
+- **Middleware skip for detailed routes** — `settings.update`, `reports.settings.save`, `users.store`, `users.update` are now logged inline by their controllers (with diffs) instead of the generic middleware.
+
 ## 1.8.2 — 2026-06-27
 **Report Settings UI polish: proper multi-select, toggle switches for all reports, container fix**
 - **Container width restored** — settings page back to `max-w-3xl` centered (matches the user-edit card width), with inputs filling the full card interior instead of capping at `sm:max-w-sm`.

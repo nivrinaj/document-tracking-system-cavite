@@ -69,6 +69,7 @@ class ActivityLog extends Model
             'roles.update' => 'Updated Role',
             'roles.destroy' => 'Deleted Role',
             'settings.update' => 'Updated Settings',
+            'reports.settings.save' => 'Report Settings',
             'documentation.store' => 'Created Doc Page',
             'documentation.update' => 'Updated Doc Page',
             'documentation.destroy' => 'Deleted Doc Page',
