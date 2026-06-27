@@ -1,7 +1,7 @@
 <x-app-layout>
     <x-slot name="header">Report Settings</x-slot>
 
-    <div class="max-w-2xl mx-auto space-y-6" x-data="{ rpt: 'erecord' }">
+    <div class="space-y-6" x-data="{ rpt: 'erecord' }">
         <a href="{{ route('reports.index') }}" class="text-sm link">&larr; Back to Reports</a>
         <p class="text-sm text-gray-500 dark:text-gray-400">Configure how each report prints and which offices may run it. Staff only generate &mdash; they don't set these.</p>
 
@@ -25,9 +25,9 @@
                 <div class="space-y-4">
                     <div>
                         <label class="label">Report title</label>
-                        <input type="text" name="erecord_title" value="{{ old('erecord_title', $title) }}" class="input sm:max-w-sm" required>
+                        <input type="text" name="erecord_title" value="{{ old('erecord_title', $title) }}" class="input" required>
                     </div>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-md">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                             <label class="label">Paper size</label>
                             <select name="erecord_paper" class="input">
@@ -50,14 +50,14 @@
 
             <x-card>
                 <h2 class="font-semibold text-sm mb-1">Offices that may run this report</h2>
-                <p class="text-xs text-gray-400 mb-3">Tick the offices allowed to use the E-Record. Leave all unticked to default to offices flagged "Voucher &amp; Payroll office". (Super Admins can always run it.)</p>
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-1.5 max-h-64 overflow-y-auto">
-                    @foreach($departments as $dept)
-                        <label class="flex items-center gap-2 text-sm py-1">
-                            <input type="checkbox" name="erecord_offices[]" value="{{ $dept->id }}" class="rounded text-[color:var(--color-primary)]" @checked(in_array((string) $dept->id, $offices, true))>
-                            <span>{{ $dept->code }} <span class="text-gray-400">&mdash; {{ $dept->name }}</span></span>
-                        </label>
-                    @endforeach
+                <p class="text-xs text-gray-400 mb-3">Select the offices allowed to use the E-Record. Leave empty to default to offices flagged "Voucher &amp; Payroll office". (Super Admins can always run it.)</p>
+                <div x-data="multiSelect({
+                    items: @js($departments->map(fn($d) => ['id' => (string)$d->id, 'label' => $d->code.' — '.$d->name])),
+                    selected: @js(array_map('strval', $offices)),
+                    name: 'erecord_offices[]',
+                    placeholder: '— Select offices —',
+                })">
+                    <x-reports._multi-select />
                 </div>
             </x-card>
 
@@ -86,7 +86,15 @@
 
         {{-- ───────── Transmittal settings ───────── --}}
         <form method="POST" action="{{ route('reports.settings.save') }}" class="space-y-6"
-              x-show="rpt === 'transmittal'" x-cloak>
+              x-show="rpt === 'transmittal'" x-cloak
+              x-data="{
+                  selOffices: @js(array_map('strval', $tOffices)),
+                  allDivisions: @js($divisions->map(fn($d) => ['id' => (string)$d->id, 'label' => ($d->code ?? $d->name).' — '.$d->name, 'department_id' => (string)$d->department_id])),
+                  get filteredDivisions() {
+                      if (!this.selOffices.length) return this.allDivisions;
+                      return this.allDivisions.filter(d => this.selOffices.includes(d.department_id));
+                  }
+              }">
             @csrf @method('PUT')
             <input type="hidden" name="_report" value="transmittal">
 
@@ -95,52 +103,78 @@
                 <div class="space-y-4">
                     <div>
                         <label class="label">Report title</label>
-                        <input type="text" name="transmittal_title" value="{{ old('transmittal_title', $tTitle) }}" class="input sm:max-w-sm" required>
+                        <input type="text" name="transmittal_title" value="{{ old('transmittal_title', $tTitle) }}" class="input" required>
                     </div>
                     <div>
                         <label class="label">ISO code</label>
-                        <input type="text" name="transmittal_iso" value="{{ old('transmittal_iso', $tIso) }}" class="input sm:max-w-sm" placeholder="e.g. PGC ACCTG. R.002">
+                        <input type="text" name="transmittal_iso" value="{{ old('transmittal_iso', $tIso) }}" class="input" placeholder="e.g. PGC ACCTG. R.002">
                     </div>
                     <div>
                         <label class="label">Date source for "Date Received" columns</label>
-                        <select name="transmittal_date_source" class="input sm:max-w-sm">
+                        <select name="transmittal_date_source" class="input">
                             <option value="received_by_division" @selected($tDateSource === 'received_by_division')>Date received by the configured division</option>
                             <option value="created" @selected($tDateSource === 'created')>Date encoded / created</option>
                         </select>
                         <p class="text-xs text-gray-400 mt-1">Controls what date appears in the "Date Received" columns.</p>
                     </div>
-                    <div>
-                        <label class="inline-flex items-center gap-2 cursor-pointer select-none">
-                            <input type="checkbox" name="transmittal_page_number" value="1" class="rounded text-[color:var(--color-primary)]" @checked($tPageNumber)>
-                            <span class="text-sm">Show page number in footer</span>
-                        </label>
-                    </div>
+                </div>
+            </x-card>
+
+            {{-- Toggles --}}
+            <x-card padding="p-0">
+                <p class="text-xs font-semibold uppercase tracking-wider text-gray-400 px-4 pt-4 pb-2">Options</p>
+                <div class="rounded-xl border border-gray-200 dark:border-gray-700 divide-y divide-gray-100 dark:divide-gray-700 mx-4 mb-4">
+                    <label class="flex items-center justify-between gap-4 px-4 py-3 cursor-pointer">
+                        <span class="min-w-0">
+                            <span class="block text-sm font-medium">Show page subtotal &amp; grand total</span>
+                            <span class="block text-xs text-gray-400">Print a subtotal at the bottom of each page and a grand total on the last page.</span>
+                        </span>
+                        <span class="relative inline-flex shrink-0 items-center">
+                            <input type="hidden" name="transmittal_show_totals" value="0">
+                            <input type="checkbox" name="transmittal_show_totals" value="1" class="peer sr-only" @checked($tShowTotals)>
+                            <span class="w-11 h-6 rounded-full bg-gray-300 dark:bg-gray-600 peer-checked:bg-[color:var(--color-primary)] transition-colors"></span>
+                            <span class="absolute left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform peer-checked:translate-x-5"></span>
+                        </span>
+                    </label>
+                    <label class="flex items-center justify-between gap-4 px-4 py-3 cursor-pointer">
+                        <span class="min-w-0">
+                            <span class="block text-sm font-medium">Show page number in footer</span>
+                            <span class="block text-xs text-gray-400">Print a centered page number at the bottom of each page.</span>
+                        </span>
+                        <span class="relative inline-flex shrink-0 items-center">
+                            <input type="hidden" name="transmittal_page_number" value="0">
+                            <input type="checkbox" name="transmittal_page_number" value="1" class="peer sr-only" @checked($tPageNumber)>
+                            <span class="w-11 h-6 rounded-full bg-gray-300 dark:bg-gray-600 peer-checked:bg-[color:var(--color-primary)] transition-colors"></span>
+                            <span class="absolute left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform peer-checked:translate-x-5"></span>
+                        </span>
+                    </label>
                 </div>
             </x-card>
 
             <x-card>
                 <h2 class="font-semibold text-sm mb-1">Offices that may run this report</h2>
                 <p class="text-xs text-gray-400 mb-3">Select which office(s) can generate the Transmittal. (Super Admins can always run it.)</p>
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-1.5 max-h-64 overflow-y-auto">
-                    @foreach($departments as $dept)
-                        <label class="flex items-center gap-2 text-sm py-1">
-                            <input type="checkbox" name="transmittal_offices[]" value="{{ $dept->id }}" class="rounded text-[color:var(--color-primary)]" @checked(in_array((string) $dept->id, $tOffices, true))>
-                            <span>{{ $dept->code }} <span class="text-gray-400">&mdash; {{ $dept->name }}</span></span>
-                        </label>
-                    @endforeach
+                <div x-data="multiSelect({
+                    items: @js($departments->map(fn($d) => ['id' => (string)$d->id, 'label' => $d->code.' — '.$d->name])),
+                    selected: selOffices,
+                    name: 'transmittal_offices[]',
+                    placeholder: '— Select offices —',
+                    sync: v => selOffices = v,
+                })">
+                    <x-reports._multi-select />
                 </div>
             </x-card>
 
             <x-card>
                 <h2 class="font-semibold text-sm mb-1">Divisions that may run this report</h2>
-                <p class="text-xs text-gray-400 mb-3">Staff in these divisions (plus department heads of the selected offices above) can generate. Leave all unticked to allow any division in the selected offices.</p>
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-1.5 max-h-64 overflow-y-auto">
-                    @foreach($divisions as $div)
-                        <label class="flex items-center gap-2 text-sm py-1">
-                            <input type="checkbox" name="transmittal_divisions[]" value="{{ $div->id }}" class="rounded text-[color:var(--color-primary)]" @checked(in_array((string) $div->id, $tDivisions, true))>
-                            <span>{{ $div->code ?? $div->name }} <span class="text-gray-400">&mdash; {{ $div->name }}</span></span>
-                        </label>
-                    @endforeach
+                <p class="text-xs text-gray-400 mb-3">Staff in these divisions (plus department heads of the selected offices above) can generate. Leave empty to allow any division in the selected offices.</p>
+                <div x-data="multiSelect({
+                    items: [],
+                    selected: @js(array_map('strval', $tDivisions)),
+                    name: 'transmittal_divisions[]',
+                    placeholder: '— Select divisions —',
+                })" x-effect="items = filteredDivisions">
+                    <x-reports._multi-select />
                 </div>
             </x-card>
 
@@ -167,4 +201,42 @@
             </div>
         </form>
     </div>
+
+    <script>
+    document.addEventListener('alpine:init', () => {
+        Alpine.data('multiSelect', ({ items, selected, name, placeholder, sync }) => ({
+            items: items || [],
+            selected: [...(selected || [])],
+            name: name,
+            placeholder: placeholder || '— Select —',
+            open: false,
+            search: '',
+            init() {
+                this.$watch('items', () => {
+                    const validIds = new Set(this.items.map(i => i.id));
+                    this.selected = this.selected.filter(s => validIds.has(s));
+                    if (sync) sync(this.selected);
+                });
+            },
+            get filtered() {
+                const q = this.search.toLowerCase();
+                return this.items.filter(i => !q || i.label.toLowerCase().includes(q));
+            },
+            get selectedLabels() {
+                return this.items.filter(i => this.selected.includes(i.id));
+            },
+            toggle(id) {
+                const idx = this.selected.indexOf(id);
+                if (idx >= 0) this.selected.splice(idx, 1);
+                else this.selected.push(id);
+                if (sync) sync(this.selected);
+            },
+            remove(id) {
+                this.selected = this.selected.filter(v => v !== id);
+                if (sync) sync(this.selected);
+            },
+            isSelected(id) { return this.selected.includes(id); },
+        }));
+    });
+    </script>
 </x-app-layout>

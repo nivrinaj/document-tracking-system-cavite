@@ -310,6 +310,7 @@ class ReportController extends Controller
             'org' => Setting::get('organization', ''),
             'total' => $rows->sum('amount'),
             'showPageNumber' => (bool) Setting::get('transmittal_page_number', true),
+            'showTotals' => (bool) Setting::get('transmittal_show_totals', true),
         ];
 
         if ($request->input('format') === 'html') {
@@ -347,6 +348,7 @@ class ReportController extends Controller
             'tDivisions' => array_values(array_filter(explode(',', (string) Setting::get('transmittal_divisions', '')))),
             'tDateSource' => Setting::get('transmittal_date_source', 'received_by_division'),
             'tPageNumber' => (bool) Setting::get('transmittal_page_number', true),
+            'tShowTotals' => (bool) Setting::get('transmittal_show_totals', true),
             'tCols' => self::TRANSMITTAL_COLS,
             'tAlign' => $this->transmittalAlign(),
             'tLabels' => $this->transmittalLabels(),
@@ -367,6 +369,7 @@ class ReportController extends Controller
                 'transmittal_divisions.*' => ['integer', 'exists:divisions,id'],
                 'transmittal_date_source' => ['required', 'in:received_by_division,created'],
                 'transmittal_page_number' => ['nullable'],
+                'transmittal_show_totals' => ['nullable'],
                 'align' => ['nullable', 'array'],
                 'align.*' => ['in:left,center,right'],
                 'labels' => ['nullable', 'array'],
@@ -378,6 +381,7 @@ class ReportController extends Controller
             Setting::put('transmittal_divisions', implode(',', $data['transmittal_divisions'] ?? []));
             Setting::put('transmittal_date_source', $data['transmittal_date_source']);
             Setting::put('transmittal_page_number', $request->boolean('transmittal_page_number') ? '1' : '0');
+            Setting::put('transmittal_show_totals', $request->boolean('transmittal_show_totals') ? '1' : '0');
             Setting::put('transmittal_align', json_encode(array_intersect_key($data['align'] ?? [], self::TRANSMITTAL_COLS)));
             Setting::put('transmittal_labels', json_encode(array_intersect_key($data['labels'] ?? [], self::TRANSMITTAL_COLS)));
 

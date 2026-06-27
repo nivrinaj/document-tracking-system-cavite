@@ -97,6 +97,7 @@
                             <td></td>
                         </tr>
                     @endforeach
+                    @if(!empty($showTotals))
                     <tr class="subtotal">
                         <td colspan="8" style="text-align:right;">Page subtotal</td>
                         <td style="text-align:{{ $a['amount'] }}">{{ number_format($chunk->sum('amount'), 2) }}</td>
@@ -108,6 +109,7 @@
                             <td style="text-align:{{ $a['amount'] }}">{{ number_format($total, 2) }}</td>
                             <td colspan="6"></td>
                         </tr>
+                    @endif
                     @endif
                 </tbody>
             </table>

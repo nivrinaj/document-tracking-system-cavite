@@ -6,6 +6,14 @@ Format based on [Keep a Changelog](https://keepachangelog.com).
 
 ---
 
+## 1.8.1 — 2026-06-27
+**Report Settings UX overhaul: full-width panels, searchable multi-select, toggle switches, subtotal toggle**
+- **Full-width settings panels** — removed the `max-w-2xl` container constraint so all settings cards stretch to fill the available space, eliminating dead space.
+- **Searchable multi-select dropdowns** — replaced the checkbox grid for offices (both E-Record and Transmittal) with a searchable dropdown that shows selected items as removable pills. Scales to 30+ departments without a wall of checkboxes.
+- **Dependent divisions dropdown** — Transmittal's divisions multi-select now filters automatically based on the selected offices, showing only divisions that belong to those offices. Changing offices prunes invalid divisions.
+- **Subtotal & grand total toggle** — new setting for the Transmittal report to show/hide per-page subtotals and the grand total row. Uses the same iOS-style toggle design.
+- **Toggle switches** — page number and subtotal settings now use the same iOS-style toggle design as the "Access & capabilities" panel on the user edit page, with title + description layout.
+
 ## 1.8.0 — 2026-06-27
 **New report: Transmittal of Reviewed Disbursement (ISO layout)**
 - **New report type** — "Transmittal of Reviewed Disbursement" with an ISO-registered layout (`transmittal.blade.php`). A4 landscape, 15 columns: 9 data columns (Date Received JEV, DV No., OBR No., RC, Fund, Payee, Nature, Particulars/Explanation, Amount) + Date Received Review (same date) + 5 blank tracking columns (Secretary, Releasing Staff, No. of Days, Date In, Date Out) at minimal width.
