@@ -455,7 +455,11 @@ class ReportController extends Controller
     private function diffSettings(array $fields): string
     {
         $parts = [];
-        foreach ($fields as $label => [$key, $newVal, $isBool = false, $lookup = null]) {
+        foreach ($fields as $label => $field) {
+            $key = $field[0];
+            $newVal = $field[1];
+            $isBool = $field[2] ?? false;
+            $lookup = $field[3] ?? null;
             $oldVal = (string) Setting::get($key, '');
             if ($oldVal === $newVal) continue;
 

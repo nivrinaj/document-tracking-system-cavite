@@ -69,6 +69,8 @@ Always output the exact deployment commands for both machines with the real vers
 
 ## Things to never do
 
+- **Never deploy without running `php artisan route:list` AND loading every changed route in the browser first.** A `view:cache` success does NOT guarantee runtime correctness — it only checks Blade syntax, not PHP fatal errors in controllers.
+- Never use PHP array destructuring with default values (`[$a, $b = false]`) — PHP does not support this. Use explicit index access (`$field[2] ?? false`) instead.
 - Never hardcode office/department names or codes — use DB flags
 - Never infer hospital status from tracking-code text or current division FK
 - Never skip version-number collision check
