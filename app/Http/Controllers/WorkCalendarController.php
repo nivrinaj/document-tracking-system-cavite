@@ -65,7 +65,13 @@ class WorkCalendarController extends Controller
             'type' => ['required', Rule::in(['holiday', 'suspension', 'other'])],
             'label' => ['required', 'string', 'max:150'],
         ]);
-        CalendarDay::create($data + ['created_by' => $request->user()->id]);
+        $entry = CalendarDay::create($data + ['created_by' => $request->user()->id]);
+
+        \App\Models\ActivityLog::record(
+            'work-calendar.holidays.store',
+            'Added a holiday: '.$data['label'].' on '.$data['date'],
+            $entry,
+        );
 
         return back()->with('success', 'Entry added.');
     }
@@ -73,6 +79,13 @@ class WorkCalendarController extends Controller
     public function destroyHoliday(CalendarDay $calendarDay)
     {
         abort_unless(in_array($calendarDay->type, CalendarDay::GLOBAL_TYPES, true), 404);
+
+        \App\Models\ActivityLog::record(
+            'work-calendar.holidays.destroy',
+            'Deleted a holiday: '.$calendarDay->label.' on '.$calendarDay->date->toDateString().' (#'.$calendarDay->id.')',
+            $calendarDay,
+        );
+
         $calendarDay->delete();
 
         return back()->with('success', 'Entry removed.');

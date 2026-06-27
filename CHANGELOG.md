@@ -6,6 +6,13 @@ Format based on [Keep a Changelog](https://keepachangelog.com).
 
 ---
 
+## 1.8.7 — 2026-06-27
+**Audit log fixes: holiday detail, real client IP via Cloudflare, district-level geolocation**
+- **Holiday log detail** — `storeHoliday` and `destroyHoliday` in `WorkCalendarController` now log inline with full detail: "Deleted a holiday: Independence Day on 2026-06-12 (#23)" instead of the generic middleware format. Both routes added to middleware ignore list.
+- **Real client IP via Cloudflare** — `ActivityLog::clientIp()` reads `CF-Connecting-IP` header first (set by Cloudflare with the real visitor IP), falling back to `X-Forwarded-For`, then `request()->ip()`. Previously logged the Cloudflare edge server's IPv6 address, which geolocated to the wrong city.
+- **District-level geolocation** — ip-api.com query now includes `district` field. Location string shows district → city → region → country when available, e.g. "Rosario, Cavite City, Calabarzon, Philippines" instead of just "Makati City, Metro Manila, Philippines".
+- **Note on precision** — IP geolocation is inherently limited to city-level accuracy at best. ISPs in the Philippines often route through Manila POPs, so the city may not match the user's physical location. Barangay/municipality precision is not achievable from IP alone.
+
 ## 1.8.6 — 2026-06-27
 **Audit log overhaul: location tracking, human-readable labels, named subjects**
 - **Login/logout location** — auth events now resolve the user's IP to city/region/country via ip-api.com (2-second timeout, graceful fallback). Log entries read e.g. "Logged in — Windows PC / Chrome — Imus, Cavite, Philippines". Private/local IPs skip the lookup.

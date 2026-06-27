@@ -97,7 +97,8 @@ class LogActivity
         'notifications.read', 'notifications.readAll',
         'settings.update', 'reports.settings.save',
         'users.store', 'users.update',
-        'work-calendar.holidays.store', 'work-calendar.team.store', 'work-calendar.team.destroy',
+        'work-calendar.holidays.store', 'work-calendar.holidays.destroy',
+        'work-calendar.team.store', 'work-calendar.team.destroy',
     ];
 
     public function handle(Request $request, Closure $next): Response

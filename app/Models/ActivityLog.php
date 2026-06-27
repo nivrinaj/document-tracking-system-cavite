@@ -36,7 +36,7 @@ class ActivityLog extends Model
                 'description' => $description,
                 'subject_type' => $subject ? $subject->getMorphClass() : null,
                 'subject_id' => $subject?->getKey(),
-                'ip_address' => $request?->ip(),
+                'ip_address' => static::clientIp() ?? $request?->ip(),
                 'user_agent' => $request?->userAgent(),
             ]);
         } catch (\Throwable $e) {
@@ -167,16 +167,33 @@ class ActivityLog extends Model
         }
 
         try {
-            $response = @file_get_contents("http://ip-api.com/json/{$ip}?fields=status,city,regionName,country", false, stream_context_create(['http' => ['timeout' => 2]]));
+            $response = @file_get_contents("http://ip-api.com/json/{$ip}?fields=status,city,district,regionName,country,isp", false, stream_context_create(['http' => ['timeout' => 2]]));
             if (!$response) return null;
 
             $data = json_decode($response, true);
             if (($data['status'] ?? '') !== 'success') return null;
 
-            $parts = array_filter([$data['city'] ?? null, $data['regionName'] ?? null, $data['country'] ?? null]);
+            $parts = array_filter([
+                $data['district'] ?? null,
+                $data['city'] ?? null,
+                $data['regionName'] ?? null,
+                $data['country'] ?? null,
+            ]);
             return implode(', ', $parts) ?: null;
         } catch (\Throwable $e) {
             return null;
         }
+    }
+
+    /**
+     * Get the real client IP, preferring Cloudflare's CF-Connecting-IP header.
+     */
+    public static function clientIp(): ?string
+    {
+        $request = request();
+        if (!$request) return null;
+
+        return $request->header('CF-Connecting-IP')
+            ?? $request->header('X-Forwarded-For', $request->ip());
     }
 }

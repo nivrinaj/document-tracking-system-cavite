@@ -64,7 +64,7 @@ class AppServiceProvider extends ServiceProvider
             elseif (str_contains($ua, 'Safari/') && !str_contains($ua, 'Chrome')) $browser = 'Safari';
 
             $parts = [$device . ' / ' . $browser];
-            $location = \App\Models\ActivityLog::resolveLocation(request()->ip());
+            $location = \App\Models\ActivityLog::resolveLocation(\App\Models\ActivityLog::clientIp());
             if ($location) $parts[] = $location;
 
             return implode(' — ', $parts);
