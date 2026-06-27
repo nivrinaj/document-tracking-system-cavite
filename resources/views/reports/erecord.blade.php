@@ -2,6 +2,7 @@
 <html>
 <head>
     <meta charset="utf-8">
+    <title>{{ $reportTitle }} - {{ $documentType }} - {{ optional($fund)->reportCode() }}{{ ($hospital ?? 'exclude') === 'only' ? '-H' : '' }}</title>
     <style>
         @page { margin: 12mm 8mm 14mm 8mm; }
         * { font-family: DejaVu Sans, sans-serif; }

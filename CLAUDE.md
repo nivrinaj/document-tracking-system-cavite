@@ -65,7 +65,9 @@ powershell -ExecutionPolicy Bypass -File .\deploy.ps1
 deploy.ps1 does: git pull → composer install → npm install → npm run build → php artisan migrate --force → optimize:clear → config/route/view cache → iisreset
 
 ### After every completed version bump
-Always output the exact deployment commands for both machines with the real version number and commit message filled in.
+1. Bump `config/version.php` and append to `CHANGELOG.md` FIRST — before giving deploy commands.
+2. Then output the exact deployment commands for both machines with the real version number and commit message filled in.
+3. Never give deploy commands before the version bump commit is ready — the user will push what's on disk.
 
 ## Things to never do
 

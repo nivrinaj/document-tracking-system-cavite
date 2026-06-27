@@ -6,6 +6,13 @@ Format based on [Keep a Changelog](https://keepachangelog.com).
 
 ---
 
+## 1.8.5 — 2026-06-27
+**Full report title in filename, compressed tracking columns, browser tab title, device info in auth logs**
+- **Full report title in PDF filename** — Transmittal PDF now uses the full configured title (e.g. `Transmittal-of-Reviewed-Disbursement-GF-20260627-103903.pdf`) instead of just `Transmittal-GF-...`. Spaces in the title are replaced with dashes.
+- **Browser tab shows report title** — added `<title>` tags to both `transmittal.blade.php` and `erecord.blade.php` so the browser tab displays the report name + fund code instead of a generic "transmittal".
+- **Compressed last 5 columns** — Transmittal tracking columns (secretary, releasing, days, date_in, date_out) reduced from 5%/5%/3%/3.5%/4% to 4%/4%/2.5%/3%/3%. Freed 4% redistributed to payee (14→16%) and particulars (17→19%).
+- **Device info in auth logs** — login, logout, and failed login audit entries now include device and browser, e.g. "Logged in — Windows PC / Chrome" or "Logged in — iPhone / Safari". Parsed from user-agent in `AppServiceProvider`.
+
 ## 1.8.4 — 2026-06-27
 **Hotfix: PHP fatal error on reports page (array destructuring with defaults)**
 - **Root cause** — `ReportController::diffSettings()` used PHP array destructuring with default values (`[$key, $newVal, $isBool = false, $lookup = null]`), which PHP does not support. This caused a fatal error on every page load that touched the reports route.

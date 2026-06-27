@@ -320,10 +320,13 @@ class ReportController extends Controller
         }
 
         $hospSuffix = $hospital === 'only' ? '-H' : '';
+        $title = str_replace(' ', '-', Setting::get('transmittal_title', 'Transmittal-of-Reviewed-Disbursement'));
+        $filename = $title.'-'.$fund->reportCode().$hospSuffix.'-'.now()->format('Ymd-His').'.pdf';
+
         return Pdf::loadView('reports.transmittal', $payload)
             ->setPaper('a4', 'landscape')
             ->setOption('isPhpEnabled', true)
-            ->stream('Transmittal-'.$fund->reportCode().$hospSuffix.'-'.now()->format('Ymd-His').'.pdf');
+            ->stream($filename);
     }
 
     /* ───────────── Report settings (Super Admin) ───────────── */

@@ -2,6 +2,7 @@
 <html>
 <head>
     <meta charset="utf-8">
+    <title>{{ $reportTitle }} - {{ optional($fund)->reportCode() }}{{ ($hospital ?? 'exclude') === 'only' ? '-H' : '' }}</title>
     <style>
         @page { margin: 10mm 6mm 10mm 6mm; }
         * { font-family: DejaVu Sans, sans-serif; }
@@ -36,9 +37,9 @@
         // Widths: data cols get space, blank tracking cols are minimal
         $w = [
             'date_jev'=>'5.5%','dv'=>'10%','obr'=>'7%','rc'=>'6%','fund'=>'3.5%',
-            'payee'=>'14%','nature'=>'4%','particulars'=>'17%','amount'=>'7%',
-            'date_review'=>'5.5%','secretary'=>'5%','releasing'=>'5%',
-            'days'=>'3%','date_in'=>'3.5%','date_out'=>'4%',
+            'payee'=>'16%','nature'=>'4%','particulars'=>'19%','amount'=>'7%',
+            'date_review'=>'5.5%','secretary'=>'4%','releasing'=>'4%',
+            'days'=>'2.5%','date_in'=>'3%','date_out'=>'3%',
         ];
         $fundLabel = $fund ? strtoupper($fund->name).' - '.$fund->reportCode().' YEAR '.date('Y') : '';
         $pages = $rows->chunk($perPage ?? 16);
