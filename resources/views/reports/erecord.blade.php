@@ -7,7 +7,7 @@
         * { font-family: DejaVu Sans, sans-serif; }
         body { font-size: 9px; color: #111; margin: 0; }
         .page { page-break-after: always; }
-        .page:last-child { page-break-after: auto; }
+        .page:last-child { page-break-after: avoid; }
         .head { text-align: center; margin-bottom: 6px; }
         .org { font-size: 11px; font-weight: bold; text-transform: uppercase; letter-spacing: .5px; }
         .office { font-size: 10px; font-weight: bold; margin-top: 1px; }
@@ -48,15 +48,15 @@
                 </colgroup>
                 <thead>
                     <tr>
-                        <th style="text-align:{{ $a['date'] }}">Date Received</th>
-                        <th style="text-align:{{ $a['dv'] }}">DV #</th>
-                        <th style="text-align:{{ $a['obr'] }}">OBR No.</th>
-                        <th style="text-align:{{ $a['rc'] }}">Responsibility Center</th>
-                        <th style="text-align:{{ $a['fund'] }}">Fund</th>
-                        <th style="text-align:{{ $a['payee'] }}">Payee</th>
-                        <th style="text-align:{{ $a['nature'] }}">Nature</th>
-                        <th style="text-align:{{ $a['particulars'] }}">Particulars</th>
-                        <th style="text-align:{{ $a['amount'] }}">Amount</th>
+                        <th style="width:{{ $w['date'] }};text-align:{{ $a['date'] }}">Date Received</th>
+                        <th style="width:{{ $w['dv'] }};text-align:{{ $a['dv'] }}">DV #</th>
+                        <th style="width:{{ $w['obr'] }};text-align:{{ $a['obr'] }}">OBR No.</th>
+                        <th style="width:{{ $w['rc'] }};text-align:{{ $a['rc'] }}">Responsibility Center</th>
+                        <th style="width:{{ $w['fund'] }};text-align:{{ $a['fund'] }}">Fund</th>
+                        <th style="width:{{ $w['payee'] }};text-align:{{ $a['payee'] }}">Payee</th>
+                        <th style="width:{{ $w['nature'] }};text-align:{{ $a['nature'] }}">Nature</th>
+                        <th style="width:{{ $w['particulars'] }};text-align:{{ $a['particulars'] }}">Particulars</th>
+                        <th style="width:{{ $w['amount'] }};text-align:{{ $a['amount'] }}">Amount</th>
                     </tr>
                 </thead>
                 <tbody>

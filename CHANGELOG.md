@@ -6,6 +6,12 @@ Format based on [Keep a Changelog](https://keepachangelog.com).
 
 ---
 
+## 1.7.6 — 2026-06-27
+**E-Record PDF fixes: blank page, column widths, sort order**
+- **Fixed blank trailing page** — single-page reports no longer generate an extra empty page at the end (changed `page-break-after` from `auto` to `avoid` on the last page).
+- **PDF column widths now match the preview** — explicit `width` styles on `<th>` cells reinforce the `<colgroup>` percentages so dompdf respects the same fixed layout the browser renders.
+- **Sort order: date received → DV #** — rows are sorted by date (day only), then by DV number (numeric) within the same date, so the report reads in natural document order.
+
 ## 1.7.5 — 2026-06-27
 **Date range always visible; time range is opt-in via checkbox**
 - **Split the date & time filter** on the E-Record report page. **Date range** (date inputs) is always visible. **Time range** only appears when the "Include time range" checkbox is ticked — cleaner default for date-only filtering.

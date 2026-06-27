@@ -141,7 +141,8 @@ class ReportController extends Controller
             ->when($deptId, fn ($q) => $q->where('department_id', $deptId))
             ->when($hospital === 'only', fn ($q) => $q->where('is_hospital', true))
             ->when($hospital === 'exclude', fn ($q) => $q->where('is_hospital', false))
-            ->orderBy('created_at')
+            ->orderBy(DB::raw('DATE(created_at)'))
+            ->orderByRaw("CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(tracking_code, '-', 4), '-', -1) AS UNSIGNED)")
             ->get();
 
         $fund = \App\Models\Fund::find($data['fund_id']);
