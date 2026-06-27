@@ -1,13 +1,13 @@
 <x-app-layout>
     <x-slot name="header">Report Settings</x-slot>
 
-    <div class="space-y-6" x-data="{ rpt: 'erecord' }">
+    <div class="max-w-3xl mx-auto space-y-6" x-data="{ rpt: 'erecord' }">
         <a href="{{ route('reports.index') }}" class="text-sm link">&larr; Back to Reports</a>
         <p class="text-sm text-gray-500 dark:text-gray-400">Configure how each report prints and which offices may run it. Staff only generate &mdash; they don't set these.</p>
 
         <div>
             <label class="label">Report type</label>
-            <select x-model="rpt" class="input sm:max-w-sm">
+            <select x-model="rpt" class="input">
                 <option value="erecord">E-Record</option>
                 <option value="transmittal">Transmittal of Reviewed Disbursement</option>
             </select>
@@ -45,6 +45,37 @@
                             </select>
                         </div>
                     </div>
+                </div>
+            </x-card>
+
+            {{-- Toggles --}}
+            <x-card padding="p-0">
+                <p class="text-xs font-semibold uppercase tracking-wider text-gray-400 px-4 pt-4 pb-2">Options</p>
+                <div class="rounded-xl border border-gray-200 dark:border-gray-700 divide-y divide-gray-100 dark:divide-gray-700 mx-4 mb-4">
+                    <label class="flex items-center justify-between gap-4 px-4 py-3 cursor-pointer">
+                        <span class="min-w-0">
+                            <span class="block text-sm font-medium">Show page subtotal &amp; grand total</span>
+                            <span class="block text-xs text-gray-400">Print a subtotal at the bottom of each page and a grand total on the last page.</span>
+                        </span>
+                        <span class="relative inline-flex shrink-0 items-center">
+                            <input type="hidden" name="erecord_show_totals" value="0">
+                            <input type="checkbox" name="erecord_show_totals" value="1" class="peer sr-only" @checked($eShowTotals)>
+                            <span class="w-11 h-6 rounded-full bg-gray-300 dark:bg-gray-600 peer-checked:bg-[color:var(--color-primary)] transition-colors"></span>
+                            <span class="absolute left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform peer-checked:translate-x-5"></span>
+                        </span>
+                    </label>
+                    <label class="flex items-center justify-between gap-4 px-4 py-3 cursor-pointer">
+                        <span class="min-w-0">
+                            <span class="block text-sm font-medium">Show page number in footer</span>
+                            <span class="block text-xs text-gray-400">Print page and generation info at the bottom of each page.</span>
+                        </span>
+                        <span class="relative inline-flex shrink-0 items-center">
+                            <input type="hidden" name="erecord_page_number" value="0">
+                            <input type="checkbox" name="erecord_page_number" value="1" class="peer sr-only" @checked($ePageNumber)>
+                            <span class="w-11 h-6 rounded-full bg-gray-300 dark:bg-gray-600 peer-checked:bg-[color:var(--color-primary)] transition-colors"></span>
+                            <span class="absolute left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform peer-checked:translate-x-5"></span>
+                        </span>
+                    </label>
                 </div>
             </x-card>
 

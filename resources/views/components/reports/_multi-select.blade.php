@@ -6,17 +6,22 @@
 
     {{-- Trigger --}}
     <button type="button" @click="open = !open"
-            class="input w-full text-left flex items-center gap-2 min-h-[42px] flex-wrap py-1.5 pr-8">
+            class="input-btn w-full text-left flex items-center min-h-[42px] pr-8 relative">
         <template x-if="selectedLabels.length === 0">
             <span class="text-gray-400 text-sm" x-text="placeholder"></span>
         </template>
-        <template x-for="item in selectedLabels" :key="item.id">
-            <span class="inline-flex items-center gap-1 bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 text-xs font-medium px-2 py-0.5 rounded-full ring-1 ring-primary-200 dark:ring-primary-700">
-                <span x-text="item.label.split(' — ')[0]"></span>
-                <button type="button" @click.stop="remove(item.id)" class="hover:text-red-500 transition-colors">&times;</button>
+        <template x-if="selectedLabels.length > 0">
+            <span class="flex items-center gap-1.5 flex-wrap py-0.5">
+                <template x-for="item in selectedLabels" :key="item.id">
+                    <span class="inline-flex items-center gap-1 bg-[color:var(--color-primary)]/10 text-[color:var(--color-primary)] text-xs font-medium pl-2 pr-1 py-0.5 rounded-md">
+                        <span x-text="item.label.split(' — ')[0]"></span>
+                        <button type="button" @click.stop="remove(item.id)"
+                                class="w-4 h-4 inline-flex items-center justify-center rounded hover:bg-black/10 dark:hover:bg-white/10 transition-colors text-xs leading-none">&times;</button>
+                    </span>
+                </template>
             </span>
         </template>
-        <svg class="w-4 h-4 text-gray-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+        <svg class="w-4 h-4 text-gray-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none shrink-0 transition-transform" :class="open && 'rotate-180'" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
     </button>
 
     {{-- Dropdown --}}
@@ -30,12 +35,12 @@
             <template x-for="item in filtered" :key="item.id">
                 <button type="button" @click.stop="toggle(item.id)"
                         class="w-full flex items-center gap-2.5 px-3 py-2 text-sm rounded-lg transition-colors"
-                        :class="isSelected(item.id) ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300' : 'hover:bg-gray-50 dark:hover:bg-gray-700/50'">
+                        :class="isSelected(item.id) ? 'bg-[color:var(--color-primary)]/10 text-[color:var(--color-primary)]' : 'hover:bg-gray-50 dark:hover:bg-gray-700/50'">
                     <span class="w-4 h-4 rounded border flex items-center justify-center shrink-0 transition-colors"
                           :class="isSelected(item.id) ? 'bg-[color:var(--color-primary)] border-[color:var(--color-primary)]' : 'border-gray-300 dark:border-gray-600'">
                         <svg x-show="isSelected(item.id)" class="w-3 h-3 text-white" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
                     </span>
-                    <span x-text="item.label" class="truncate"></span>
+                    <span x-text="item.label" class="truncate text-left"></span>
                 </button>
             </template>
             <div x-show="filtered.length === 0" class="px-3 py-4 text-sm text-gray-400 text-center">No matches</div>

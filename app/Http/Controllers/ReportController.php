@@ -225,6 +225,8 @@ class ReportController extends Controller
             'appName' => Setting::get('app_name', config('app.name')),
             'generatedAt' => now(),
             'total' => $rows->sum('amount'),
+            'showTotals' => (bool) Setting::get('erecord_show_totals', true),
+            'showPageNumber' => (bool) Setting::get('erecord_page_number', true),
         ];
 
         if ($request->input('format') === 'html') {
@@ -338,6 +340,8 @@ class ReportController extends Controller
             'paper' => Setting::get('erecord_paper', 'a4'),
             'orientation' => Setting::get('erecord_orientation', 'landscape'),
             'offices' => array_values(array_filter(explode(',', (string) Setting::get('erecord_offices', '')))),
+            'eShowTotals' => (bool) Setting::get('erecord_show_totals', true),
+            'ePageNumber' => (bool) Setting::get('erecord_page_number', true),
             'cols' => self::ERECORD_COLS,
             'align' => $this->erecordAlign(),
             'labels' => $this->erecordLabels(),
@@ -394,6 +398,8 @@ class ReportController extends Controller
             'erecord_orientation' => ['required', 'in:landscape,portrait'],
             'erecord_offices' => ['nullable', 'array'],
             'erecord_offices.*' => ['integer', 'exists:departments,id'],
+            'erecord_show_totals' => ['nullable'],
+            'erecord_page_number' => ['nullable'],
             'align' => ['nullable', 'array'],
             'align.*' => ['in:left,center,right'],
             'labels' => ['nullable', 'array'],
@@ -403,6 +409,8 @@ class ReportController extends Controller
         Setting::put('erecord_paper', $data['erecord_paper']);
         Setting::put('erecord_orientation', $data['erecord_orientation']);
         Setting::put('erecord_offices', implode(',', $data['erecord_offices'] ?? []));
+        Setting::put('erecord_show_totals', $request->boolean('erecord_show_totals') ? '1' : '0');
+        Setting::put('erecord_page_number', $request->boolean('erecord_page_number') ? '1' : '0');
         Setting::put('erecord_align', json_encode(array_intersect_key($data['align'] ?? [], self::ERECORD_COLS)));
         Setting::put('erecord_labels', json_encode(array_intersect_key($data['labels'] ?? [], self::ERECORD_COLS)));
 

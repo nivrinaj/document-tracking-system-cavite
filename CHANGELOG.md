@@ -6,9 +6,16 @@ Format based on [Keep a Changelog](https://keepachangelog.com).
 
 ---
 
+## 1.8.2 — 2026-06-27
+**Report Settings UI polish: proper multi-select, toggle switches for all reports, container fix**
+- **Container width restored** — settings page back to `max-w-3xl` centered (matches the user-edit card width), with inputs filling the full card interior instead of capping at `sm:max-w-sm`.
+- **Multi-select dropdown redesigned** — trigger now uses `.input-btn` for proper borders in light and dark mode. Selected items render as compact rounded pills with clear remove buttons and a rotating chevron. Search and checkbox-style dropdown unchanged.
+- **E-Record Options toggles** — added the same iOS-style "Options" card to E-Record with two toggles: "Show page subtotal & grand total" and "Show page number in footer". Both default on and persist to settings. E-Record template now conditionally renders subtotals and the page-number/generated-at footer.
+- **Toggle design** — all report toggles (E-Record + Transmittal) use the same pattern as the "Access & capabilities" panel on the user edit page: title + description on the left, iOS-style switch on the right, in a bordered rounded container with dividers.
+- **Dependent divisions** — Transmittal divisions multi-select filters to only show divisions from selected offices. Auto-prunes invalid selections when offices change.
+
 ## 1.8.1 — 2026-06-27
-**Report Settings UX overhaul: full-width panels, searchable multi-select, toggle switches, subtotal toggle**
-- **Full-width settings panels** — removed the `max-w-2xl` container constraint so all settings cards stretch to fill the available space, eliminating dead space.
+**Report Settings UX overhaul: searchable multi-select, toggle switches, subtotal toggle**
 - **Searchable multi-select dropdowns** — replaced the checkbox grid for offices (both E-Record and Transmittal) with a searchable dropdown that shows selected items as removable pills. Scales to 30+ departments without a wall of checkboxes.
 - **Dependent divisions dropdown** — Transmittal's divisions multi-select now filters automatically based on the selected offices, showing only divisions that belong to those offices. Changing offices prunes invalid divisions.
 - **Subtotal & grand total toggle** — new setting for the Transmittal report to show/hide per-page subtotals and the grand total row. Uses the same iOS-style toggle design.

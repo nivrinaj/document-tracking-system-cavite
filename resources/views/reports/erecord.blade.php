@@ -78,6 +78,7 @@
                             <td style="text-align:{{ $a['amount'] }}">{{ $doc->amount !== null ? number_format($doc->amount, 2) : '' }}</td>
                         </tr>
                     @endforeach
+                    @if(!empty($showTotals))
                     <tr class="subtotal">
                         <td colspan="8" style="text-align:right;">Page subtotal</td>
                         <td style="text-align:{{ $a['amount'] }}">{{ number_format($chunk->sum('amount'), 2) }}</td>
@@ -87,6 +88,7 @@
                             <td colspan="8" style="text-align:right;">GRAND TOTAL</td>
                             <td style="text-align:{{ $a['amount'] }}">{{ number_format($total, 2) }}</td>
                         </tr>
+                    @endif
                     @endif
                 </tbody>
             </table>
@@ -101,6 +103,7 @@
         <p style="text-align:center; color:#777; padding:16px;">No documents found for these filters.</p>
     @endforelse
 
+    @if(!empty($showPageNumber))
     <script type="text/php">
         if (isset($pdf)) {
             $font = $fontMetrics->getFont("DejaVu Sans", "normal");
@@ -112,5 +115,6 @@
             $pdf->page_text(20, $h - 22, "{{ addslashes($appName) }} · Generated {{ addslashes($generatedAt->format('M d, Y g:i A')) }}", $font, $size, $color);
         }
     </script>
+    @endif
 </body>
 </html>
