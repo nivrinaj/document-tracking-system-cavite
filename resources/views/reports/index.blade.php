@@ -53,12 +53,22 @@
                             </select>
                         </div>
                         <div>
-                            <label class="label">Date &amp; time range <span class="text-gray-400 text-xs font-normal">(optional)</span></label>
+                            <label class="label">Date range <span class="text-gray-400 text-xs font-normal">(optional)</span></label>
                             <div class="space-y-2">
-                                <input type="datetime-local" x-model="dateFrom" class="input" aria-label="From">
-                                <input type="datetime-local" x-model="dateTo" class="input" aria-label="To">
+                                <input type="date" x-model="dateFrom" class="input" aria-label="From date">
+                                <input type="date" x-model="dateTo" class="input" aria-label="To date">
                             </div>
                             <p class="text-[11px] text-gray-400 mt-1">Leave blank for all dates; use one for open-ended.</p>
+                        </div>
+                        <div>
+                            <label class="inline-flex items-center gap-2 cursor-pointer select-none">
+                                <input type="checkbox" x-model="useTime" class="rounded border-gray-300 dark:border-gray-600 text-primary-600 focus:ring-primary-500">
+                                <span class="text-sm text-gray-600 dark:text-gray-400">Include time range</span>
+                            </label>
+                            <div x-show="useTime" x-cloak class="mt-2 space-y-2">
+                                <input type="time" x-model="timeFrom" class="input" aria-label="From time">
+                                <input type="time" x-model="timeTo" class="input" aria-label="To time">
+                            </div>
                         </div>
                     </div>
                     <div class="mt-5 flex flex-wrap items-center gap-3">
@@ -97,19 +107,22 @@
                 hospital: 'exclude',
                 dateFrom: '',
                 dateTo: '',
+                useTime: false,
+                timeFrom: '',
+                timeTo: '',
                 _t: null,
                 get ready() { return this.report === 'erecord' && this.documentType && this.fundId; },
                 query(format) {
                     const p = new URLSearchParams({ document_type: this.documentType, fund_id: this.fundId, hospital: this.hospital, format });
-                    if (this.dateFrom) p.set('date_from', this.dateFrom);
-                    if (this.dateTo) p.set('date_to', this.dateTo);
+                    if (this.dateFrom) p.set('date_from', this.useTime && this.timeFrom ? this.dateFrom + ' ' + this.timeFrom : this.dateFrom);
+                    if (this.dateTo) p.set('date_to', this.useTime && this.timeTo ? this.dateTo + ' ' + this.timeTo : this.dateTo);
                     return this.base + '?' + p.toString();
                 },
                 refresh() { if (this.ready && this.$refs.frame) this.$refs.frame.src = this.query('html'); },
                 openPdf() { if (this.ready) window.open(this.query('pdf'), '_blank'); },
                 debounced() { clearTimeout(this._t); this._t = setTimeout(() => this.refresh(), 350); },
                 init() {
-                    ['report', 'documentType', 'fundId', 'hospital', 'dateFrom', 'dateTo'].forEach(k => this.$watch(k, () => this.debounced()));
+                    ['report', 'documentType', 'fundId', 'hospital', 'dateFrom', 'dateTo', 'useTime', 'timeFrom', 'timeTo'].forEach(k => this.$watch(k, () => this.debounced()));
                 },
             }));
         });

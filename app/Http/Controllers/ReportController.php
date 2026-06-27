@@ -126,6 +126,8 @@ class ReportController extends Controller
 
         $from = $request->filled('date_from') ? Carbon::parse($data['date_from']) : null;
         $to = $request->filled('date_to') ? Carbon::parse($data['date_to']) : null;
+        if ($from && strlen($data['date_from']) <= 10) $from = $from->startOfDay();
+        if ($to && strlen($data['date_to']) <= 10) $to = $to->endOfDay();
         $deptId = $user->canViewAllDepartments() ? null : $user->department_id;
         $hospital = $data['hospital'] ?? 'exclude';
 

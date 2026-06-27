@@ -6,6 +6,12 @@ Format based on [Keep a Changelog](https://keepachangelog.com).
 
 ---
 
+## 1.7.5 — 2026-06-27
+**Date range always visible; time range is opt-in via checkbox**
+- **Split the date & time filter** on the E-Record report page. **Date range** (date inputs) is always visible. **Time range** only appears when the "Include time range" checkbox is ticked — cleaner default for date-only filtering.
+- When only dates are provided (no time), the filter automatically covers the **full day** (start of day → end of day) so no records are missed.
+- Added `CLAUDE.md` to the project root with architecture, conventions, and deployment instructions.
+
 ## 1.7.4 — 2026-06-26
 **Hospital classification persisted on the document (correct exclude/only)**
 - A document's **hospital status is now recorded on the document itself at encode time** (`is_hospital`, set from the encoding/owning division) and queried as a real column. Previously it was inferred from the *current* division, which changes as a document moves — so a hospital `-H` voucher wrongly appeared under “Exclude hospital”. Fixed.

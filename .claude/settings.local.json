@@ -34,7 +34,8 @@
       "Bash(php _upd.php)",
       "Bash(php _seq.php)",
       "Bash(php _v.php)",
-      "Bash(git checkout *)"
+      "Bash(git checkout *)",
+      "Bash(git -C D:/PGC log --oneline -5)"
     ]
   }
 }
