@@ -6,6 +6,13 @@ Format based on [Keep a Changelog](https://keepachangelog.com).
 
 ---
 
+## 1.8.4 — 2026-06-27
+**Hotfix: PHP fatal error on reports page (array destructuring with defaults)**
+- **Root cause** — `ReportController::diffSettings()` used PHP array destructuring with default values (`[$key, $newVal, $isBool = false, $lookup = null]`), which PHP does not support. This caused a fatal error on every page load that touched the reports route.
+- **Fix** — replaced with explicit index access (`$field[0]`, `$field[1]`, `$field[2] ?? false`, `$field[3] ?? null`).
+- **CLAUDE.md updated** — added two new "never do" rules: (1) never use PHP array destructuring with defaults, (2) never deploy without hitting changed routes at runtime — `view:cache` only checks Blade syntax, not controller PHP.
+- **Lesson** — `php artisan view:cache` and `npm run build` passing does NOT mean the code works. Must verify changed routes actually load before deploying.
+
 ## 1.8.3 — 2026-06-27
 **Multi-select pill redesign + detailed audit logging for settings & user changes**
 - **Multi-select pill styling** — redesigned selected-item chips with indigo background, ring border, and semibold text. Clearly visible in both light and dark mode. Remove button has a hover state.
