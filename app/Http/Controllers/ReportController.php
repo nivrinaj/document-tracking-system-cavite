@@ -57,6 +57,52 @@ class ReportController extends Controller
         return Division::where('department_id', $user->department_id)->orderBy('name')->get();
     }
 
+    /* ═══════════════ Transmittal of Reviewed Disbursement ═══════════════ */
+
+    public const TRANSMITTAL_COLS = [
+        'date_jev' => 'Date Received JEV', 'dv' => 'DV No.', 'obr' => 'OBR No.', 'rc' => 'RC',
+        'fund' => 'Fund', 'payee' => 'Payee', 'nature' => 'Nature', 'particulars' => 'Particulars / Explanation',
+        'amount' => 'Amount', 'date_review' => 'Date Received Review',
+        'secretary' => 'Received by Secretary', 'releasing' => 'Received by Releasing Staff',
+        'days' => 'No. of Days', 'date_in' => 'Date In', 'date_out' => 'Date Out',
+    ];
+
+    private const TRANSMITTAL_ALIGN_DEFAULT = [
+        'date_jev' => 'center', 'dv' => 'center', 'obr' => 'left', 'rc' => 'left',
+        'fund' => 'center', 'payee' => 'left', 'nature' => 'center', 'particulars' => 'left',
+        'amount' => 'right', 'date_review' => 'center',
+        'secretary' => 'center', 'releasing' => 'center', 'days' => 'center',
+        'date_in' => 'center', 'date_out' => 'center',
+    ];
+
+    private function transmittalAlign(): array
+    {
+        $saved = json_decode((string) Setting::get('transmittal_align', ''), true) ?: [];
+        return array_merge(self::TRANSMITTAL_ALIGN_DEFAULT, array_intersect_key($saved, self::TRANSMITTAL_ALIGN_DEFAULT));
+    }
+
+    private function transmittalLabels(): array
+    {
+        $saved = json_decode((string) Setting::get('transmittal_labels', ''), true) ?: [];
+        return array_merge(self::TRANSMITTAL_COLS, array_intersect_key(array_filter($saved), self::TRANSMITTAL_COLS));
+    }
+
+    private function canRunTransmittal(User $user): bool
+    {
+        if ($user->canViewAllDepartments()) return true;
+
+        $offices = array_filter(explode(',', (string) Setting::get('transmittal_offices', '')));
+        if (empty($offices) || ! in_array((string) $user->department_id, $offices, true)) return false;
+
+        $divisions = array_filter(explode(',', (string) Setting::get('transmittal_divisions', '')));
+        if (empty($divisions)) return true;
+
+        $isHead = $user->hasRole(['Department Head', 'Assistant Department Head']);
+        return $isHead || in_array((string) $user->division_id, $divisions, true);
+    }
+
+    /* ═══════════════ E-Record ═══════════════ */
+
     /** E-Record columns and their default alignment (overridable in Report Settings). */
     public const ERECORD_COLS = [
         'date' => 'Date Received', 'dv' => 'DV #', 'obr' => 'OBR No.', 'rc' => 'RC',
@@ -105,11 +151,18 @@ class ReportController extends Controller
         if ($this->canRunERecord($user)) {
             $reports['erecord'] = 'E-Record';
         }
+        if ($this->canRunTransmittal($user)) {
+            $reports['transmittal'] = Setting::get('transmittal_title', 'Transmittal of Reviewed Disbursement');
+        }
+
+        $funds = \App\Models\Fund::where('is_active', true)->orderBy('sort_order')->orderBy('name')->get();
 
         return view('reports.index', [
             'reports' => $reports,
             'eDocTypes' => \App\Models\DocumentType::availableFor($user->department_id)->pluck('name'),
-            'eFunds' => \App\Models\Fund::where('is_active', true)->orderBy('sort_order')->orderBy('name')->get(),
+            'eFunds' => $funds,
+            'tFunds' => $funds,
+            'tDateSource' => Setting::get('transmittal_date_source', 'received_by_division'),
         ]);
     }
 
@@ -184,23 +237,153 @@ class ReportController extends Controller
             ->stream('E-Record-'.$fund->reportCode().($hospital === 'only' ? '-H' : '').'-'.now()->format('Ymd-His').'.pdf');
     }
 
+    /* ───────────── Transmittal of Reviewed Disbursement ───────────── */
+
+    public function transmittal(Request $request)
+    {
+        $user = Auth::user();
+        abort_unless($this->canRunTransmittal($user), 403);
+
+        $data = $request->validate([
+            'fund_id' => ['required', 'exists:funds,id'],
+            'date_from' => ['nullable', 'date'],
+            'date_to' => ['nullable', 'date', 'after_or_equal:date_from'],
+            'hospital' => ['nullable', 'in:exclude,include,only'],
+            'date_source' => ['nullable', 'in:received_by_division,created'],
+            'format' => ['nullable', 'in:html,pdf'],
+        ]);
+
+        $from = $request->filled('date_from') ? Carbon::parse($data['date_from'])->startOfDay() : null;
+        $to = $request->filled('date_to') ? Carbon::parse($data['date_to'])->endOfDay() : null;
+        $hospital = $data['hospital'] ?? 'exclude';
+        $dateSource = $data['date_source'] ?? Setting::get('transmittal_date_source', 'received_by_division');
+
+        $divisionIds = array_filter(explode(',', (string) Setting::get('transmittal_divisions', '')));
+        $deptId = $user->canViewAllDepartments() ? null : $user->department_id;
+
+        $rows = Document::query()
+            ->with(['fund', 'responsibilityCenter'])
+            ->where('fund_id', $data['fund_id'])
+            ->whereIn('document_type', ['Voucher', 'Payroll'])
+            ->when($deptId, fn ($q) => $q->where('department_id', $deptId))
+            ->when($hospital === 'only', fn ($q) => $q->where('is_hospital', true))
+            ->when($hospital === 'exclude', fn ($q) => $q->where('is_hospital', false))
+            ->when($from, fn ($q) => $q->where('created_at', '>=', $from))
+            ->when($to, fn ($q) => $q->where('created_at', '<=', $to))
+            ->orderBy(DB::raw('DATE(created_at)'))
+            ->orderByRaw("CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(tracking_code, '-', 4), '-', -1) AS UNSIGNED)")
+            ->get();
+
+        // Resolve the "date received" per document.
+        if ($dateSource === 'received_by_division' && ! empty($divisionIds)) {
+            $docIds = $rows->pluck('id');
+            $userIdsInDiv = User::whereIn('division_id', $divisionIds)->pluck('id');
+            $receivedDates = \App\Models\DocumentLog::whereIn('document_id', $docIds)
+                ->where('action', 'received')
+                ->whereIn('actor_id', $userIdsInDiv)
+                ->orderBy('created_at')
+                ->get()
+                ->groupBy('document_id')
+                ->map(fn ($logs) => $logs->first()->created_at);
+        } else {
+            $receivedDates = collect();
+        }
+
+        $fund = \App\Models\Fund::find($data['fund_id']);
+
+        $payload = [
+            'reportTitle' => Setting::get('transmittal_title', 'Transmittal of Reviewed Disbursement'),
+            'isoCode' => Setting::get('transmittal_iso', 'PGC ACCTG. R.002'),
+            'officeName' => optional($user->department)->name,
+            'divisionName' => optional($user->division)->name,
+            'rows' => $rows,
+            'fund' => $fund,
+            'from' => $from,
+            'to' => $to,
+            'hospital' => $hospital,
+            'dateSource' => $dateSource,
+            'receivedDates' => $receivedDates,
+            'align' => $this->transmittalAlign(),
+            'colLabels' => $this->transmittalLabels(),
+            'perPage' => 16,
+            'natureCodes' => \App\Models\NatureOfTransaction::pluck('report_code', 'name'),
+            'org' => Setting::get('organization', ''),
+            'total' => $rows->sum('amount'),
+            'showPageNumber' => (bool) Setting::get('transmittal_page_number', true),
+        ];
+
+        if ($request->input('format') === 'html') {
+            return view('reports.transmittal', $payload + ['preview' => true]);
+        }
+
+        $hospSuffix = $hospital === 'only' ? '-H' : '';
+        return Pdf::loadView('reports.transmittal', $payload)
+            ->setPaper('a4', 'landscape')
+            ->setOption('isPhpEnabled', true)
+            ->stream('Transmittal-'.$fund->reportCode().$hospSuffix.'-'.now()->format('Ymd-His').'.pdf');
+    }
+
     /* ───────────── Report settings (Super Admin) ───────────── */
     public function settings()
     {
+        $departments = \App\Models\Department::orderBy('name')->get();
+        $divisions = Division::orderBy('name')->get();
+
         return view('reports.settings', [
+            'departments' => $departments,
+            'divisions' => $divisions,
+            // E-Record
             'title' => Setting::get('erecord_title', 'E-Record'),
             'paper' => Setting::get('erecord_paper', 'a4'),
             'orientation' => Setting::get('erecord_orientation', 'landscape'),
             'offices' => array_values(array_filter(explode(',', (string) Setting::get('erecord_offices', '')))),
-            'departments' => \App\Models\Department::orderBy('name')->get(),
             'cols' => self::ERECORD_COLS,
             'align' => $this->erecordAlign(),
             'labels' => $this->erecordLabels(),
+            // Transmittal
+            'tTitle' => Setting::get('transmittal_title', 'Transmittal of Reviewed Disbursement'),
+            'tIso' => Setting::get('transmittal_iso', 'PGC ACCTG. R.002'),
+            'tOffices' => array_values(array_filter(explode(',', (string) Setting::get('transmittal_offices', '')))),
+            'tDivisions' => array_values(array_filter(explode(',', (string) Setting::get('transmittal_divisions', '')))),
+            'tDateSource' => Setting::get('transmittal_date_source', 'received_by_division'),
+            'tPageNumber' => (bool) Setting::get('transmittal_page_number', true),
+            'tCols' => self::TRANSMITTAL_COLS,
+            'tAlign' => $this->transmittalAlign(),
+            'tLabels' => $this->transmittalLabels(),
         ]);
     }
 
     public function saveSettings(Request $request)
     {
+        $report = $request->input('_report', 'erecord');
+
+        if ($report === 'transmittal') {
+            $data = $request->validate([
+                'transmittal_title' => ['required', 'string', 'max:150'],
+                'transmittal_iso' => ['nullable', 'string', 'max:80'],
+                'transmittal_offices' => ['nullable', 'array'],
+                'transmittal_offices.*' => ['integer', 'exists:departments,id'],
+                'transmittal_divisions' => ['nullable', 'array'],
+                'transmittal_divisions.*' => ['integer', 'exists:divisions,id'],
+                'transmittal_date_source' => ['required', 'in:received_by_division,created'],
+                'transmittal_page_number' => ['nullable'],
+                'align' => ['nullable', 'array'],
+                'align.*' => ['in:left,center,right'],
+                'labels' => ['nullable', 'array'],
+                'labels.*' => ['nullable', 'string', 'max:50'],
+            ]);
+            Setting::put('transmittal_title', $data['transmittal_title']);
+            Setting::put('transmittal_iso', $data['transmittal_iso'] ?? '');
+            Setting::put('transmittal_offices', implode(',', $data['transmittal_offices'] ?? []));
+            Setting::put('transmittal_divisions', implode(',', $data['transmittal_divisions'] ?? []));
+            Setting::put('transmittal_date_source', $data['transmittal_date_source']);
+            Setting::put('transmittal_page_number', $request->boolean('transmittal_page_number') ? '1' : '0');
+            Setting::put('transmittal_align', json_encode(array_intersect_key($data['align'] ?? [], self::TRANSMITTAL_COLS)));
+            Setting::put('transmittal_labels', json_encode(array_intersect_key($data['labels'] ?? [], self::TRANSMITTAL_COLS)));
+
+            return back()->with('success', 'Transmittal settings saved.');
+        }
+
         $data = $request->validate([
             'erecord_title' => ['required', 'string', 'max:150'],
             'erecord_paper' => ['required', 'in:a4,letter,legal'],

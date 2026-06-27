@@ -74,6 +74,7 @@ Route::middleware(['auth', 'active'])->group(function () {
     Route::get('/reports', [ReportController::class, 'index'])->name('reports.index')->middleware('permission:reports.view');
     Route::get('/reports/generate', [ReportController::class, 'generate'])->name('reports.generate')->middleware('permission:reports.view');
     Route::get('/reports/e-record', [ReportController::class, 'erecord'])->name('reports.erecord')->middleware('permission:reports.view');
+    Route::get('/reports/transmittal', [ReportController::class, 'transmittal'])->name('reports.transmittal')->middleware('permission:reports.view');
 
     /* -------------------- Messaging (chat) -------------------- */
     Route::get('/messages', [\App\Http\Controllers\MessageController::class, 'index'])->name('messages.index');

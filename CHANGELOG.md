@@ -6,10 +6,22 @@ Format based on [Keep a Changelog](https://keepachangelog.com).
 
 ---
 
+## 1.8.0 — 2026-06-27
+**New report: Transmittal of Reviewed Disbursement (ISO layout)**
+- **New report type** — "Transmittal of Reviewed Disbursement" with an ISO-registered layout (`transmittal.blade.php`). A4 landscape, 15 columns: 9 data columns (Date Received JEV, DV No., OBR No., RC, Fund, Payee, Nature, Particulars/Explanation, Amount) + Date Received Review (same date) + 5 blank tracking columns (Secretary, Releasing Staff, No. of Days, Date In, Date Out) at minimal width.
+- **Header matches ISO format:** Organization – Office Name – Division Name (all from DB IDs, not hardcoded), then Report Title + ISO Code (both configurable), then FUND NAME – FUND CODE YEAR YYYY.
+- **DB-gated access** — only offices and divisions configured in Report Settings can generate. Department heads of configured offices are always allowed. Uses `transmittal_offices` and `transmittal_divisions` settings (DB IDs), never hardcoded names.
+- **Date source dropdown** — choose between "Date received by the configured division" (looks up `document_logs` for the first `received` action by a user in the division) or "Date encoded/created". Configurable in Report Settings, overridable per-report in the filter panel.
+- **Configurable column labels & alignment** — same pattern as E-Record. All 15 columns can be renamed and aligned in Report Settings.
+- **Optional page number** — toggle in Report Settings to show/hide centered "Page N" in the footer. No other footer content.
+- **Report Settings** now has a report-type selector (E-Record / Transmittal), each with its own form. Transmittal has: title, ISO code, date source, page number toggle, offices, divisions, column labels & alignment.
+- **Reports index** updated — the Alpine component handles both report types independently with separate filter panels and preview.
+- **PDF filename:** `Transmittal-{FundCode}(-H if hospital)-{datetime}.pdf`.
+
 ## 1.7.8 — 2026-06-27
 **Encode placeholder, Voucher badge, renameable report columns, redistributed column widths**
 - **Document Type placeholder** on the encode form — dropdown now starts with "— Select document type —" (disabled) instead of auto-selecting the first type.
-- **Voucher/Payroll badge** — shown as a subtle indigo pill with ring in the document list and detail page, making them visually distinct without being overpowering.
+- **Voucher/Payroll badge** on the encode form — the doc-type chip in the Accounting details panel is now a subtle indigo pill with a ring border instead of faded gray, so the selected type stands out clearly.
 - **Renameable report columns** — Report Settings now shows an editable label input beside each column's alignment selector. Leave blank to keep the default name; type a custom label to override it on the preview and PDF.
 - **Redistributed column widths** — OBR (10→7%) and RC (13→10%) narrowed; freed space goes to Particulars (25→28%) and Payee (19→22%), giving long-content columns more room.
 

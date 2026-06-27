@@ -35,7 +35,9 @@
       "Bash(php _seq.php)",
       "Bash(php _v.php)",
       "Bash(git checkout *)",
-      "Bash(git -C D:/PGC log --oneline -5)"
+      "Bash(git -C D:/PGC log --oneline -5)",
+      "Bash(git -C D:/PGC log --oneline -3)",
+      "Bash(git -C D:/PGC tag --list 'v1.7*' --sort=-v:refname)"
     ]
   }
 }

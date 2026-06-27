@@ -6,7 +6,7 @@
             <p class="text-sm text-gray-500 dark:text-gray-400">No reports are available for your office yet.</p>
         </x-card>
     @else
-    <div x-data="erecordForm('{{ route('reports.erecord') }}')" class="space-y-3">
+    <div x-data="reportPage()" class="space-y-3">
         @role('Super Admin')
             <div class="flex justify-end">
                 <a href="{{ route('reports.settings') }}" class="inline-flex items-center gap-1.5 text-sm link">
@@ -27,6 +27,7 @@
                     @endforeach
                 </select>
 
+                {{-- ── E-Record filters ── --}}
                 <div x-show="report === 'erecord'" x-cloak class="mt-5 pt-5 border-t border-gray-100 dark:border-gray-700">
                     <h3 class="font-semibold text-sm mb-4">Filters</h3>
                     <div class="space-y-4">
@@ -76,7 +77,51 @@
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
                             Generate PDF
                         </x-btn>
-                        <button type="button" @click="refresh()" x-show="ready" class="text-sm link">↻ Refresh preview</button>
+                        <button type="button" @click="refresh()" x-show="ready" class="text-sm link">&circlearrowright; Refresh preview</button>
+                    </div>
+                </div>
+
+                {{-- ── Transmittal filters ── --}}
+                <div x-show="report === 'transmittal'" x-cloak class="mt-5 pt-5 border-t border-gray-100 dark:border-gray-700">
+                    <h3 class="font-semibold text-sm mb-4">Filters</h3>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="label">Fund <span class="text-red-500">*</span></label>
+                            <select x-model="tFundId" class="input">
+                                <option value="">— Select fund —</option>
+                                @foreach($tFunds as $f)<option value="{{ $f->id }}">{{ $f->name }} ({{ $f->reportCode() }})</option>@endforeach
+                            </select>
+                        </div>
+                        <div>
+                            <label class="label">Hospital Division</label>
+                            <select x-model="tHospital" class="input">
+                                <option value="exclude">Exclude hospital transactions</option>
+                                <option value="include">Include hospital transactions</option>
+                                <option value="only">Hospital transactions only</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="label">Date source</label>
+                            <select x-model="tDateSource" class="input">
+                                <option value="received_by_division">Date received by division</option>
+                                <option value="created">Date encoded / created</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="label">Date range <span class="text-gray-400 text-xs font-normal">(optional)</span></label>
+                            <div class="space-y-2">
+                                <input type="date" x-model="tDateFrom" class="input" aria-label="From date">
+                                <input type="date" x-model="tDateTo" class="input" aria-label="To date">
+                            </div>
+                            <p class="text-[11px] text-gray-400 mt-1">Leave blank for all dates.</p>
+                        </div>
+                    </div>
+                    <div class="mt-5 flex flex-wrap items-center gap-3">
+                        <x-btn type="button" @click="openPdf()" x-bind:disabled="!ready">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                            Generate PDF
+                        </x-btn>
+                        <button type="button" @click="refresh()" x-show="ready" class="text-sm link">&circlearrowright; Refresh preview</button>
                     </div>
                 </div>
             </x-card>
@@ -85,11 +130,11 @@
             <x-card padding="p-0" class="overflow-hidden">
                 <div class="flex items-center justify-between px-4 py-2.5 border-b border-gray-100 dark:border-gray-700">
                     <span class="text-sm font-medium">Preview</span>
-                    <span class="text-[11px] text-gray-400">Updates as you change filters · {{ strtoupper(\App\Models\Setting::get('erecord_paper','a4')) }} {{ \App\Models\Setting::get('erecord_orientation','landscape') }}</span>
+                    <span class="text-[11px] text-gray-400">Updates as you change filters</span>
                 </div>
                 <div class="relative bg-gray-100 dark:bg-gray-900" style="height: 74vh;">
                     <div x-show="!ready" class="absolute inset-0 grid place-items-center text-sm text-gray-400 px-6 text-center">
-                        Pick a report, Document Type and Fund to preview.
+                        Pick a report and its required filters to preview.
                     </div>
                     <iframe x-ref="frame" x-show="ready" class="w-full h-full bg-white" title="Report preview"></iframe>
                 </div>
@@ -99,30 +144,42 @@
 
     <script>
         document.addEventListener('alpine:init', () => {
-            Alpine.data('erecordForm', (base) => ({
-                base,
+            Alpine.data('reportPage', () => ({
                 report: '',
-                documentType: '',
-                fundId: '',
-                hospital: 'exclude',
-                dateFrom: '',
-                dateTo: '',
-                useTime: false,
-                timeFrom: '',
-                timeTo: '',
+                // E-Record
+                documentType: '', fundId: '', hospital: 'exclude',
+                dateFrom: '', dateTo: '', useTime: false, timeFrom: '', timeTo: '',
+                // Transmittal
+                tFundId: '', tHospital: 'exclude', tDateSource: '{{ $tDateSource ?? "received_by_division" }}',
+                tDateFrom: '', tDateTo: '',
+
                 _t: null,
-                get ready() { return this.report === 'erecord' && this.documentType && this.fundId; },
+                get ready() {
+                    if (this.report === 'erecord') return this.documentType && this.fundId;
+                    if (this.report === 'transmittal') return !!this.tFundId;
+                    return false;
+                },
                 query(format) {
-                    const p = new URLSearchParams({ document_type: this.documentType, fund_id: this.fundId, hospital: this.hospital, format });
-                    if (this.dateFrom) p.set('date_from', this.useTime && this.timeFrom ? this.dateFrom + ' ' + this.timeFrom : this.dateFrom);
-                    if (this.dateTo) p.set('date_to', this.useTime && this.timeTo ? this.dateTo + ' ' + this.timeTo : this.dateTo);
-                    return this.base + '?' + p.toString();
+                    if (this.report === 'erecord') {
+                        const p = new URLSearchParams({ document_type: this.documentType, fund_id: this.fundId, hospital: this.hospital, format });
+                        if (this.dateFrom) p.set('date_from', this.useTime && this.timeFrom ? this.dateFrom + ' ' + this.timeFrom : this.dateFrom);
+                        if (this.dateTo) p.set('date_to', this.useTime && this.timeTo ? this.dateTo + ' ' + this.timeTo : this.dateTo);
+                        return '{{ route("reports.erecord") }}?' + p.toString();
+                    }
+                    if (this.report === 'transmittal') {
+                        const p = new URLSearchParams({ fund_id: this.tFundId, hospital: this.tHospital, date_source: this.tDateSource, format });
+                        if (this.tDateFrom) p.set('date_from', this.tDateFrom);
+                        if (this.tDateTo) p.set('date_to', this.tDateTo);
+                        return '{{ route("reports.transmittal") }}?' + p.toString();
+                    }
+                    return '';
                 },
                 refresh() { if (this.ready && this.$refs.frame) this.$refs.frame.src = this.query('html'); },
                 openPdf() { if (this.ready) window.open(this.query('pdf'), '_blank'); },
                 debounced() { clearTimeout(this._t); this._t = setTimeout(() => this.refresh(), 350); },
                 init() {
-                    ['report', 'documentType', 'fundId', 'hospital', 'dateFrom', 'dateTo', 'useTime', 'timeFrom', 'timeTo'].forEach(k => this.$watch(k, () => this.debounced()));
+                    ['report','documentType','fundId','hospital','dateFrom','dateTo','useTime','timeFrom','timeTo',
+                     'tFundId','tHospital','tDateSource','tDateFrom','tDateTo'].forEach(k => this.$watch(k, () => this.debounced()));
                 },
             }));
         });
