@@ -59,7 +59,7 @@ class ReportController extends Controller
 
     /** E-Record columns and their default alignment (overridable in Report Settings). */
     public const ERECORD_COLS = [
-        'date' => 'Date Received', 'dv' => 'DV #', 'obr' => 'OBR No.', 'rc' => 'Responsibility Center',
+        'date' => 'Date Received', 'dv' => 'DV #', 'obr' => 'OBR No.', 'rc' => 'RC',
         'fund' => 'Fund', 'payee' => 'Payee', 'nature' => 'Nature', 'particulars' => 'Particulars', 'amount' => 'Amount',
     ];
 
@@ -173,7 +173,7 @@ class ReportController extends Controller
         return Pdf::loadView('reports.erecord', $payload)
             ->setPaper(Setting::get('erecord_paper', 'a4'), $orientation)
             ->setOption('isPhpEnabled', true)
-            ->stream('e-record-'.$fund->reportCode().'-'.now()->format('Ymd-His').'.pdf');
+            ->stream('E-Record-'.$fund->reportCode().($hospital === 'only' ? '-H' : '').'-'.now()->format('Ymd-His').'.pdf');
     }
 
     /* ───────────── Report settings (Super Admin) ───────────── */

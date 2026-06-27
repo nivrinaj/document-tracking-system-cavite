@@ -114,6 +114,7 @@ class SettingController extends Controller
             \Illuminate\Support\Facades\DB::table('document_assignees')->delete();
             \Illuminate\Support\Facades\DB::table('document_logs')->delete();
             \App\Models\Document::query()->delete();
+            \App\Models\TrackingSequence::query()->delete();
             \Illuminate\Support\Facades\DB::table('notifications')->delete();
             \App\Models\ActivityLog::query()->delete();
         };

@@ -6,8 +6,7 @@
         @page { margin: 12mm 8mm 14mm 8mm; }
         * { font-family: DejaVu Sans, sans-serif; }
         body { font-size: 9px; color: #111; margin: 0; }
-        .page { page-break-after: always; }
-        .page:last-child { page-break-after: avoid; }
+        .page-break { page-break-after: always; }
         .head { text-align: center; margin-bottom: 6px; }
         .org { font-size: 11px; font-weight: bold; text-transform: uppercase; letter-spacing: .5px; }
         .office { font-size: 10px; font-weight: bold; margin-top: 1px; }
@@ -32,7 +31,7 @@
     @endphp
 
     @forelse($pages as $chunk)
-        <div class="page">
+        <div class="{{ $loop->last ? '' : 'page-break' }}">
             <div class="head">
                 @if($org)<div class="org">{{ $org }}</div>@endif
                 @if(!empty($officeName))<div class="office">{{ $officeName }}</div>@endif
@@ -51,7 +50,7 @@
                         <th style="width:{{ $w['date'] }};text-align:{{ $a['date'] }}">Date Received</th>
                         <th style="width:{{ $w['dv'] }};text-align:{{ $a['dv'] }}">DV #</th>
                         <th style="width:{{ $w['obr'] }};text-align:{{ $a['obr'] }}">OBR No.</th>
-                        <th style="width:{{ $w['rc'] }};text-align:{{ $a['rc'] }}">Responsibility Center</th>
+                        <th style="width:{{ $w['rc'] }};text-align:{{ $a['rc'] }}">RC</th>
                         <th style="width:{{ $w['fund'] }};text-align:{{ $a['fund'] }}">Fund</th>
                         <th style="width:{{ $w['payee'] }};text-align:{{ $a['payee'] }}">Payee</th>
                         <th style="width:{{ $w['nature'] }};text-align:{{ $a['nature'] }}">Nature</th>

@@ -6,6 +6,13 @@ Format based on [Keep a Changelog](https://keepachangelog.com).
 
 ---
 
+## 1.7.7 — 2026-06-27
+**Sequence reset on data wipe, RC column rename, PDF blank page fix, descriptive filename**
+- **Deleting all documents now resets tracking sequences** — the Danger Zone wipe clears the `tracking_sequences` table so the next encoded document starts at sequence 1, not where the deleted data left off.
+- **Renamed "Responsibility Center" → "RC"** in the E-Record report column header (both preview and PDF) and in the Report Settings alignment labels.
+- **Fixed blank trailing page in PDF** — single-page (or last-page) reports no longer emit a page break. Only intermediate pages get `page-break-after: always`; the last page has no break class at all.
+- **Descriptive PDF filename** — downloads are now named `E-Record-{FundCode}(-H if hospital)-{datetime}.pdf` (e.g. `E-Record-GF-H-20260627-093000.pdf`).
+
 ## 1.7.6 — 2026-06-27
 **E-Record PDF fixes: blank page, column widths, sort order**
 - **Fixed blank trailing page** — single-page reports no longer generate an extra empty page at the end (changed `page-break-after` from `auto` to `avoid` on the last page).
