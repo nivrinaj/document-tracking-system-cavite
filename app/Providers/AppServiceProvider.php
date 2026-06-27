@@ -47,7 +47,7 @@ class AppServiceProvider extends ServiceProvider
         });
 
         // Audit authentication events.
-        $parseDevice = function () {
+        $authContext = function () {
             $ua = request()->userAgent() ?? '';
             $device = 'Unknown device';
             if (preg_match('/\b(iPhone|iPad|iPod)\b/', $ua, $m)) $device = $m[1];
@@ -63,20 +63,24 @@ class AppServiceProvider extends ServiceProvider
             elseif (str_contains($ua, 'Firefox/')) $browser = 'Firefox';
             elseif (str_contains($ua, 'Safari/') && !str_contains($ua, 'Chrome')) $browser = 'Safari';
 
-            return $device . ' / ' . $browser;
+            $parts = [$device . ' / ' . $browser];
+            $location = \App\Models\ActivityLog::resolveLocation(request()->ip());
+            if ($location) $parts[] = $location;
+
+            return implode(' — ', $parts);
         };
 
-        \Illuminate\Support\Facades\Event::listen(\Illuminate\Auth\Events\Login::class, function ($event) use ($parseDevice) {
-            \App\Models\ActivityLog::record('login', 'Logged in — ' . $parseDevice(), null, $event->user->id);
+        \Illuminate\Support\Facades\Event::listen(\Illuminate\Auth\Events\Login::class, function ($event) use ($authContext) {
+            \App\Models\ActivityLog::record('login', 'Logged in — ' . $authContext(), null, $event->user->id);
         });
-        \Illuminate\Support\Facades\Event::listen(\Illuminate\Auth\Events\Logout::class, function ($event) use ($parseDevice) {
+        \Illuminate\Support\Facades\Event::listen(\Illuminate\Auth\Events\Logout::class, function ($event) use ($authContext) {
             if ($event->user) {
-                \App\Models\ActivityLog::record('logout', 'Logged out — ' . $parseDevice(), null, $event->user->id);
+                \App\Models\ActivityLog::record('logout', 'Logged out — ' . $authContext(), null, $event->user->id);
             }
         });
-        \Illuminate\Support\Facades\Event::listen(\Illuminate\Auth\Events\Failed::class, function ($event) use ($parseDevice) {
+        \Illuminate\Support\Facades\Event::listen(\Illuminate\Auth\Events\Failed::class, function ($event) use ($authContext) {
             $who = $event->credentials['username'] ?? $event->credentials['email'] ?? 'unknown';
-            \App\Models\ActivityLog::record('login.failed', "Failed login attempt for \"{$who}\" — " . $parseDevice(), null, null);
+            \App\Models\ActivityLog::record('login.failed', "Failed login attempt for \"{$who}\" — " . $authContext(), null, null);
         });
 
         // Make system settings (logo, colors, app name) available to every view as $settings.

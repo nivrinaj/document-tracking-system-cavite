@@ -18,8 +18,9 @@ class LogActivity
 {
     /** Friendly text for known routes. */
     private array $map = [
-        'documents.store' => 'Encoded a document',
-        'documents.update' => 'Updated a document',
+        // Documents
+        'documents.store' => 'Encoded a new document',
+        'documents.update' => 'Updated document details',
         'documents.destroy' => 'Deleted a document',
         'documents.assign' => 'Assigned a document',
         'documents.release' => 'Released a document',
@@ -27,26 +28,77 @@ class LogActivity
         'documents.forward' => 'Forwarded a document',
         'documents.transfer' => 'Transferred a document to another office',
         'documents.archive' => 'Archived a document',
-        'users.store' => 'Created a user',
-        'users.update' => 'Updated a user',
-        'users.destroy' => 'Deleted a user',
+        'documents.acknowledge' => 'Acknowledged a document',
+        'documents.distribute' => 'Distributed a document',
+        'documents.pending' => 'Marked a document as pending',
+        'documents.reject' => 'Rejected a document',
+        'documents.reopen' => 'Reopened a document',
+        'documents.resume' => 'Resumed a document from pending',
+        'documents.link' => 'Linked two documents',
+        'documents.unlink' => 'Unlinked two documents',
+        'documents.batchReceive.store' => 'Batch received multiple documents',
+        'documents.items.decision' => 'Made a route item decision',
+        // Attachments
+        'attachments.store' => 'Added an attachment',
+        'attachments.digitalCopy' => 'Added a digital copy',
+        'attachments.destroy' => 'Deleted an attachment',
+        // Users
+        'users.store' => 'Created a user account',
+        'users.update' => 'Updated a user account',
+        'users.destroy' => 'Deleted a user account',
+        // Departments & divisions
+        'departments.store' => 'Created a department',
+        'departments.update' => 'Updated a department',
+        'departments.destroy' => 'Deleted a department',
         'divisions.store' => 'Created a division',
         'divisions.update' => 'Updated a division',
         'divisions.destroy' => 'Deleted a division',
+        // Document types
+        'document-types.store' => 'Added a document type',
+        'document-types.update' => 'Updated a document type',
+        'document-types.destroy' => 'Deleted a document type',
+        // Accounting setup
+        'accounting.funds.store' => 'Added a fund',
+        'accounting.funds.destroy' => 'Deleted a fund',
+        'accounting.centers.store' => 'Added a responsibility center',
+        'accounting.centers.destroy' => 'Deleted a responsibility center',
+        'accounting.natures.store' => 'Added a nature of transaction',
+        'accounting.natures.destroy' => 'Deleted a nature of transaction',
+        // Roles
         'roles.store' => 'Created a role',
         'roles.update' => 'Updated a role',
         'roles.destroy' => 'Deleted a role',
+        // Settings
         'settings.update' => 'Updated system settings',
+        'settings.resetData' => 'Reset system data (Danger Zone)',
         'reports.settings.save' => 'Updated report settings',
-        'documentation.store' => 'Created a documentation page',
-        'documentation.update' => 'Updated a documentation page',
-        'documentation.destroy' => 'Deleted a documentation page',
+        // Calendar
+        'work-calendar.holidays.store' => 'Added a holiday',
+        'work-calendar.holidays.destroy' => 'Deleted a holiday',
+        'work-calendar.team.store' => 'Added a team calendar entry',
+        'work-calendar.team.destroy' => 'Removed a team calendar entry',
+        // Documentation
+        'documentation.store' => 'Created a help page',
+        'documentation.update' => 'Updated a help page',
+        'documentation.destroy' => 'Deleted a help page',
+        // Profile
         'profile.update' => 'Updated their profile',
         'profile.destroy' => 'Deleted their account',
+        // Messages
+        'messages.start' => 'Started a conversation',
+        'messages.store' => 'Sent a message',
+        'messages.group' => 'Created a group conversation',
     ];
 
-    /** Auth flows are logged via events; routes with inline ActivityLog::record() calls are skipped to avoid duplicates. */
-    private array $ignore = ['login', 'logout', 'register', 'password.email', 'password.store', 'password.update', 'password.confirm', 'notifications.read', 'notifications.readAll', 'settings.update', 'reports.settings.save', 'users.store', 'users.update'];
+    /** Routes handled inline by their controllers (with detailed diffs) or via auth events. */
+    private array $ignore = [
+        'login', 'logout', 'register',
+        'password.email', 'password.store', 'password.update', 'password.confirm',
+        'notifications.read', 'notifications.readAll',
+        'settings.update', 'reports.settings.save',
+        'users.store', 'users.update',
+        'work-calendar.holidays.store', 'work-calendar.team.store', 'work-calendar.team.destroy',
+    ];
 
     public function handle(Request $request, Closure $next): Response
     {
@@ -70,22 +122,18 @@ class LogActivity
             return;
         }
         if ($response->getStatusCode() >= 400) {
-            return; // skip validation failures / errors
+            return;
         }
 
         $route = $request->route();
         $name = $route?->getName();
 
-        // Skip unnamed/framework-internal routes (Laravel auto-names them
-        // "generated::xxxx", e.g. the POST /login route) and auth flows that
-        // are already audited via events.
         if (! $name || str_starts_with($name, 'generated::') || in_array($name, $this->ignore)) {
             return;
         }
 
         $description = $this->map[$name] ?? ucfirst(str_replace(['.', '_'], ' ', $name));
 
-        // Attach a human label for the affected record, if any.
         $subject = null;
         foreach ($route->parameters() as $param) {
             if ($param instanceof Model) {
@@ -94,8 +142,13 @@ class LogActivity
             }
         }
         if ($subject) {
-            $label = $subject->tracking_code ?? $subject->name ?? $subject->title ?? ('#'.$subject->getKey());
-            $description .= ': '.$label;
+            $label = $subject->tracking_code
+                ?? $subject->name
+                ?? $subject->title
+                ?? $subject->label
+                ?? null;
+            $id = $subject->getKey();
+            $description .= ': ' . ($label ? "{$label} (#{$id})" : "#{$id}");
         }
 
         ActivityLog::record($name, $description, $subject);

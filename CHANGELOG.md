@@ -6,6 +6,15 @@ Format based on [Keep a Changelog](https://keepachangelog.com).
 
 ---
 
+## 1.8.6 — 2026-06-27
+**Audit log overhaul: location tracking, human-readable labels, named subjects**
+- **Login/logout location** — auth events now resolve the user's IP to city/region/country via ip-api.com (2-second timeout, graceful fallback). Log entries read e.g. "Logged in — Windows PC / Chrome — Imus, Cavite, Philippines". Private/local IPs skip the lookup.
+- **Human-readable action labels** — every action in `ActivityLog::actionLabel()` and `LogActivity` middleware now has a plain-English label. Covers all 40+ routes: documents, attachments, departments, divisions, document types, accounting setup (funds, centers, natures), roles, settings, calendar, holidays, help pages, messages, and data resets. No more "Work-calendar Holidays Destroy" — now reads "Deleted Holiday".
+- **Named subjects in details** — middleware now logs `Name (#{id})` instead of just `#id`. Falls back through `tracking_code → name → title → label → #id`. E.g. "Deleted a holiday: Independence Day (#23)" instead of "Work-calendar holidays destroy: #23".
+- **Expanded filter dropdown** — Logs & History filter now includes all action categories: Attachments, Department changes, Document type changes, Accounting setup, Report settings, Calendar entries, Holidays, Help pages, Messages, Data resets.
+- **Calendar routes deduplicated** — `work-calendar.holidays.store`, `work-calendar.team.store`, `work-calendar.team.destroy` added to middleware ignore list since `WorkCalendarController` already logs inline with full detail.
+- **Device info on failed logins** — failed login attempts now also log device/browser/location alongside the attempted username.
+
 ## 1.8.5 — 2026-06-27
 **Full report title in filename, compressed tracking columns, browser tab title, device info in auth logs**
 - **Full report title in PDF filename** — Transmittal PDF now uses the full configured title (e.g. `Transmittal-of-Reviewed-Disbursement-GF-20260627-103903.pdf`) instead of just `Transmittal-GF-...`. Spaces in the title are replaced with dashes.

@@ -51,6 +51,7 @@ class ActivityLog extends Model
             'login' => 'Logged In',
             'logout' => 'Logged Out',
             'login.failed' => 'Failed Login',
+            // Documents
             'documents.store' => 'Encoded Document',
             'documents.update' => 'Updated Document',
             'documents.destroy' => 'Deleted Document',
@@ -58,23 +59,72 @@ class ActivityLog extends Model
             'documents.release' => 'Released Document',
             'documents.receive' => 'Received Document',
             'documents.forward' => 'Forwarded Document',
+            'documents.transfer' => 'Transferred Document',
             'documents.archive' => 'Archived Document',
+            'documents.acknowledge' => 'Acknowledged Document',
+            'documents.distribute' => 'Distributed Document',
+            'documents.pending' => 'Marked Pending',
+            'documents.reject' => 'Rejected Document',
+            'documents.reopen' => 'Reopened Document',
+            'documents.resume' => 'Resumed Document',
+            'documents.link' => 'Linked Documents',
+            'documents.unlink' => 'Unlinked Documents',
+            'documents.batchReceive.store' => 'Batch Received',
+            'documents.items.decision' => 'Route Item Decision',
+            // Attachments
+            'attachments.store' => 'Added Attachment',
+            'attachments.digitalCopy' => 'Added Digital Copy',
+            'attachments.destroy' => 'Deleted Attachment',
+            // Users
             'users.store' => 'Created User',
             'users.update' => 'Updated User',
             'users.destroy' => 'Deleted User',
+            // Departments & divisions
+            'departments.store' => 'Created Department',
+            'departments.update' => 'Updated Department',
+            'departments.destroy' => 'Deleted Department',
             'divisions.store' => 'Created Division',
             'divisions.update' => 'Updated Division',
             'divisions.destroy' => 'Deleted Division',
+            // Document types
+            'document-types.store' => 'Added Document Type',
+            'document-types.update' => 'Updated Document Type',
+            'document-types.destroy' => 'Deleted Document Type',
+            // Accounting setup
+            'accounting.funds.store' => 'Added Fund',
+            'accounting.funds.destroy' => 'Deleted Fund',
+            'accounting.centers.store' => 'Added Responsibility Center',
+            'accounting.centers.destroy' => 'Deleted Responsibility Center',
+            'accounting.natures.store' => 'Added Nature of Transaction',
+            'accounting.natures.destroy' => 'Deleted Nature of Transaction',
+            // Roles
             'roles.store' => 'Created Role',
             'roles.update' => 'Updated Role',
             'roles.destroy' => 'Deleted Role',
+            // Settings
             'settings.update' => 'Updated Settings',
+            'settings.resetData' => 'Reset Data',
             'reports.settings.save' => 'Report Settings',
-            'documentation.store' => 'Created Doc Page',
-            'documentation.update' => 'Updated Doc Page',
-            'documentation.destroy' => 'Deleted Doc Page',
+            // Calendar
+            'calendar.dept_dayoff' => 'Department Day-Off',
+            'calendar.user_leave' => 'Staff Leave',
+            'calendar.user_undertime' => 'Staff Undertime',
+            'calendar.remove' => 'Removed Calendar Entry',
+            'work-calendar.holidays.store' => 'Added Holiday',
+            'work-calendar.holidays.destroy' => 'Deleted Holiday',
+            'work-calendar.team.store' => 'Added Team Entry',
+            'work-calendar.team.destroy' => 'Removed Team Entry',
+            // Documentation
+            'documentation.store' => 'Created Help Page',
+            'documentation.update' => 'Updated Help Page',
+            'documentation.destroy' => 'Deleted Help Page',
+            // Profile
             'profile.update' => 'Updated Profile',
             'profile.destroy' => 'Deleted Account',
+            // Messages
+            'messages.start' => 'Started Conversation',
+            'messages.store' => 'Sent Message',
+            'messages.group' => 'Created Group Chat',
         ];
 
         if (isset($map[$this->action])) {
@@ -91,15 +141,42 @@ class ActivityLog extends Model
     public function actionColor(): string
     {
         return match (true) {
-            str_contains($this->action, 'login') => 'blue',
+            str_contains($this->action, 'login') && !str_contains($this->action, 'fail') => 'blue',
             str_contains($this->action, 'logout') => 'gray',
             str_contains($this->action, 'fail') => 'red',
-            str_contains($this->action, 'destroy'), str_contains($this->action, 'delete') => 'red',
-            str_contains($this->action, 'release'), str_contains($this->action, 'forward') => 'indigo',
-            str_contains($this->action, 'receive') => 'blue',
+            str_contains($this->action, 'destroy'), str_contains($this->action, 'delete'), str_contains($this->action, 'reject') => 'red',
+            str_contains($this->action, 'release'), str_contains($this->action, 'forward'), str_contains($this->action, 'transfer') => 'indigo',
+            str_contains($this->action, 'receive'), str_contains($this->action, 'acknowledge') => 'blue',
             str_contains($this->action, 'archive'), str_contains($this->action, 'complete') => 'green',
             str_contains($this->action, 'store'), str_contains($this->action, 'create') => 'green',
+            str_contains($this->action, 'settings'), str_contains($this->action, 'update') => 'amber',
+            str_contains($this->action, 'calendar') => 'purple',
+            str_contains($this->action, 'reset') => 'red',
             default => 'gray',
         };
+    }
+
+    /**
+     * Resolve a short location string from an IP address.
+     * Uses ip-api.com (free, no key). Returns null on failure or private IPs.
+     */
+    public static function resolveLocation(?string $ip): ?string
+    {
+        if (!$ip || filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE) === false) {
+            return null;
+        }
+
+        try {
+            $response = @file_get_contents("http://ip-api.com/json/{$ip}?fields=status,city,regionName,country", false, stream_context_create(['http' => ['timeout' => 2]]));
+            if (!$response) return null;
+
+            $data = json_decode($response, true);
+            if (($data['status'] ?? '') !== 'success') return null;
+
+            $parts = array_filter([$data['city'] ?? null, $data['regionName'] ?? null, $data['country'] ?? null]);
+            return implode(', ', $parts) ?: null;
+        } catch (\Throwable $e) {
+            return null;
+        }
     }
 }

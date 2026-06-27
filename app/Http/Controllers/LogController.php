@@ -41,8 +41,13 @@ class LogController extends Controller
             'canViewAll' => $canViewAll,
             'actions' => [
                 'login' => 'Logins', 'logout' => 'Logouts', 'login.failed' => 'Failed logins',
-                'documents' => 'Document actions', 'users' => 'User changes',
-                'settings' => 'Settings changes', 'roles' => 'Role changes', 'divisions' => 'Division changes',
+                'documents' => 'Document actions', 'attachments' => 'Attachments',
+                'users' => 'User changes', 'departments' => 'Department changes', 'divisions' => 'Division changes',
+                'document-types' => 'Document type changes', 'accounting' => 'Accounting setup',
+                'roles' => 'Role changes', 'settings' => 'Settings changes', 'reports.settings' => 'Report settings',
+                'calendar' => 'Calendar entries', 'work-calendar' => 'Holidays',
+                'documentation' => 'Help pages', 'messages' => 'Messages',
+                'data.reset' => 'Data resets',
             ],
         ]);
     }
