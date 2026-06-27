@@ -60,13 +60,14 @@
             </x-card>
 
             <x-card>
-                <h2 class="font-semibold text-sm mb-1">Column alignment</h2>
-                <p class="text-xs text-gray-400 mb-3">How each column is aligned on the E-Record.</p>
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2">
-                    @foreach($cols as $key => $label)
-                        <div class="flex items-center justify-between gap-3 py-1">
-                            <span class="text-sm text-gray-600 dark:text-gray-300">{{ $label }}</span>
-                            <select name="align[{{ $key }}]" class="input py-1.5 max-w-[140px]">
+                <h2 class="font-semibold text-sm mb-1">Column labels &amp; alignment</h2>
+                <p class="text-xs text-gray-400 mb-3">Rename and align each column on the E-Record. Leave blank to use the default name.</p>
+                <div class="space-y-2">
+                    @foreach($cols as $key => $defaultLabel)
+                        <div class="flex items-center gap-3 py-1">
+                            <span class="text-sm text-gray-400 w-28 shrink-0 truncate" title="{{ $defaultLabel }}">{{ $defaultLabel }}</span>
+                            <input type="text" name="labels[{{ $key }}]" value="{{ ($labels[$key] ?? '') !== $defaultLabel ? ($labels[$key] ?? '') : '' }}" placeholder="{{ $defaultLabel }}" class="input py-1.5 flex-1 min-w-0">
+                            <select name="align[{{ $key }}]" class="input py-1.5 w-[110px] shrink-0">
                                 @foreach(['left' => 'Left', 'center' => 'Center', 'right' => 'Right'] as $v => $l)
                                     <option value="{{ $v }}" @selected(($align[$key] ?? 'left') === $v)>{{ $l }}</option>
                                 @endforeach

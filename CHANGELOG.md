@@ -6,6 +6,13 @@ Format based on [Keep a Changelog](https://keepachangelog.com).
 
 ---
 
+## 1.7.8 — 2026-06-27
+**Encode placeholder, Voucher badge, renameable report columns, redistributed column widths**
+- **Document Type placeholder** on the encode form — dropdown now starts with "— Select document type —" (disabled) instead of auto-selecting the first type.
+- **Voucher/Payroll badge** — shown as a subtle indigo pill with ring in the document list and detail page, making them visually distinct without being overpowering.
+- **Renameable report columns** — Report Settings now shows an editable label input beside each column's alignment selector. Leave blank to keep the default name; type a custom label to override it on the preview and PDF.
+- **Redistributed column widths** — OBR (10→7%) and RC (13→10%) narrowed; freed space goes to Particulars (25→28%) and Payee (19→22%), giving long-content columns more room.
+
 ## 1.7.7 — 2026-06-27
 **Sequence reset on data wipe, RC column rename, PDF blank page fix, descriptive filename**
 - **Deleting all documents now resets tracking sequences** — the Danger Zone wipe clears the `tracking_sequences` table so the next encoded document starts at sequence 1, not where the deleted data left off.

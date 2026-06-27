@@ -75,6 +75,13 @@ class ReportController extends Controller
         return array_merge(self::ERECORD_ALIGN_DEFAULT, array_intersect_key($saved, self::ERECORD_ALIGN_DEFAULT));
     }
 
+    private function erecordLabels(): array
+    {
+        $saved = json_decode((string) Setting::get('erecord_labels', ''), true) ?: [];
+
+        return array_merge(self::ERECORD_COLS, array_intersect_key(array_filter($saved), self::ERECORD_COLS));
+    }
+
     /** Offices allowed to run the E-Record report — Super Admin, the configured offices, else accounting offices. */
     private function canRunERecord(User $user): bool
     {
@@ -158,6 +165,7 @@ class ReportController extends Controller
             'to' => $to,
             'hospital' => $hospital,
             'align' => $this->erecordAlign(),
+            'colLabels' => $this->erecordLabels(),
             'perPage' => $orientation === 'portrait' ? 26 : 16,
             'natureCodes' => \App\Models\NatureOfTransaction::pluck('report_code', 'name'),
             'org' => Setting::get('organization', ''),
@@ -187,6 +195,7 @@ class ReportController extends Controller
             'departments' => \App\Models\Department::orderBy('name')->get(),
             'cols' => self::ERECORD_COLS,
             'align' => $this->erecordAlign(),
+            'labels' => $this->erecordLabels(),
         ]);
     }
 
@@ -200,12 +209,15 @@ class ReportController extends Controller
             'erecord_offices.*' => ['integer', 'exists:departments,id'],
             'align' => ['nullable', 'array'],
             'align.*' => ['in:left,center,right'],
+            'labels' => ['nullable', 'array'],
+            'labels.*' => ['nullable', 'string', 'max:50'],
         ]);
         Setting::put('erecord_title', $data['erecord_title']);
         Setting::put('erecord_paper', $data['erecord_paper']);
         Setting::put('erecord_orientation', $data['erecord_orientation']);
         Setting::put('erecord_offices', implode(',', $data['erecord_offices'] ?? []));
         Setting::put('erecord_align', json_encode(array_intersect_key($data['align'] ?? [], self::ERECORD_COLS)));
+        Setting::put('erecord_labels', json_encode(array_intersect_key($data['labels'] ?? [], self::ERECORD_COLS)));
 
         return back()->with('success', 'Report settings saved.');
     }

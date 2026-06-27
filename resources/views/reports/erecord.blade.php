@@ -22,7 +22,8 @@
 <body>
     @php
         $a = ($align ?? []) + ['date'=>'center','dv'=>'center','obr'=>'left','rc'=>'left','fund'=>'center','payee'=>'left','nature'=>'center','particulars'=>'left','amount'=>'right'];
-        $w = ['date'=>'7%','dv'=>'5%','obr'=>'10%','rc'=>'13%','fund'=>'5%','payee'=>'19%','nature'=>'6%','particulars'=>'25%','amount'=>'10%'];
+        $cl = ($colLabels ?? []) + ['date'=>'Date Received','dv'=>'DV #','obr'=>'OBR No.','rc'=>'RC','fund'=>'Fund','payee'=>'Payee','nature'=>'Nature','particulars'=>'Particulars','amount'=>'Amount'];
+        $w = ['date'=>'7%','dv'=>'5%','obr'=>'7%','rc'=>'10%','fund'=>'5%','payee'=>'22%','nature'=>'6%','particulars'=>'28%','amount'=>'10%'];
         $fundLabel = $fund ? $fund->name.' ('.$fund->reportCode().')' : '';
         $fmt = fn ($d) => $d->format('M j, Y'.($d->format('H:i') !== '00:00' ? ' g:i A' : ''));
         $period = ($from && $to) ? $fmt($from).' – '.$fmt($to) : ($from ? 'From '.$fmt($from) : ($to ? 'Up to '.$fmt($to) : 'All dates'));
@@ -47,15 +48,15 @@
                 </colgroup>
                 <thead>
                     <tr>
-                        <th style="width:{{ $w['date'] }};text-align:{{ $a['date'] }}">Date Received</th>
-                        <th style="width:{{ $w['dv'] }};text-align:{{ $a['dv'] }}">DV #</th>
-                        <th style="width:{{ $w['obr'] }};text-align:{{ $a['obr'] }}">OBR No.</th>
-                        <th style="width:{{ $w['rc'] }};text-align:{{ $a['rc'] }}">RC</th>
-                        <th style="width:{{ $w['fund'] }};text-align:{{ $a['fund'] }}">Fund</th>
-                        <th style="width:{{ $w['payee'] }};text-align:{{ $a['payee'] }}">Payee</th>
-                        <th style="width:{{ $w['nature'] }};text-align:{{ $a['nature'] }}">Nature</th>
-                        <th style="width:{{ $w['particulars'] }};text-align:{{ $a['particulars'] }}">Particulars</th>
-                        <th style="width:{{ $w['amount'] }};text-align:{{ $a['amount'] }}">Amount</th>
+                        <th style="width:{{ $w['date'] }};text-align:{{ $a['date'] }}">{{ $cl['date'] }}</th>
+                        <th style="width:{{ $w['dv'] }};text-align:{{ $a['dv'] }}">{{ $cl['dv'] }}</th>
+                        <th style="width:{{ $w['obr'] }};text-align:{{ $a['obr'] }}">{{ $cl['obr'] }}</th>
+                        <th style="width:{{ $w['rc'] }};text-align:{{ $a['rc'] }}">{{ $cl['rc'] }}</th>
+                        <th style="width:{{ $w['fund'] }};text-align:{{ $a['fund'] }}">{{ $cl['fund'] }}</th>
+                        <th style="width:{{ $w['payee'] }};text-align:{{ $a['payee'] }}">{{ $cl['payee'] }}</th>
+                        <th style="width:{{ $w['nature'] }};text-align:{{ $a['nature'] }}">{{ $cl['nature'] }}</th>
+                        <th style="width:{{ $w['particulars'] }};text-align:{{ $a['particulars'] }}">{{ $cl['particulars'] }}</th>
+                        <th style="width:{{ $w['amount'] }};text-align:{{ $a['amount'] }}">{{ $cl['amount'] }}</th>
                     </tr>
                 </thead>
                 <tbody>

@@ -4,7 +4,7 @@
     <div class="max-w-3xl mx-auto">
         <form method="POST" action="{{ route('documents.store') }}" class="space-y-6"
               x-data="{
-                  docType: '{{ old('document_type', $documentTypes->first()->name ?? 'Memorandum') }}',
+                  docType: '{{ old('document_type', '') }}',
                   voucherNo: '{{ old('voucher_number') }}',
                   voucherTypes: @js($voucherTypeNames),
                   isAccounting: {{ ($isAccounting ?? false) ? 'true' : 'false' }},
@@ -55,11 +55,10 @@
                     <div class="sm:col-span-2">
                         <label class="label">Document Type <span class="text-red-500">*</span></label>
                         <select name="document_type" x-model="docType" class="input" required>
-                            @forelse($documentTypes as $t)
+                            <option value="" disabled>— Select document type —</option>
+                            @foreach($documentTypes as $t)
                                 <option value="{{ $t->name }}" @selected(old('document_type')===$t->name)>{{ $t->name }}</option>
-                            @empty
-                                <option value="Other">Other</option>
-                            @endforelse
+                            @endforeach
                         </select>
                     </div>
 
@@ -86,7 +85,7 @@
                             <div class="flex items-center gap-2 mb-4">
                                 <span class="grid place-items-center h-6 w-6 rounded-lg text-white text-xs" style="background: var(--color-primary)">₱</span>
                                 <h3 class="text-xs font-semibold text-gray-700 dark:text-gray-200">Accounting details</h3>
-                                <span class="ml-auto text-[11px] px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-300" x-text="docType"></span>
+                                <span class="ml-auto text-[11px] px-2.5 py-0.5 rounded-full font-semibold tracking-wide bg-indigo-50 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-300 ring-1 ring-indigo-200 dark:ring-indigo-700/50" x-text="docType"></span>
                             </div>
 
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-5 gap-y-4">
