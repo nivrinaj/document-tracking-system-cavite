@@ -89,3 +89,4 @@ deploy.ps1 does: git pull → composer install → npm install → npm run build
 - Auto-fitting grids with `[grid-template-columns:repeat(auto-fit,minmax(150px,1fr))]`
 - Super-Admin toggles for optional features
 - Mandatory reason + audit log for leave/undertime entries (anti-circumvention)
+- **Audit trail detail.** Every `ActivityLog::record()` call must include the most specific details possible — names, titles, and IDs (e.g. `"Deleted a holiday: Independence Day on 2026-06-12 (#23)"`), never just IDs or generic labels. For settings changes, log exact diffs (`"Title "X" → "Y"; Show totals ON → OFF"`). Action labels must be plain English readable by non-technical staff. Log inline from controllers (not the generic middleware) when detail matters.

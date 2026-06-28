@@ -6,6 +6,12 @@ Format based on [Keep a Changelog](https://keepachangelog.com).
 
 ---
 
+## 1.8.8 — 2026-06-28
+**Paper size & orientation in Options panel for all reports**
+- **Transmittal paper & orientation** — Transmittal report now has configurable paper size (A4/Letter/Legal) and orientation (Landscape/Portrait), stored as `transmittal_paper` and `transmittal_orientation` settings. Previously hardcoded to A4 Landscape.
+- **Options panel consolidation** — for both E-Record and Transmittal, paper size and orientation are now inside the Options card alongside the subtotal/grand total and page number toggles. Paper and orientation use inline dropdowns on the right side matching the toggle layout. Removed the separate grid from the E-Record card.
+- **Audit logging** — paper and orientation changes are included in the settings diff log for both report types.
+
 ## 1.8.7 — 2026-06-27
 **Audit log fixes: holiday detail, real client IP via Cloudflare, district-level geolocation**
 - **Holiday log detail** — `storeHoliday` and `destroyHoliday` in `WorkCalendarController` now log inline with full detail: "Deleted a holiday: Independence Day on 2026-06-12 (#23)" instead of the generic middleware format. Both routes added to middleware ignore list.

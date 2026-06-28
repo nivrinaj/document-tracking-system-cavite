@@ -27,31 +27,36 @@
                         <label class="label">Report title</label>
                         <input type="text" name="erecord_title" value="{{ old('erecord_title', $title) }}" class="input" required>
                     </div>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div>
-                            <label class="label">Paper size</label>
-                            <select name="erecord_paper" class="input">
-                                @foreach(['a4' => 'A4', 'letter' => 'Letter', 'legal' => 'Legal'] as $v => $l)
-                                    <option value="{{ $v }}" @selected(old('erecord_paper', $paper) === $v)>{{ $l }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div>
-                            <label class="label">Orientation</label>
-                            <select name="erecord_orientation" class="input">
-                                @foreach(['landscape' => 'Landscape', 'portrait' => 'Portrait'] as $v => $l)
-                                    <option value="{{ $v }}" @selected(old('erecord_orientation', $orientation) === $v)>{{ $l }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                    </div>
                 </div>
             </x-card>
 
-            {{-- Toggles --}}
             <x-card padding="p-0">
                 <p class="text-xs font-semibold uppercase tracking-wider text-gray-400 px-4 pt-4 pb-2">Options</p>
                 <div class="rounded-xl border border-gray-200 dark:border-gray-700 divide-y divide-gray-100 dark:divide-gray-700 mx-4 mb-4">
+                    {{-- Paper & orientation --}}
+                    <div class="flex items-center justify-between gap-4 px-4 py-3">
+                        <span class="min-w-0">
+                            <span class="block text-sm font-medium">Paper size</span>
+                            <span class="block text-xs text-gray-400">Page dimensions for the PDF output.</span>
+                        </span>
+                        <select name="erecord_paper" class="input w-auto shrink-0">
+                            @foreach(['a4' => 'A4', 'letter' => 'Letter', 'legal' => 'Legal'] as $v => $l)
+                                <option value="{{ $v }}" @selected(old('erecord_paper', $paper) === $v)>{{ $l }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="flex items-center justify-between gap-4 px-4 py-3">
+                        <span class="min-w-0">
+                            <span class="block text-sm font-medium">Orientation</span>
+                            <span class="block text-xs text-gray-400">Page direction for the PDF output.</span>
+                        </span>
+                        <select name="erecord_orientation" class="input w-auto shrink-0">
+                            @foreach(['landscape' => 'Landscape', 'portrait' => 'Portrait'] as $v => $l)
+                                <option value="{{ $v }}" @selected(old('erecord_orientation', $orientation) === $v)>{{ $l }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    {{-- Toggles --}}
                     <label class="flex items-center justify-between gap-4 px-4 py-3 cursor-pointer">
                         <span class="min-w-0">
                             <span class="block text-sm font-medium">Show page subtotal &amp; grand total</span>
@@ -151,10 +156,33 @@
                 </div>
             </x-card>
 
-            {{-- Toggles --}}
             <x-card padding="p-0">
                 <p class="text-xs font-semibold uppercase tracking-wider text-gray-400 px-4 pt-4 pb-2">Options</p>
                 <div class="rounded-xl border border-gray-200 dark:border-gray-700 divide-y divide-gray-100 dark:divide-gray-700 mx-4 mb-4">
+                    {{-- Paper & orientation --}}
+                    <div class="flex items-center justify-between gap-4 px-4 py-3">
+                        <span class="min-w-0">
+                            <span class="block text-sm font-medium">Paper size</span>
+                            <span class="block text-xs text-gray-400">Page dimensions for the PDF output.</span>
+                        </span>
+                        <select name="transmittal_paper" class="input w-auto shrink-0">
+                            @foreach(['a4' => 'A4', 'letter' => 'Letter', 'legal' => 'Legal'] as $v => $l)
+                                <option value="{{ $v }}" @selected(old('transmittal_paper', $tPaper) === $v)>{{ $l }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="flex items-center justify-between gap-4 px-4 py-3">
+                        <span class="min-w-0">
+                            <span class="block text-sm font-medium">Orientation</span>
+                            <span class="block text-xs text-gray-400">Page direction for the PDF output.</span>
+                        </span>
+                        <select name="transmittal_orientation" class="input w-auto shrink-0">
+                            @foreach(['landscape' => 'Landscape', 'portrait' => 'Portrait'] as $v => $l)
+                                <option value="{{ $v }}" @selected(old('transmittal_orientation', $tOrientation) === $v)>{{ $l }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    {{-- Toggles --}}
                     <label class="flex items-center justify-between gap-4 px-4 py-3 cursor-pointer">
                         <span class="min-w-0">
                             <span class="block text-sm font-medium">Show page subtotal &amp; grand total</span>

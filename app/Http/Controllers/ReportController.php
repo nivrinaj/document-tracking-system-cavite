@@ -324,7 +324,7 @@ class ReportController extends Controller
         $filename = $title.'-'.$fund->reportCode().$hospSuffix.'-'.now()->format('Ymd-His').'.pdf';
 
         return Pdf::loadView('reports.transmittal', $payload)
-            ->setPaper('a4', 'landscape')
+            ->setPaper(Setting::get('transmittal_paper', 'a4'), Setting::get('transmittal_orientation', 'landscape'))
             ->setOption('isPhpEnabled', true)
             ->stream($filename);
     }
@@ -354,6 +354,8 @@ class ReportController extends Controller
             'tOffices' => array_values(array_filter(explode(',', (string) Setting::get('transmittal_offices', '')))),
             'tDivisions' => array_values(array_filter(explode(',', (string) Setting::get('transmittal_divisions', '')))),
             'tDateSource' => Setting::get('transmittal_date_source', 'received_by_division'),
+            'tPaper' => Setting::get('transmittal_paper', 'a4'),
+            'tOrientation' => Setting::get('transmittal_orientation', 'landscape'),
             'tPageNumber' => (bool) Setting::get('transmittal_page_number', true),
             'tShowTotals' => (bool) Setting::get('transmittal_show_totals', true),
             'tCols' => self::TRANSMITTAL_COLS,
@@ -375,6 +377,8 @@ class ReportController extends Controller
                 'transmittal_divisions' => ['nullable', 'array'],
                 'transmittal_divisions.*' => ['integer', 'exists:divisions,id'],
                 'transmittal_date_source' => ['required', 'in:received_by_division,created'],
+                'transmittal_paper' => ['required', 'in:a4,letter,legal'],
+                'transmittal_orientation' => ['required', 'in:landscape,portrait'],
                 'transmittal_page_number' => ['nullable'],
                 'transmittal_show_totals' => ['nullable'],
                 'align' => ['nullable', 'array'],
@@ -392,6 +396,8 @@ class ReportController extends Controller
                 'Title' => ['transmittal_title', $data['transmittal_title']],
                 'ISO code' => ['transmittal_iso', $data['transmittal_iso'] ?? ''],
                 'Date source' => ['transmittal_date_source', $data['transmittal_date_source']],
+                'Paper' => ['transmittal_paper', $data['transmittal_paper']],
+                'Orientation' => ['transmittal_orientation', $data['transmittal_orientation']],
                 'Page number' => ['transmittal_page_number', $request->boolean('transmittal_page_number') ? '1' : '0', true],
                 'Show totals' => ['transmittal_show_totals', $request->boolean('transmittal_show_totals') ? '1' : '0', true],
                 'Offices' => ['transmittal_offices', $newOffices, false, $deptCodes],
@@ -403,6 +409,8 @@ class ReportController extends Controller
             Setting::put('transmittal_offices', $newOffices);
             Setting::put('transmittal_divisions', $newDivisions);
             Setting::put('transmittal_date_source', $data['transmittal_date_source']);
+            Setting::put('transmittal_paper', $data['transmittal_paper']);
+            Setting::put('transmittal_orientation', $data['transmittal_orientation']);
             Setting::put('transmittal_page_number', $request->boolean('transmittal_page_number') ? '1' : '0');
             Setting::put('transmittal_show_totals', $request->boolean('transmittal_show_totals') ? '1' : '0');
             Setting::put('transmittal_align', json_encode(array_intersect_key($data['align'] ?? [], self::TRANSMITTAL_COLS)));
