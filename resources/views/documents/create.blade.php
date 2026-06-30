@@ -283,7 +283,7 @@
                 <div class="mb-4">
                     <label class="label">Send as</label>
                     <select name="broadcast_scope" x-model="scope" @change="div=''" class="input">
-                        <option value="none">Assign to a staff in my office</option>
+                        <option value="none">👤 Assign to a staff in my office</option>
                         @if($crossDept)
                             <option value="transfer">📤 Transfer to another office (their receiving staff will claim &amp; assign)</option>
                         @endif

@@ -45,49 +45,42 @@
         <x-card>
             <h2 class="font-semibold mb-1">Funds</h2>
             <p class="text-xs text-gray-400 mb-3">The fund code prefixes the auto-generated tracking code. Every fund has its own annual sequence (starts at 1, resets each year). Add the “Gen. Fund 20% Development Fund” as its own fund (same code 101 is fine — it keeps a separate sequence). Tick “Hospital” for funds the Hospital division may use.</p>
-            <div class="overflow-x-auto">
-                <table class="r-table min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                    <thead class="bg-gray-50 dark:bg-gray-700/40"><tr>
-                        <th class="table-th">Name</th><th class="table-th">Code</th><th class="table-th">Report code</th><th class="table-th">Hospital</th><th class="table-th">Active</th><th class="table-th text-right">Action</th>
-                    </tr></thead>
-                    <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
-                        @forelse($funds as $fund)
-                            <tr x-data="{ edit: false }">
-                                <template x-if="!edit">
-                                    <td class="table-td" data-label="Name">{{ $fund->name }}</td>
-                                </template>
-                                <td class="table-td" data-label="Code">{{ $fund->code }}</td>
-                                <td class="table-td font-mono" data-label="Report code">{{ $fund->report_code ?: '—' }}</td>
-                                <td class="table-td" data-label="Hospital">{!! $fund->hospital_available ? '✓' : '<span class="text-gray-300">—</span>' !!}</td>
-                                <td class="table-td" data-label="Active">{!! $fund->is_active ? '<span class="text-green-600">Active</span>' : '<span class="text-gray-400">Off</span>' !!}</td>
-                                <td class="table-td text-right" data-label="Action">
-                                    <div class="inline-flex gap-1">
-                                        <button type="button" @click="edit = !edit" class="act-edit">Edit</button>
-                                        <form method="POST" action="{{ route('accounting.funds.destroy', $fund) }}" data-confirm="Remove this fund?">@csrf @method('DELETE')<button class="act-del">Delete</button></form>
-                                    </div>
-                                    <form x-show="edit" x-cloak method="POST" action="{{ route('accounting.funds.update', $fund) }}" class="mt-2 grid grid-cols-2 gap-2 text-left">
-                                        @csrf @method('PUT')
-                                        <input name="name" value="{{ $fund->name }}" class="input" required>
-                                        <input name="code" value="{{ $fund->code }}" class="input" required>
-                                        <input name="report_code" value="{{ $fund->report_code }}" class="input" placeholder="Report code (e.g. GF)">
-                                        <label class="flex items-center gap-1 text-xs"><input type="hidden" name="hospital_available" value="0"><input type="checkbox" name="hospital_available" value="1" class="rounded" @checked($fund->hospital_available)> Hospital-available</label>
-                                        <label class="flex items-center gap-1 text-xs"><input type="hidden" name="is_active" value="0"><input type="checkbox" name="is_active" value="1" class="rounded" @checked($fund->is_active)> Active</label>
-                                        <div class="col-span-2"><x-btn type="submit" class="w-full">Save</x-btn></div>
-                                    </form>
-                                </td>
-                            </tr>
-                        @empty
-                            <tr><td colspan="6" class="px-4 py-6 text-center text-sm text-gray-400">No funds yet.</td></tr>
-                        @endforelse
-                    </tbody>
-                </table>
+            <div class="divide-y divide-gray-100 dark:divide-gray-700">
+                @forelse($funds as $fund)
+                    <div class="py-2" x-data="{ edit: false }">
+                        <div class="flex items-center gap-2 flex-wrap" x-show="!edit">
+                            <span class="font-medium text-sm">{{ $fund->name }}</span>
+                            <span class="text-xs text-gray-400 font-mono">{{ $fund->code }}</span>
+                            @if($fund->report_code)<span class="text-xs text-gray-400 font-mono">· {{ $fund->report_code }}</span>@endif
+                            @if($fund->hospital_available)<span class="text-[10px] px-1.5 py-0.5 rounded-full bg-sky-50 dark:bg-sky-900/30 text-sky-600 dark:text-sky-300">Hospital</span>@endif
+                            @if($fund->is_active)<span class="text-[10px] text-green-600 dark:text-green-400">Active</span>@else<span class="text-[10px] text-gray-400">Off</span>@endif
+                            <div class="ml-auto inline-flex gap-1 shrink-0">
+                                <button type="button" @click="edit = !edit" class="act-edit">Edit</button>
+                                <form method="POST" action="{{ route('accounting.funds.destroy', $fund) }}" data-confirm="Remove this fund?">@csrf @method('DELETE')<button class="act-del">Delete</button></form>
+                            </div>
+                        </div>
+                        <form x-show="edit" x-cloak method="POST" action="{{ route('accounting.funds.update', $fund) }}" class="grid grid-cols-1 sm:grid-cols-6 gap-2 items-center">
+                            @csrf @method('PUT')
+                            <input name="name" value="{{ $fund->name }}" class="input sm:col-span-2" placeholder="Name" required>
+                            <input name="code" value="{{ $fund->code }}" class="input" placeholder="Code" required>
+                            <input name="report_code" value="{{ $fund->report_code }}" class="input" placeholder="Report code (e.g. GF)">
+                            <div class="flex items-center gap-3 text-xs shrink-0">
+                                <label class="flex items-center gap-1 whitespace-nowrap"><input type="hidden" name="hospital_available" value="0"><input type="checkbox" name="hospital_available" value="1" class="rounded text-[color:var(--color-primary)]" @checked($fund->hospital_available)> Hospital</label>
+                                <label class="flex items-center gap-1 whitespace-nowrap"><input type="hidden" name="is_active" value="0"><input type="checkbox" name="is_active" value="1" class="rounded text-[color:var(--color-primary)]" @checked($fund->is_active)> Active</label>
+                            </div>
+                            <x-btn type="submit" class="shrink-0">Save</x-btn>
+                        </form>
+                    </div>
+                @empty
+                    <p class="py-3 text-sm text-gray-400">No funds yet.</p>
+                @endforelse
             </div>
             <form method="POST" action="{{ route('accounting.funds.store') }}" class="mt-3 grid grid-cols-1 sm:grid-cols-5 gap-2 items-center border-t border-gray-100 dark:border-gray-700 pt-3">
                 @csrf
                 <input name="name" class="input sm:col-span-2" placeholder="Fund name" required>
                 <input name="code" class="input" placeholder="Code (e.g. 101)" required>
                 <input name="report_code" class="input" placeholder="Report code (e.g. GF)">
-                <label class="flex items-center gap-1 text-xs"><input type="checkbox" name="hospital_available" value="1" class="rounded"> Hospital</label>
+                <label class="flex items-center gap-1 text-xs"><input type="checkbox" name="hospital_available" value="1" class="rounded text-[color:var(--color-primary)]"> Hospital</label>
                 <div class="sm:col-span-5"><x-btn type="submit">Add fund</x-btn></div>
             </form>
         </x-card>
@@ -104,7 +97,7 @@
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
                             </button>
                             <div class="flex-1 min-w-0" x-show="!edit">
-                                <span class="font-medium text-sm">{{ $c->code }}/{{ $c->name }}</span>
+                                <span class="font-medium text-sm">{{ $c->label() }}</span>
                                 <span class="text-xs text-gray-400 ml-1">{{ $c->projects->count() }} {{ \Illuminate\Support\Str::plural('project', $c->projects->count()) }}</span>
                                 @unless($c->is_active)<span class="text-[10px] text-gray-400 ml-1">(off)</span>@endunless
                             </div>
@@ -160,10 +153,10 @@
             <div class="divide-y divide-gray-100 dark:divide-gray-700">
                 @forelse($hospitalCenters as $c)
                     <div class="flex items-center gap-2 py-2" x-data="{ edit: false }">
-                        <div class="flex-1 min-w-0" x-show="!edit"><span class="font-medium text-sm">{{ $c->code }}/{{ $c->name }}</span> @unless($c->is_active)<span class="text-[10px] text-gray-400">(off)</span>@endunless</div>
+                        <div class="flex-1 min-w-0" x-show="!edit"><span class="font-medium text-sm">{{ $c->label() }}</span> @unless($c->is_active)<span class="text-[10px] text-gray-400">(off)</span>@endunless</div>
                         <form x-show="edit" x-cloak method="POST" action="{{ route('accounting.centers.update', $c) }}" class="flex-1 flex gap-2">@csrf @method('PUT')
                             <input name="name" value="{{ $c->name }}" class="input" placeholder="Name" required>
-                            <input name="code" value="{{ $c->code }}" class="input max-w-[120px]" placeholder="Code">
+                            <input name="code" value="{{ $c->code }}" class="input max-w-[120px]" placeholder="Code (optional)">
                             <input type="hidden" name="is_active" value="1">
                             <input type="hidden" name="is_hospital" value="1">
                             <x-btn type="submit" class="shrink-0">Save</x-btn>

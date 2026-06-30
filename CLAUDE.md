@@ -69,6 +69,9 @@ deploy.ps1 does: git pull → composer install → npm install → npm run build
 2. Then output the exact deployment commands for both machines with the real version number and commit message filled in.
 3. Never give deploy commands before the version bump commit is ready — the user will push what's on disk.
 
+### Changelog entries: keep them general, not technical
+Same format as always (subject line + bullets), but keep each bullet general and plain — explain what changed and why it matters, properly enough to understand, without diving into implementation detail. Skip file paths, method/class names, migration names, and multi-clause technical breakdowns.
+
 ## Things to never do
 
 - **Never deploy without running `php artisan route:list` AND loading every changed route in the browser first.** A `view:cache` success does NOT guarantee runtime correctness — it only checks Blade syntax, not PHP fatal errors in controllers.
@@ -79,8 +82,17 @@ deploy.ps1 does: git pull → composer install → npm install → npm run build
 - Never add seeders to deploy.ps1
 - Never use `@can('accounting.manage')` for Accounting Setup nav — use `@role('Super Admin')`
 - Never use `.input` class on `<button>` elements — use `.input-btn`
+- **Never nest a `<button>` inside another `<button>`** (e.g. a clear/"×" control inside a dropdown trigger). This is invalid HTML — the browser silently closes the outer button early and hoists the inner one out of the DOM, breaking layout (the classic symptom: a clear/caret icon rendering misaligned or below its trigger instead of inside it). Always make the clear button an absolutely-positioned **sibling** of the trigger button inside a shared `position: relative` wrapper, never a child.
 - Never introduce features, abstractions, or cleanup beyond what was asked
 - Never let "small fixes" compromise data accuracy — get calculations right the first time
+- **Never trust that custom Alpine/Blade UI "looks right" just because it compiles.** `view:cache` and `npm run build` only catch syntax errors, not broken layouts (invalid HTML nesting, misaligned flex children, etc.). For any new or edited dropdown/picker/form component, mentally trace the rendered DOM (or actually load the page) before calling it done.
+
+## Dropdown / picker conventions
+
+- **Searchable by default.** Any dropdown selecting from a list of users, departments, or divisions (system-wide, not just per-office short lists) must be searchable, not a plain `<select>` — these lists grow over time.
+- **Shared pattern.** Use `<x-search-select>` for a flat single-value picker, `<x-rc-picker>`-style inline Alpine blocks for dependent/cascading pairs (e.g. Department → Division). Trigger button: `.input-btn flex items-center justify-between text-left pr-8` with a `relative` wrapper. Chevron icon sits inside the trigger (decorative `<svg>`, not interactive) and rotates via `:class="open && 'rotate-180'"`. The clear ("×") button is always a sibling, absolutely positioned at `right-7 top-1/2 -translate-y-1/2` — never nested inside the trigger (see "Never nest a button" above).
+- **Always offer a way to clear a selection** once something is picked, unless the field is genuinely mandatory and has no "none" state.
+- **Optional fields look optional.** Use `<span class="text-gray-400 text-xs font-normal">(optional)</span>` next to the label instead of a red asterisk when a field isn't required.
 
 ## Design principles
 

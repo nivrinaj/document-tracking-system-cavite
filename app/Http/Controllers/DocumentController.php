@@ -125,15 +125,12 @@ class DocumentController extends Controller
     {
         $this->authorizeAction('documents.create');
 
-        // The extra accounting fields (amount/fund/OBR/RC/nature) apply only when the
+        // The extra accounting fields (amount/fund/OBR/nature) apply only when the
         // encoder's office has the Accounting toggle on; other offices encode a
-        // Voucher/Payroll with the regular fields only.
+        // Voucher/Payroll with the regular fields only. Responsibility Center
+        // (office/unit + project, or the single hospital RC) is always optional.
         $acct = (bool) optional($request->user()->department)->is_accounting;
-        $isHospital = (bool) optional($request->user()->division)->is_hospital;
         $acctRule = $acct ? 'required_if:document_type,Voucher,Payroll' : 'nullable';
-        // Hospital-division encoders pick a single hospital RC (no project level).
-        // Everyone else picks an Office/Unit, then a dependent Project.
-        $projectRule = ($acct && ! $isHospital) ? 'required_if:document_type,Voucher,Payroll' : 'nullable';
 
         $data = $request->validate([
             'title' => ['required', 'string', 'max:255'],
@@ -143,8 +140,8 @@ class DocumentController extends Controller
             'fund_id' => ['nullable', $acctRule, 'exists:funds,id'],
             'amount' => ['nullable', $acctRule, 'numeric', 'min:0'],
             'obr_no' => ['nullable', $acctRule, 'string', 'max:100'],
-            'responsibility_center_id' => ['nullable', $acctRule, 'exists:responsibility_centers,id'],
-            'responsibility_center_project_id' => ['nullable', $projectRule, 'exists:responsibility_center_projects,id'],
+            'responsibility_center_id' => ['nullable', 'exists:responsibility_centers,id'],
+            'responsibility_center_project_id' => ['nullable', 'exists:responsibility_center_projects,id'],
             'nature_of_transaction' => ['nullable', $acctRule, 'string', 'max:150'],
             'description' => ['nullable', 'string'],
             'source_department_id' => ['nullable', 'string', 'max:50'],
@@ -197,6 +194,7 @@ class DocumentController extends Controller
         // Memo broadcast — distribute to everyone in the chosen scope.
         if (in_array($scope, ['division', 'department'])) {
             $document = $service->broadcast($data, $request->user(), $scope);
+            \App\Models\ActivityLog::record('documents.store', "Encoded a new document: {$document->title} ({$document->tracking_code}, #{$document->id})", $document);
 
             return redirect()->route('documents.show', $document)
                 ->with('success', "Memo broadcast to your {$scope}. Tracking code: {$document->tracking_code}");
@@ -205,6 +203,7 @@ class DocumentController extends Controller
         // Send to a hand-picked list of people (possibly across offices).
         if ($scope === 'multi') {
             $document = $service->broadcastToUsers($data, $request->user(), $data['recipient_ids'] ?? []);
+            \App\Models\ActivityLog::record('documents.store', "Encoded a new document: {$document->title} ({$document->tracking_code}, #{$document->id})", $document);
 
             return redirect()->route('documents.show', $document)
                 ->with('success', "Document sent to the selected recipients. Tracking code: {$document->tracking_code}");
@@ -217,6 +216,7 @@ class DocumentController extends Controller
             $data['source'] = trim(($actor->department?->code ?? '').($actor->division ? ' · '.$actor->division->name : '')) ?: 'Internal';
             $document = $service->encode($data, $request->user(), null);
             $service->transferToOffice($document, (int) $data['to_department_id'], $request->user(), $data['assign_remarks'] ?: 'Transferred to your office.');
+            \App\Models\ActivityLog::record('documents.store', "Encoded a new document: {$document->title} ({$document->tracking_code}, #{$document->id})", $document);
 
             return redirect()->route('documents.show', $document)
                 ->with('success', "Document encoded and sent to the selected office's receiving pool. Tracking code: {$document->tracking_code}");
@@ -224,6 +224,7 @@ class DocumentController extends Controller
 
         // Normal: assign to a specific staff in my own office (or assign later).
         $document = $service->encode($data, $request->user(), $data['assignee_id'] ?? null);
+        \App\Models\ActivityLog::record('documents.store', "Encoded a new document: {$document->title} ({$document->tracking_code}, #{$document->id})", $document);
 
         return redirect()->route('documents.show', $document)
             ->with('success', "Document encoded. Tracking code: {$document->tracking_code}");

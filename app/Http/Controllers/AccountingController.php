@@ -55,11 +55,12 @@ class AccountingController extends Controller
             'report_code' => ['nullable', 'string', 'max:20'],
             'hospital_available' => ['nullable', 'boolean'],
         ]);
-        Fund::create([
+        $fund = Fund::create([
             'name' => $data['name'], 'code' => $data['code'], 'report_code' => $data['report_code'] ?? null,
             'hospital_available' => $request->boolean('hospital_available'),
             'sort_order' => Fund::max('sort_order') + 1,
         ]);
+        \App\Models\ActivityLog::record('accounting.funds.store', "Added a fund: {$fund->name} ({$fund->code}, #{$fund->id})", $fund);
 
         return back()->with('success', 'Fund added.');
     }
@@ -97,10 +98,11 @@ class AccountingController extends Controller
             'code' => ['nullable', 'string', 'max:50'],
             'is_hospital' => ['nullable', 'boolean'],
         ]);
-        ResponsibilityCenter::create($data + [
+        $center = ResponsibilityCenter::create($data + [
             'is_hospital' => $request->boolean('is_hospital'),
             'sort_order' => ResponsibilityCenter::max('sort_order') + 1,
         ]);
+        \App\Models\ActivityLog::record('accounting.centers.store', "Added a responsibility center: {$center->label()} (#{$center->id})".($center->is_hospital ? ' [Hospital]' : ''), $center);
 
         return back()->with('success', 'Responsibility center added.');
     }
@@ -137,7 +139,8 @@ class AccountingController extends Controller
             'name' => ['required', 'string', 'max:150'],
             'code' => ['nullable', 'string', 'max:50'],
         ]);
-        $center->projects()->create($data + ['sort_order' => $center->projects()->max('sort_order') + 1]);
+        $project = $center->projects()->create($data + ['sort_order' => $center->projects()->max('sort_order') + 1]);
+        \App\Models\ActivityLog::record('accounting.centers.projects.store', "Added a project: {$project->label()} under {$center->label()} (#{$project->id})", $project);
 
         return back()->with('success', 'Project added.');
     }
@@ -168,7 +171,8 @@ class AccountingController extends Controller
             'name' => ['required', 'string', 'max:150'],
             'report_code' => ['nullable', 'string', 'max:20'],
         ]);
-        NatureOfTransaction::create($data + ['sort_order' => NatureOfTransaction::max('sort_order') + 1]);
+        $nature = NatureOfTransaction::create($data + ['sort_order' => NatureOfTransaction::max('sort_order') + 1]);
+        \App\Models\ActivityLog::record('accounting.natures.store', "Added a nature of transaction: {$nature->name} (#{$nature->id})", $nature);
 
         return back()->with('success', 'Nature of transaction added.');
     }

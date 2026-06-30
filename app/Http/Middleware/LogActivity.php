@@ -62,6 +62,8 @@ class LogActivity
         'accounting.funds.destroy' => 'Deleted a fund',
         'accounting.centers.store' => 'Added a responsibility center',
         'accounting.centers.destroy' => 'Deleted a responsibility center',
+        'accounting.centers.projects.update' => 'Updated a project',
+        'accounting.centers.projects.destroy' => 'Deleted a project',
         'accounting.natures.store' => 'Added a nature of transaction',
         'accounting.natures.destroy' => 'Deleted a nature of transaction',
         // Roles
@@ -99,6 +101,11 @@ class LogActivity
         'users.store', 'users.update',
         'work-calendar.holidays.store', 'work-calendar.holidays.destroy',
         'work-calendar.team.store', 'work-calendar.team.destroy',
+        'documents.store',
+        'accounting.funds.store', 'accounting.centers.store',
+        'accounting.centers.projects.store',
+        'accounting.natures.store',
+        'departments.store', 'divisions.store', 'document-types.store', 'roles.store', 'documentation.store',
     ];
 
     public function handle(Request $request, Closure $next): Response

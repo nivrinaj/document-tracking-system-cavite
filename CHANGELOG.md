@@ -6,6 +6,16 @@ Format based on [Keep a Changelog](https://keepachangelog.com).
 
 ---
 
+## 1.11.0 — 2026-06-28
+**Dropdown alignment fixes, Responsibility Center now optional, audit log detail, search filters added system-wide**
+- Fixed a layout bug where the clear ("×") button on searchable dropdowns rendered misaligned below the field instead of inside it — affected the Forward-to-staff picker and the Responsibility Center pickers.
+- Responsibility Center (office/unit and project) is now optional when encoding documents, not required. Reports show "N/A" when nothing was picked, or just the office's own code/name when a project wasn't chosen.
+- Hospital Responsibility Centers (which don't have a code) now display just their name instead of an odd leading slash.
+- Fixed the broken layout when editing a Fund in Accounting Setup.
+- Added a missing icon to the "Assign to a staff in my office" option so every choice in that dropdown is visually consistent.
+- Audit log entries for encoding a document, adding a responsibility center, and similar "create" actions now show the actual name/code instead of a generic label.
+- Added search filtering to the user, department, and division dropdowns on the most-used pages (user accounts, document filters) so they're easier to use as the lists grow.
+
 ## 1.10.0 — 2026-06-28
 **Responsibility Center rework (Office/Unit → Project cascading dropdowns + dedicated Hospital RC list), QR Slip design settings**
 - **New `responsibility_center_projects` table** — Responsibility Centers (existing flat table) now act as the parent "Office/Unit" level; a new child table holds Projects under each office/unit. New `is_hospital` flag on `responsibility_centers` repurposes the same table for a separate, flat Hospital RC list (same pattern as `funds.hospital_available`). New `documents.responsibility_center_project_id` FK added.

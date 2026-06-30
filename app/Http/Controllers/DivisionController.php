@@ -23,6 +23,7 @@ class DivisionController extends Controller
     {
         $data = $this->validateData($request);
         $division = Division::create($data);
+        \App\Models\ActivityLog::record('divisions.store', "Created a division: {$division->name} ({$division->code}, #{$division->id})", $division);
 
         return $this->redirectAfter($division)->with('success', 'Division created.');
     }

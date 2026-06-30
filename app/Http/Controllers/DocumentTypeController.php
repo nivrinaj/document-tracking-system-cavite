@@ -22,7 +22,8 @@ class DocumentTypeController extends Controller
 
     public function store(Request $request)
     {
-        DocumentType::create($this->validateData($request));
+        $type = DocumentType::create($this->validateData($request));
+        \App\Models\ActivityLog::record('document-types.store', "Added a document type: {$type->name} (#{$type->id})", $type);
 
         return redirect()->route('document-types.index')->with('success', 'Document type created.');
     }

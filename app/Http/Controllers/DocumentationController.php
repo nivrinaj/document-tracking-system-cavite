@@ -34,7 +34,8 @@ class DocumentationController extends Controller
     public function store(Request $request)
     {
         $data = $this->validateData($request);
-        DocumentationPage::create($data);
+        $page = DocumentationPage::create($data);
+        \App\Models\ActivityLog::record('documentation.store', "Created a help page: {$page->title} (#{$page->id})", $page);
 
         return redirect()->route('documentation.index')->with('success', 'Documentation page created.');
     }

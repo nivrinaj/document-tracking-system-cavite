@@ -35,6 +35,7 @@ class RoleController extends Controller
 
         $role = Role::create(['name' => $data['name'], 'guard_name' => 'web']);
         $role->syncPermissions($data['permissions'] ?? []);
+        \App\Models\ActivityLog::record('roles.store', "Created a role: {$role->name} (#{$role->id}) with ".count($data['permissions'] ?? [])." permission(s)", $role);
 
         return redirect()->route('roles.index')->with('success', 'Role created.');
     }

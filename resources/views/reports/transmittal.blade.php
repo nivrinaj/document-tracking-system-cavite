@@ -73,7 +73,7 @@
                 <tbody>
                     @foreach($chunk as $doc)
                         @php
-                            $rcStr = $doc->rcLabel() ?: '';
+                            $rcStr = $doc->rcLabel() ?: 'N/A';
                             $nature = $natureCodes[$doc->nature_of_transaction] ?? $doc->nature_of_transaction;
                             $dateVal = ($dateSource ?? 'created') === 'received_by_division' && isset($receivedDates[$doc->id])
                                 ? $receivedDates[$doc->id]

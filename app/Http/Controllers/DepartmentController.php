@@ -24,6 +24,7 @@ class DepartmentController extends Controller
     {
         $department = Department::create($this->validateData($request));
         $this->applyTypeRestriction($request, $department);
+        \App\Models\ActivityLog::record('departments.store', "Created a department: {$department->name} ({$department->code}, #{$department->id})", $department);
 
         return redirect()->route('departments.index')->with('success', 'Department created.');
     }

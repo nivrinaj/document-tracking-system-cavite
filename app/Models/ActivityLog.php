@@ -95,6 +95,9 @@ class ActivityLog extends Model
             'accounting.funds.destroy' => 'Deleted Fund',
             'accounting.centers.store' => 'Added Responsibility Center',
             'accounting.centers.destroy' => 'Deleted Responsibility Center',
+            'accounting.centers.projects.store' => 'Added Project',
+            'accounting.centers.projects.update' => 'Updated Project',
+            'accounting.centers.projects.destroy' => 'Deleted Project',
             'accounting.natures.store' => 'Added Nature of Transaction',
             'accounting.natures.destroy' => 'Deleted Nature of Transaction',
             // Roles
