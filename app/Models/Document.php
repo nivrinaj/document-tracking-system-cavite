@@ -23,6 +23,7 @@ class Document extends Model
         'amount',
         'obr_no',
         'responsibility_center_id',
+        'responsibility_center_project_id',
         'rc_code',
         'nature_of_transaction',
         'is_hospital',
@@ -230,6 +231,26 @@ class Document extends Model
     public function responsibilityCenter(): BelongsTo
     {
         return $this->belongsTo(ResponsibilityCenter::class);
+    }
+
+    public function responsibilityCenterProject(): BelongsTo
+    {
+        return $this->belongsTo(ResponsibilityCenterProject::class);
+    }
+
+    /** "1011/OPG - SPA - Project 1" style combined RC label for reports & display. */
+    public function rcLabel(): ?string
+    {
+        $rc = $this->responsibilityCenter;
+        if (! $rc) {
+            return $this->rc_code ?: null;
+        }
+        $label = $rc->label();
+        if ($proj = $this->responsibilityCenterProject) {
+            $label .= ' - '.$proj->label();
+        }
+
+        return $label;
     }
 
     public function currentHolder(): BelongsTo

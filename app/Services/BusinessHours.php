@@ -74,9 +74,12 @@ class BusinessHours
     }
 
     /**
-     * Per-day detail: [ 'Y-m-d' => ['seconds' => int, 'from' => Carbon, 'to' => Carbon] ].
+     * Per-day detail: [ 'Y-m-d' => ['seconds' => int, 'from' => Carbon, 'to' => Carbon,
+     * 'day_start' => Carbon, 'day_end' => Carbon] ].
      * "from"/"to" are the actual working window the range covered that day (e.g. 8:00 AM
      * if it started at open, or mid-morning if picked up late; 5:00 PM at close, or earlier).
+     * "day_start"/"day_end" are that day's full configured working window (e.g. 8:00 AM–5:00 PM),
+     * used to position "from"/"to" proportionally within the day rather than from a flat origin.
      */
     public static function dailyDetail($start, $end = null, ?User $user = null): array
     {
@@ -137,7 +140,7 @@ class BusinessHours
         $le = $day->copy()->setTimeFromTimeString($cfg['lunch_end']);
         $seconds -= static::overlapSeconds($s, $e, $ls, $le);
 
-        return ['seconds' => max(0, (int) $seconds), 'from' => $s, 'to' => $e];
+        return ['seconds' => max(0, (int) $seconds), 'from' => $s, 'to' => $e, 'day_start' => $ws, 'day_end' => $we];
     }
 
     /** End of a capped undertime window: start + worked minutes, pushed past lunch if crossed. */

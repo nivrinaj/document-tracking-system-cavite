@@ -44,7 +44,7 @@
             <x-stat-card label="Awaiting Release" :value="$stats['awaiting_release']" color="amber" :href="route('documents.index', ['stage' => 'awaiting_release'])">
                 <x-slot:icon><path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></x-slot:icon>
             </x-stat-card>
-            <x-stat-card label="In Transit (to receive)" :value="$stats['in_transit']" color="blue" :href="route('documents.index', ['stage' => 'in_transit'])">
+            <x-stat-card label="Awaiting Receipt" :value="$stats['in_transit']" color="blue" :href="route('documents.index', ['stage' => 'in_transit'])">
                 <x-slot:icon><path stroke-linecap="round" stroke-linejoin="round" d="M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1"/></x-slot:icon>
             </x-stat-card>
             <x-stat-card label="In Progress (received)" :value="$stats['active']" color="primary" :href="route('documents.index', ['stage' => 'in_progress'])">
@@ -63,7 +63,7 @@
         <div>
             <div class="flex items-center gap-2 mb-3">
                 <h2 class="font-semibold text-lg">Needs your action</h2>
-                @unless($nothingPending)<span class="text-xs px-2 py-0.5 rounded-full bg-[color:var(--color-primary)]/10 text-[color:var(--color-primary)] font-medium">{{ $pendingTotal }}</span>@endunless
+                @unless($nothingPending)<span class="text-xs px-2 py-0.5 rounded-full bg-[color:var(--color-primary)]/10 dark:bg-[color:var(--color-primary)]/25 text-[color:var(--color-primary)] dark:text-[color:var(--color-primary-light)] font-medium">{{ $pendingTotal }}</span>@endunless
             </div>
 
             @if($nothingPending)

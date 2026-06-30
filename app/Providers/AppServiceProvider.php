@@ -110,6 +110,20 @@ class AppServiceProvider extends ServiceProvider
                     'records_per_page' => Setting::get('records_per_page', '12'),
                     'support_contact' => Setting::get('support_contact', ''),
                     'announcement'   => Setting::get('announcement', ''),
+                    // QR Slip design
+                    'qr_slip_header_color' => Setting::get('qr_slip_header_color', ''),
+                    'qr_slip_badge_text' => Setting::get('qr_slip_badge_text', 'Document Tracking Slip'),
+                    'qr_slip_footer_text' => Setting::get('qr_slip_footer_text', 'Powered by PICTO'),
+                    'qr_slip_show_footer' => Setting::get('qr_slip_show_footer', '1'),
+                    'qr_slip_show_url' => Setting::get('qr_slip_show_url', '1'),
+                    'qr_slip_show_type' => Setting::get('qr_slip_show_type', '1'),
+                    'qr_slip_show_voucher' => Setting::get('qr_slip_show_voucher', '1'),
+                    'qr_slip_show_reference' => Setting::get('qr_slip_show_reference', '1'),
+                    'qr_slip_show_fund' => Setting::get('qr_slip_show_fund', '1'),
+                    'qr_slip_show_amount' => Setting::get('qr_slip_show_amount', '1'),
+                    'qr_slip_show_obr' => Setting::get('qr_slip_show_obr', '1'),
+                    'qr_slip_show_source' => Setting::get('qr_slip_show_source', '1'),
+                    'qr_slip_show_encoded' => Setting::get('qr_slip_show_encoded', '1'),
                 ]);
             } catch (\Throwable $e) {
                 // settings table may not exist yet (e.g. before first migrate)
@@ -137,6 +151,19 @@ class AppServiceProvider extends ServiceProvider
                     'records_per_page' => '12',
                     'support_contact' => '',
                     'announcement' => '',
+                    'qr_slip_header_color' => '',
+                    'qr_slip_badge_text' => 'Document Tracking Slip',
+                    'qr_slip_footer_text' => 'Powered by PICTO',
+                    'qr_slip_show_footer' => '1',
+                    'qr_slip_show_url' => '1',
+                    'qr_slip_show_type' => '1',
+                    'qr_slip_show_voucher' => '1',
+                    'qr_slip_show_reference' => '1',
+                    'qr_slip_show_fund' => '1',
+                    'qr_slip_show_amount' => '1',
+                    'qr_slip_show_obr' => '1',
+                    'qr_slip_show_source' => '1',
+                    'qr_slip_show_encoded' => '1',
                 ]);
             }
         });

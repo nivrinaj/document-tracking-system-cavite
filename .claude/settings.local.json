@@ -37,7 +37,12 @@
       "Bash(git checkout *)",
       "Bash(git -C D:/PGC log --oneline -5)",
       "Bash(git -C D:/PGC log --oneline -3)",
-      "Bash(git -C D:/PGC tag --list 'v1.7*' --sort=-v:refname)"
+      "Bash(git -C D:/PGC tag --list 'v1.7*' --sort=-v:refname)",
+      "Bash(grep -n \"^use \\\\|use App\\\\\\\\\\\\\\\\Models\\\\\\\\\\\\\\\\Setting;\\\\|use SimpleSoftwareIO\" \"D:\\\\PGC\\\\app\\\\Http\\\\Controllers\\\\DocumentController.php\")",
+      "Bash(php -l app/Http/Controllers/DocumentController.php)",
+      "Bash(php -l app/Http/Controllers/AccountingController.php)",
+      "Bash(php -l app/Models/ResponsibilityCenter.php)",
+      "Bash(php -l app/Models/ResponsibilityCenterProject.php)"
     ]
   }
 }

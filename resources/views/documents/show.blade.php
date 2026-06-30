@@ -56,7 +56,7 @@
                                 <div class="text-xs text-gray-500 dark:text-gray-400">Assigned to {{ $h->name }} ({{ $h->orgShort() }}) — not yet handed over</div>
                             @elseif($h && in_array($document->status, ['released', 'forwarded']))
                                 {{-- Handed over / sent, but the recipient hasn't confirmed receipt yet. --}}
-                                <div class="font-semibold text-amber-600 dark:text-amber-400">In transit</div>
+                                <div class="font-semibold text-amber-600 dark:text-amber-400">Awaiting Receipt</div>
                                 <div class="text-xs text-gray-500 dark:text-gray-400">{{ $document->status === 'forwarded' ? 'Forwarded' : 'Released' }} to {{ $h->name }} ({{ $h->orgShort() }}) — awaiting receipt</div>
                             @elseif($h)
                                 {{-- Received (or closed): the holder actually possesses it. --}}
@@ -73,7 +73,7 @@
                                 <div class="text-xs text-gray-500 dark:text-gray-400">Transferred to {{ $document->department?->code }} — not yet claimed</div>
                             @else
                                 <div class="font-semibold text-gray-500 dark:text-gray-400">Not yet assigned</div>
-                                <div class="text-xs text-gray-400">⏳ In transit — awaiting routing</div>
+                                <div class="text-xs text-gray-400">⏳ Awaiting routing</div>
                             @endif
                         </div>
                     </div>
@@ -112,7 +112,7 @@
                     @php
                         $pausedSecs = $document->totalPausedSeconds();
                         $hasAccounting = $document->fund_id || $document->amount !== null || $document->obr_no || $document->responsibility_center_id || $document->nature_of_transaction;
-                        $rcParts = array_filter([$document->rc_code, $document->responsibilityCenter?->name]);
+                        $rcLabel = $document->rcLabel();
                         $showBreakdown = \App\Models\Setting::get('show_daily_breakdown', '0') === '1';
                         $breakdown = $showBreakdown
                             ? \App\Services\BusinessHours::dailyDetail($document->received_at ?? $document->created_at, $document->completed_at ?? now())
@@ -164,8 +164,8 @@
                                     @if($document->obr_no)
                                         <div><dt class="{{ $k }}">OBR No.</dt><dd class="{{ $v }} font-mono">{{ $document->obr_no }}</dd></div>
                                     @endif
-                                    @if($rcParts)
-                                        <div><dt class="{{ $k }}">Resp. Center</dt><dd class="{{ $v }}">{{ implode('/', $rcParts) }}</dd></div>
+                                    @if($rcLabel)
+                                        <div><dt class="{{ $k }}">Resp. Center</dt><dd class="{{ $v }}">{{ $rcLabel }}</dd></div>
                                     @endif
                                     @if($document->nature_of_transaction)
                                         <div><dt class="{{ $k }}">Nature</dt><dd class="{{ $v }}">{{ $document->nature_of_transaction }}</dd></div>
@@ -209,7 +209,11 @@
                                 </header>
                                 <div class="p-4 sm:p-5 space-y-3">
                                     @foreach($breakdown as $date => $info)
-                                        @php $pct = min(100, (int) round($info['seconds'] / (8 * 3600) * 100)); @endphp
+                                        @php
+                                            $daySpan = max(1, $info['day_start']->diffInSeconds($info['day_end']));
+                                            $offsetPct = max(0, min(100, $info['day_start']->diffInSeconds($info['from']) / $daySpan * 100));
+                                            $widthPct = max(0, min(100 - $offsetPct, $info['from']->diffInSeconds($info['to']) / $daySpan * 100));
+                                        @endphp
                                         <div class="flex items-center gap-3">
                                             <div class="w-20 sm:w-24 shrink-0 text-xs font-medium text-gray-600 dark:text-gray-300">{{ \Carbon\Carbon::parse($date)->format('D, M d') }}</div>
                                             <div class="flex-1 min-w-0">
@@ -217,8 +221,8 @@
                                                     <span class="tabular-nums">{{ $info['from']->format('g:i A') }} – {{ $info['to']->format('g:i A') }}</span>
                                                     <span class="font-medium text-gray-600 dark:text-gray-300 tabular-nums">{{ \App\Models\Document::humanDuration($info['seconds']) }}</span>
                                                 </div>
-                                                <div class="h-2 rounded-full bg-gray-100 dark:bg-gray-700 overflow-hidden">
-                                                    <div class="h-full rounded-full" style="width: {{ $pct }}%; background: var(--color-primary)"></div>
+                                                <div class="h-2 rounded-full bg-gray-100 dark:bg-gray-700 overflow-hidden relative">
+                                                    <div class="h-full rounded-full absolute top-0" style="left: {{ $offsetPct }}%; width: {{ $widthPct }}%; background: var(--color-primary)"></div>
                                                 </div>
                                             </div>
                                         </div>
@@ -391,7 +395,7 @@
                     @php $dc = $document->digitalCopy; $canDigital = ! $document->isClosed() && auth()->id() === $document->created_by; @endphp
                     <x-card>
                         <div class="flex items-center gap-2 mb-3">
-                            <span class="w-8 h-8 rounded-lg grid place-items-center bg-[color:var(--color-primary)]/10 text-[color:var(--color-primary)]">
+                            <span class="w-8 h-8 rounded-lg grid place-items-center bg-[color:var(--color-primary)]/10 dark:bg-[color:var(--color-primary)]/25 text-[color:var(--color-primary)] dark:text-[color:var(--color-primary-light)]">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.7" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
                             </span>
                             <div>
@@ -840,7 +844,7 @@
                                     <div x-show="scope === 'selected'" x-cloak>
                                         <div class="flex flex-wrap gap-1 mb-1.5" x-show="picked.length">
                                             <template x-for="id in picked" :key="id">
-                                                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[color:var(--color-primary)]/10 text-[color:var(--color-primary)] text-[11px]">
+                                                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[color:var(--color-primary)]/10 dark:bg-[color:var(--color-primary)]/25 text-[color:var(--color-primary)] dark:text-[color:var(--color-primary-light)] text-[11px]">
                                                     <span x-text="(people.find(p=>p.id===id)||{}).name"></span>
                                                     <button type="button" @click="toggle(id)">&times;</button>
                                                 </span>

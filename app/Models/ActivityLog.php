@@ -105,6 +105,7 @@ class ActivityLog extends Model
             'settings.update' => 'Updated Settings',
             'settings.resetData' => 'Reset Data',
             'reports.settings.save' => 'Report Settings',
+            'qr-slip.settings.save' => 'QR Slip Settings',
             // Calendar
             'calendar.dept_dayoff' => 'Department Day-Off',
             'calendar.user_leave' => 'Staff Leave',

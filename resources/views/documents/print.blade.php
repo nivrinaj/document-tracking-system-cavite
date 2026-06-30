@@ -5,7 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Tracking Slip — {{ $document->tracking_code }}</title>
     @php
-        $primary = $settings['primary_color'] ?? '#4f46e5';
+        $primary = !empty($settings['qr_slip_header_color']) ? $settings['qr_slip_header_color'] : ($settings['primary_color'] ?? '#4f46e5');
+        $badgeText = $settings['qr_slip_badge_text'] ?? 'Document Tracking Slip';
+        $footerText = $settings['qr_slip_footer_text'] ?? 'Powered by PICTO';
+        $showFooter = ($settings['qr_slip_show_footer'] ?? '1') === '1';
+        $showUrl = ($settings['qr_slip_show_url'] ?? '1') === '1';
         $prio = strtolower($document->priority);
         $prioColors = [
             'urgent' => '#dc2626', 'high' => '#ea580c', 'normal' => '#2563eb', 'low' => '#6b7280',
@@ -64,7 +68,7 @@
             @if(!empty($settings['app_name']))<div class="sub">{{ $settings['app_name'] }}</div>@endif
         </div>
         <div class="body">
-            <div class="slip-badge-wrap"><span class="slip-badge">Document Tracking Slip</span></div>
+            <div class="slip-badge-wrap"><span class="slip-badge">{{ $badgeText }}</span></div>
             <div class="code-row">
                 <div class="code-label">Document Code</div>
                 <span class="code">{{ $document->tracking_code }}</span>
@@ -83,28 +87,34 @@
                     : $originName;
             @endphp
             <div class="info">
-                <div class="row"><span class="k">Type</span><span class="v">{{ $document->document_type }}</span></div>
-                @if($document->voucher_number)
+                @if(($settings['qr_slip_show_type'] ?? '1') === '1')
+                    <div class="row"><span class="k">Type</span><span class="v">{{ $document->document_type }}</span></div>
+                @endif
+                @if($document->voucher_number && ($settings['qr_slip_show_voucher'] ?? '1') === '1')
                     <div class="row"><span class="k">Voucher No.</span><span class="v">{{ $document->voucher_number }}</span></div>
                 @endif
-                @if($document->reference_no)
+                @if($document->reference_no && ($settings['qr_slip_show_reference'] ?? '1') === '1')
                     <div class="row"><span class="k">Reference No.</span><span class="v">{{ $document->reference_no }}</span></div>
                 @endif
-                @if($document->fund)
+                @if($document->fund && ($settings['qr_slip_show_fund'] ?? '1') === '1')
                     <div class="row"><span class="k">Fund</span><span class="v">{{ $document->fund->name }}</span></div>
                 @endif
-                @if($document->amount !== null)
+                @if($document->amount !== null && ($settings['qr_slip_show_amount'] ?? '1') === '1')
                     <div class="row"><span class="k">Amount</span><span class="v">₱{{ number_format($document->amount, 2) }}</span></div>
                 @endif
-                @if($document->obr_no)
+                @if($document->obr_no && ($settings['qr_slip_show_obr'] ?? '1') === '1')
                     <div class="row"><span class="k">OBR No.</span><span class="v">{{ $document->obr_no }}</span></div>
                 @endif
-                <div class="row"><span class="k">Source / Origin</span><span class="v">{{ $sourceCombined }}</span></div>
-                <div class="row"><span class="k">Encoded</span><span class="v">{{ $document->created_at->format('M d, Y g:i A') }}</span></div>
+                @if(($settings['qr_slip_show_source'] ?? '1') === '1')
+                    <div class="row"><span class="k">Source / Origin</span><span class="v">{{ $sourceCombined }}</span></div>
+                @endif
+                @if(($settings['qr_slip_show_encoded'] ?? '1') === '1')
+                    <div class="row"><span class="k">Encoded</span><span class="v">{{ $document->created_at->format('M d, Y g:i A') }}</span></div>
+                @endif
             </div>
 
-            <div class="url">{{ $trackUrl }}</div>
-            <div class="powered">Powered by PICTO</div>
+            @if($showUrl)<div class="url">{{ $trackUrl }}</div>@endif
+            @if($showFooter)<div class="powered">{{ $footerText }}</div>@endif
         </div>
     </div>
     <div class="btn">

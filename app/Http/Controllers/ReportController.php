@@ -193,7 +193,7 @@ class ReportController extends Controller
 
         // Hospital transactions are flagged on the document at encode time (is_hospital).
         $rows = Document::query()
-            ->with(['fund', 'responsibilityCenter'])
+            ->with(['fund', 'responsibilityCenter', 'responsibilityCenterProject'])
             ->where('document_type', $data['document_type'])
             ->where('fund_id', $data['fund_id'])
             ->when($from, fn ($q) => $q->where('created_at', '>=', $from))
@@ -264,7 +264,7 @@ class ReportController extends Controller
         $deptId = $user->canViewAllDepartments() ? null : $user->department_id;
 
         $rows = Document::query()
-            ->with(['fund', 'responsibilityCenter'])
+            ->with(['fund', 'responsibilityCenter', 'responsibilityCenterProject'])
             ->where('fund_id', $data['fund_id'])
             ->whereIn('document_type', ['Voucher', 'Payroll'])
             ->when($deptId, fn ($q) => $q->where('department_id', $deptId))

@@ -38,7 +38,7 @@
             <template x-for="c in conversations" :key="c.id">
                 <button @click="openConversation(c.id, c.title)" class="w-full flex items-center gap-3 px-3 py-2.5 text-left hover:bg-gray-50 dark:hover:bg-gray-700/40 border-b border-gray-50 dark:border-gray-700/50">
                     <template x-if="c.avatar"><img :src="c.avatar" class="w-9 h-9 rounded-full shrink-0"></template>
-                    <template x-if="!c.avatar"><span class="w-9 h-9 rounded-full grid place-items-center bg-[color:var(--color-primary)]/10 text-[color:var(--color-primary)] shrink-0 text-sm font-semibold" x-text="c.title.charAt(0)"></span></template>
+                    <template x-if="!c.avatar"><span class="w-9 h-9 rounded-full grid place-items-center bg-[color:var(--color-primary)]/10 dark:bg-[color:var(--color-primary)]/25 text-[color:var(--color-primary)] dark:text-[color:var(--color-primary-light)] shrink-0 text-sm font-semibold" x-text="c.title.charAt(0)"></span></template>
                     <span class="min-w-0 flex-1">
                         <span class="flex items-center justify-between gap-2">
                             <span class="font-medium text-sm truncate" x-text="c.title"></span>
@@ -56,11 +56,11 @@
         {{-- NEW CHAT --}}
         <div x-show="view === 'new'" class="flex-1 overflow-y-auto p-3">
             <div class="flex gap-2 mb-2" x-show="canDiv || canDept">
-                <button x-show="canDiv" @click="startGroup('division')" class="flex-1 inline-flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-lg bg-[color:var(--color-primary)]/10 text-[color:var(--color-primary)] text-xs font-medium hover:opacity-90">
+                <button x-show="canDiv" @click="startGroup('division')" class="flex-1 inline-flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-lg bg-[color:var(--color-primary)]/10 dark:bg-[color:var(--color-primary)]/25 text-[color:var(--color-primary)] dark:text-[color:var(--color-primary-light)] text-xs font-medium hover:opacity-90">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m6-3.13a4 4 0 10-4-4 4 4 0 004 4z"/></svg>
                     My Division
                 </button>
-                <button x-show="canDept" @click="startGroup('department')" class="flex-1 inline-flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-lg bg-[color:var(--color-primary)]/10 text-[color:var(--color-primary)] text-xs font-medium hover:opacity-90">
+                <button x-show="canDept" @click="startGroup('department')" class="flex-1 inline-flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-lg bg-[color:var(--color-primary)]/10 dark:bg-[color:var(--color-primary)]/25 text-[color:var(--color-primary)] dark:text-[color:var(--color-primary-light)] text-xs font-medium hover:opacity-90">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0H5m14 0h2M5 21H3m4-14h2m-2 4h2m6-4h2m-2 4h2"/></svg>
                     My Department
                 </button>

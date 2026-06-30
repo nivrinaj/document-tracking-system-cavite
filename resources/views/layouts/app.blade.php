@@ -199,7 +199,7 @@
 
                 {{-- Messages --}}
                 @if(auth()->user()?->canUseChat())
-                    <a href="{{ route('messages.index') }}" class="relative p-2 rounded-lg {{ request()->routeIs('messages.*') ? 'text-[color:var(--color-primary)] bg-[color:var(--color-primary)]/10' : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700' }}" title="Messages">
+                    <a href="{{ route('messages.index') }}" class="relative p-2 rounded-lg {{ request()->routeIs('messages.*') ? 'text-[color:var(--color-primary)] dark:text-[color:var(--color-primary-light)] bg-[color:var(--color-primary)]/10 dark:bg-[color:var(--color-primary)]/25' : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700' }}" title="Messages">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.86 9.86 0 01-4-.8L3 20l1.3-3.5C3.5 15.3 3 13.7 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
                         <span id="msgBadge" class="absolute -top-0.5 -right-0.5 text-white text-[10px] leading-none rounded-full px-1.5 py-0.5 hidden" style="background: var(--color-primary)"></span>
                     </a>

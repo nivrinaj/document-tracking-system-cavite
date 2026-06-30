@@ -106,7 +106,15 @@ class DocumentController extends Controller
             'funds' => \App\Models\Fund::where('is_active', true)
                 ->when($isHospital, fn ($q) => $q->where('hospital_available', true))
                 ->orderBy('sort_order')->orderBy('name')->get(),
-            'responsibilityCenters' => \App\Models\ResponsibilityCenter::where('is_active', true)->orderBy('sort_order')->orderBy('name')->get(),
+            'rcOfficeOptions' => \App\Models\ResponsibilityCenter::where('is_active', true)->where('is_hospital', false)
+                ->orderBy('sort_order')->orderBy('name')->get()
+                ->map(fn ($rc) => ['value' => $rc->id, 'label' => $rc->label()])->values(),
+            'rcProjectsByOffice' => \App\Models\ResponsibilityCenter::where('is_active', true)->where('is_hospital', false)
+                ->with(['projects' => fn ($q) => $q->where('is_active', true)->orderBy('sort_order')->orderBy('name')])
+                ->get()->mapWithKeys(fn ($rc) => [(string) $rc->id => $rc->projects->map(fn ($p) => ['value' => $p->id, 'label' => $p->label()])->values()]),
+            'rcHospitalOptions' => \App\Models\ResponsibilityCenter::where('is_active', true)->where('is_hospital', true)
+                ->orderBy('sort_order')->orderBy('name')->get()
+                ->map(fn ($rc) => ['value' => $rc->id, 'label' => $rc->label()])->values(),
             'natures' => \App\Models\NatureOfTransaction::where('is_active', true)->orderBy('sort_order')->orderBy('name')->get(),
             'isHospital' => $isHospital,
             'isAccounting' => $isAccounting,
@@ -121,7 +129,11 @@ class DocumentController extends Controller
         // encoder's office has the Accounting toggle on; other offices encode a
         // Voucher/Payroll with the regular fields only.
         $acct = (bool) optional($request->user()->department)->is_accounting;
+        $isHospital = (bool) optional($request->user()->division)->is_hospital;
         $acctRule = $acct ? 'required_if:document_type,Voucher,Payroll' : 'nullable';
+        // Hospital-division encoders pick a single hospital RC (no project level).
+        // Everyone else picks an Office/Unit, then a dependent Project.
+        $projectRule = ($acct && ! $isHospital) ? 'required_if:document_type,Voucher,Payroll' : 'nullable';
 
         $data = $request->validate([
             'title' => ['required', 'string', 'max:255'],
@@ -132,7 +144,7 @@ class DocumentController extends Controller
             'amount' => ['nullable', $acctRule, 'numeric', 'min:0'],
             'obr_no' => ['nullable', $acctRule, 'string', 'max:100'],
             'responsibility_center_id' => ['nullable', $acctRule, 'exists:responsibility_centers,id'],
-            'rc_code' => ['nullable', $acctRule, 'string', 'max:150'],
+            'responsibility_center_project_id' => ['nullable', $projectRule, 'exists:responsibility_center_projects,id'],
             'nature_of_transaction' => ['nullable', $acctRule, 'string', 'max:150'],
             'description' => ['nullable', 'string'],
             'source_department_id' => ['nullable', 'string', 'max:50'],

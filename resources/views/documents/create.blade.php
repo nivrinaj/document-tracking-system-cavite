@@ -140,19 +140,8 @@
                                     <input type="text" name="obr_no" value="{{ old('obr_no') }}" class="input" placeholder="OBR number, or N/A" x-bind:required="acct">
                                 </div>
 
-                                <div>
-                                    <label class="label">Resp. Center — Office/Unit/Project <span class="text-red-500">*</span></label>
-                                    <select name="responsibility_center_id" class="input" x-bind:required="acct">
-                                        <option value="">— Select —</option>
-                                        @foreach($responsibilityCenters as $rc)
-                                            <option value="{{ $rc->id }}" @selected(old('responsibility_center_id')==$rc->id)>{{ $rc->label() }}</option>
-                                        @endforeach
-                                    </select>
-                                </div>
-
-                                <div>
-                                    <label class="label">Resp. Center — Code <span class="text-red-500">*</span></label>
-                                    <input type="text" name="rc_code" value="{{ old('rc_code') }}" class="input" placeholder="e.g. SPA - 20% Dev Fund" x-bind:required="acct">
+                                <div class="sm:col-span-2">
+                                    <x-rc-picker :is-hospital="$isHospital" :office-options="$rcOfficeOptions" :projects-by-office="$rcProjectsByOffice" :hospital-options="$rcHospitalOptions" />
                                 </div>
 
                                 <div class="sm:col-span-2">
@@ -364,7 +353,7 @@
                     {{-- selected chips --}}
                     <div class="flex flex-wrap gap-1.5 mb-2" x-show="recipients.length">
                         <template x-for="id in recipients" :key="id">
-                            <span class="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-[color:var(--color-primary)]/10 text-[color:var(--color-primary)] text-xs">
+                            <span class="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-[color:var(--color-primary)]/10 dark:bg-[color:var(--color-primary)]/25 text-[color:var(--color-primary)] dark:text-[color:var(--color-primary-light)] text-xs">
                                 <span x-text="(allUsers.find(u => u.id === id) || {}).name"></span>
                                 <button type="button" @click="toggleRecipient(id)" class="hover:opacity-70">&times;</button>
                             </span>

@@ -107,6 +107,9 @@ Route::middleware(['auth', 'active'])->group(function () {
         Route::post('/centers', [\App\Http\Controllers\AccountingController::class, 'storeCenter'])->name('centers.store');
         Route::put('/centers/{center}', [\App\Http\Controllers\AccountingController::class, 'updateCenter'])->name('centers.update');
         Route::delete('/centers/{center}', [\App\Http\Controllers\AccountingController::class, 'destroyCenter'])->name('centers.destroy');
+        Route::post('/centers/{center}/projects', [\App\Http\Controllers\AccountingController::class, 'storeProject'])->name('centers.projects.store');
+        Route::put('/projects/{project}', [\App\Http\Controllers\AccountingController::class, 'updateProject'])->name('centers.projects.update');
+        Route::delete('/projects/{project}', [\App\Http\Controllers\AccountingController::class, 'destroyProject'])->name('centers.projects.destroy');
         Route::put('/overdue', [\App\Http\Controllers\AccountingController::class, 'updateOverdue'])->name('overdue.update');
         Route::post('/natures', [\App\Http\Controllers\AccountingController::class, 'storeNature'])->name('natures.store');
         Route::put('/natures/{nature}', [\App\Http\Controllers\AccountingController::class, 'updateNature'])->name('natures.update');
@@ -136,6 +139,8 @@ Route::middleware(['auth', 'active'])->group(function () {
     Route::middleware('role:Super Admin')->group(function () {
         Route::get('/reports/settings', [ReportController::class, 'settings'])->name('reports.settings');
         Route::put('/reports/settings', [ReportController::class, 'saveSettings'])->name('reports.settings.save');
+        Route::get('/qr-slip/settings', [\App\Http\Controllers\QrSlipController::class, 'edit'])->name('qr-slip.settings');
+        Route::put('/qr-slip/settings', [\App\Http\Controllers\QrSlipController::class, 'update'])->name('qr-slip.settings.save');
         Route::resource('document-types', \App\Http\Controllers\DocumentTypeController::class)->except('show');
         Route::get('/changelog', [\App\Http\Controllers\ChangelogController::class, 'index'])->name('changelog.index');
         Route::get('/documentation', [DocumentationController::class, 'index'])->name('documentation.index');

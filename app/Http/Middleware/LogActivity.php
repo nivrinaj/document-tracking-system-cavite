@@ -95,7 +95,7 @@ class LogActivity
         'login', 'logout', 'register',
         'password.email', 'password.store', 'password.update', 'password.confirm',
         'notifications.read', 'notifications.readAll',
-        'settings.update', 'reports.settings.save',
+        'settings.update', 'reports.settings.save', 'qr-slip.settings.save',
         'users.store', 'users.update',
         'work-calendar.holidays.store', 'work-calendar.holidays.destroy',
         'work-calendar.team.store', 'work-calendar.team.destroy',

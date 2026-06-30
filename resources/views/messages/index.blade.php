@@ -25,7 +25,7 @@
                         @if($canDivisionGroup)
                             <form method="POST" action="{{ route('messages.group') }}" class="flex-1">
                                 @csrf <input type="hidden" name="scope" value="division">
-                                <button type="submit" class="w-full inline-flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-lg bg-[color:var(--color-primary)]/10 text-[color:var(--color-primary)] text-xs font-medium hover:opacity-90">
+                                <button type="submit" class="w-full inline-flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-lg bg-[color:var(--color-primary)]/10 dark:bg-[color:var(--color-primary)]/25 text-[color:var(--color-primary)] dark:text-[color:var(--color-primary-light)] text-xs font-medium hover:opacity-90">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m6-3.13a4 4 0 10-4-4 4 4 0 004 4z"/></svg>
                                     My Division
                                 </button>
@@ -34,7 +34,7 @@
                         @if($canDepartmentGroup)
                             <form method="POST" action="{{ route('messages.group') }}" class="flex-1">
                                 @csrf <input type="hidden" name="scope" value="department">
-                                <button type="submit" class="w-full inline-flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-lg bg-[color:var(--color-primary)]/10 text-[color:var(--color-primary)] text-xs font-medium hover:opacity-90">
+                                <button type="submit" class="w-full inline-flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-lg bg-[color:var(--color-primary)]/10 dark:bg-[color:var(--color-primary)]/25 text-[color:var(--color-primary)] dark:text-[color:var(--color-primary-light)] text-xs font-medium hover:opacity-90">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0H5m14 0h2M5 21H3m4-14h2m-2 4h2m6-4h2m-2 4h2"/></svg>
                                     My Department
                                 </button>
@@ -72,7 +72,7 @@
                             class="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-700/40"
                             :class="activeId === {{ $c->id }} ? 'bg-gray-50 dark:bg-gray-700/50' : ''">
                         @if($c->is_group)
-                            <span class="w-9 h-9 rounded-full grid place-items-center bg-[color:var(--color-primary)]/10 text-[color:var(--color-primary)] shrink-0">
+                            <span class="w-9 h-9 rounded-full grid place-items-center bg-[color:var(--color-primary)]/10 dark:bg-[color:var(--color-primary)]/25 text-[color:var(--color-primary)] dark:text-[color:var(--color-primary-light)] shrink-0">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m6-3.13a4 4 0 10-4-4 4 4 0 004 4z"/></svg>
                             </span>
                         @else

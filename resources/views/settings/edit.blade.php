@@ -3,6 +3,12 @@
 
     <div class="max-w-3xl mx-auto space-y-6"
          x-data="{ color: '{{ $settings['primary_color'] ?? '#4f46e5' }}' }">
+        <div class="flex justify-end">
+            <a href="{{ route('qr-slip.settings') }}" class="inline-flex items-center gap-1.5 text-sm link">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 4a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H4a1 1 0 01-1-1V4zm0 12a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H4a1 1 0 01-1-1v-4zM14 4a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1V4zm3 12h2m-5 0h.01M14 19h2m-2-3v3m5-3v3"/></svg>
+                QR Slip settings
+            </a>
+        </div>
         <form method="POST" action="{{ route('settings.update') }}" enctype="multipart/form-data" class="space-y-6">
             @csrf
             @method('PUT')

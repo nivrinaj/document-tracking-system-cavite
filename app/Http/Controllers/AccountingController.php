@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Fund;
 use App\Models\NatureOfTransaction;
 use App\Models\ResponsibilityCenter;
+use App\Models\ResponsibilityCenterProject;
 use Illuminate\Http\Request;
 
 class AccountingController extends Controller
@@ -15,7 +16,8 @@ class AccountingController extends Controller
 
         return view('accounting.index', [
             'funds' => Fund::orderBy('sort_order')->orderBy('name')->get(),
-            'centers' => ResponsibilityCenter::orderBy('sort_order')->orderBy('name')->get(),
+            'centers' => ResponsibilityCenter::where('is_hospital', false)->with('projects')->orderBy('sort_order')->orderBy('name')->get(),
+            'hospitalCenters' => ResponsibilityCenter::where('is_hospital', true)->orderBy('sort_order')->orderBy('name')->get(),
             'natures' => NatureOfTransaction::orderBy('sort_order')->orderBy('name')->get(),
             'department' => $dept,
             'trackableTypes' => $dept ? \App\Models\DocumentType::availableFor($dept->id)->pluck('name') : collect(),
@@ -87,14 +89,18 @@ class AccountingController extends Controller
         return back()->with('success', 'Fund removed.');
     }
 
-    /* ---------------- Responsibility Centers ---------------- */
+    /* ---------------- Responsibility Centers (Office / Unit, and Hospital RCs) ---------------- */
     public function storeCenter(Request $request)
     {
         $data = $request->validate([
             'name' => ['required', 'string', 'max:150'],
             'code' => ['nullable', 'string', 'max:50'],
+            'is_hospital' => ['nullable', 'boolean'],
         ]);
-        ResponsibilityCenter::create($data + ['sort_order' => ResponsibilityCenter::max('sort_order') + 1]);
+        ResponsibilityCenter::create($data + [
+            'is_hospital' => $request->boolean('is_hospital'),
+            'sort_order' => ResponsibilityCenter::max('sort_order') + 1,
+        ]);
 
         return back()->with('success', 'Responsibility center added.');
     }
@@ -105,8 +111,12 @@ class AccountingController extends Controller
             'name' => ['required', 'string', 'max:150'],
             'code' => ['nullable', 'string', 'max:50'],
             'is_active' => ['nullable', 'boolean'],
+            'is_hospital' => ['nullable', 'boolean'],
         ]);
-        $center->update($data + ['is_active' => $request->boolean('is_active')]);
+        $center->update($data + [
+            'is_active' => $request->boolean('is_active'),
+            'is_hospital' => $request->boolean('is_hospital'),
+        ]);
 
         return back()->with('success', 'Responsibility center updated.');
     }
@@ -116,6 +126,39 @@ class AccountingController extends Controller
         $center->delete();
 
         return back()->with('success', 'Responsibility center removed.');
+    }
+
+    /* ---------------- Projects (children of an Office/Unit Responsibility Center) ---------------- */
+    public function storeProject(Request $request, ResponsibilityCenter $center)
+    {
+        abort_if($center->is_hospital, 404);
+
+        $data = $request->validate([
+            'name' => ['required', 'string', 'max:150'],
+            'code' => ['nullable', 'string', 'max:50'],
+        ]);
+        $center->projects()->create($data + ['sort_order' => $center->projects()->max('sort_order') + 1]);
+
+        return back()->with('success', 'Project added.');
+    }
+
+    public function updateProject(Request $request, ResponsibilityCenterProject $project)
+    {
+        $data = $request->validate([
+            'name' => ['required', 'string', 'max:150'],
+            'code' => ['nullable', 'string', 'max:50'],
+            'is_active' => ['nullable', 'boolean'],
+        ]);
+        $project->update($data + ['is_active' => $request->boolean('is_active')]);
+
+        return back()->with('success', 'Project updated.');
+    }
+
+    public function destroyProject(ResponsibilityCenterProject $project)
+    {
+        $project->delete();
+
+        return back()->with('success', 'Project removed.');
     }
 
     /* ---------------- Nature of Transaction ---------------- */
