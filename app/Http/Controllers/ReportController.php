@@ -161,12 +161,17 @@ class ReportController extends Controller
         $funds = \App\Models\Fund::where('is_active', true)->orderBy('sort_order')->orderBy('name')->get();
 
         // Document Aging Report filter data — scoped to the user's own office unless they see all.
+        // Divisions/staff always carry department_id so the Department filter can cascade them client-side.
         $deptId = $user->canViewAllDepartments() ? null : $user->department_id;
-        $docTrackDivisions = $deptId ? Division::where('department_id', $deptId)->orderBy('name')->get(['id', 'code', 'name'])
+        $docTrackDepartments = $deptId
+            ? \App\Models\Department::where('id', $deptId)->orderBy('name')->get(['id', 'code', 'name'])
+            : \App\Models\Department::orderBy('name')->get(['id', 'code', 'name']);
+        $docTrackDivisions = $deptId
+            ? Division::where('department_id', $deptId)->orderBy('name')->get(['id', 'code', 'name', 'department_id'])
             : Division::orderBy('name')->get(['id', 'code', 'name', 'department_id']);
         $docTrackStaff = User::where('is_active', true)
             ->when($deptId, fn ($q) => $q->where('department_id', $deptId))
-            ->orderBy('name')->get(['id', 'name', 'division_id']);
+            ->orderBy('name')->get(['id', 'name', 'department_id', 'division_id']);
 
         return view('reports.index', [
             'reports' => $reports,
@@ -175,6 +180,9 @@ class ReportController extends Controller
             'tFunds' => $funds,
             'tDateSource' => Setting::get('transmittal_date_source', 'received_by_division'),
             'docTypes' => \App\Models\DocumentType::availableFor($user->department_id)->pluck('name'),
+            'docTrackCanViewAll' => $user->canViewAllDepartments(),
+            'docTrackOwnDeptId' => $user->department_id,
+            'docTrackDepartments' => $docTrackDepartments,
             'docTrackDivisions' => $docTrackDivisions,
             'docTrackStaff' => $docTrackStaff,
         ]);
@@ -345,15 +353,15 @@ class ReportController extends Controller
 
     /* ═══════════════ Document Aging Report ═══════════════ */
 
-    /** Columns and their default alignment (overridable in Report Settings). */
+    /** Columns and their default alignment (overridable in Report Settings). The "#" row number is not in this list — it's a fixed, non-configurable first column. */
     public const DOCTRACK_COLS = [
-        'tracking_code' => 'Code', 'title' => 'Title', 'document_type' => 'Type',
+        'date_encoded' => 'Date Encoded', 'tracking_code' => 'Code', 'title' => 'Title', 'document_type' => 'Type',
         'origin' => 'Origin', 'current' => 'Current Location', 'status' => 'Status',
         'age' => 'Age (since encoded)', 'last_action' => 'Last Action', 'idle' => 'Idle Time',
     ];
 
     private const DOCTRACK_ALIGN_DEFAULT = [
-        'tracking_code' => 'center', 'title' => 'left', 'document_type' => 'center',
+        'date_encoded' => 'center', 'tracking_code' => 'center', 'title' => 'left', 'document_type' => 'center',
         'origin' => 'left', 'current' => 'left', 'status' => 'center',
         'age' => 'center', 'last_action' => 'center', 'idle' => 'center',
     ];
@@ -390,12 +398,14 @@ class ReportController extends Controller
 
         $data = $request->validate([
             'document_type' => ['nullable', 'string', 'max:100'],
+            'department_id' => ['nullable', 'exists:departments,id'],
             'division_id' => ['nullable', 'exists:divisions,id'],
             'user_id' => ['nullable', 'exists:users,id'],
             'status' => ['nullable', 'in:draft,released,received,forwarded,archived,completed'],
             'hospital' => ['nullable', 'in:exclude,include,only'],
             'date_from' => ['nullable', 'date'],
             'date_to' => ['nullable', 'date', 'after_or_equal:date_from'],
+            'sort' => ['nullable', 'in:date_encoded,idle_desc,oldest,status'],
             'format' => ['nullable', 'in:html,pdf'],
         ]);
 
@@ -404,7 +414,9 @@ class ReportController extends Controller
         if ($from && strlen($data['date_from']) <= 10) $from = $from->startOfDay();
         if ($to && strlen($data['date_to']) <= 10) $to = $to->endOfDay();
 
-        $deptId = $user->canViewAllDepartments() ? null : $user->department_id;
+        // Non-admins are always hard-locked to their own department, regardless of what's submitted.
+        // Admins may optionally narrow to one department via the filter; null means every department.
+        $deptId = $user->canViewAllDepartments() ? ($data['department_id'] ?? null) : $user->department_id;
         $hospital = $data['hospital'] ?? 'exclude';
 
         $rows = Document::query()
@@ -424,8 +436,17 @@ class ReportController extends Controller
             ->when($hospital === 'exclude', fn ($q) => $q->where('is_hospital', false))
             ->when($from, fn ($q) => $q->where('created_at', '>=', $from))
             ->when($to, fn ($q) => $q->where('created_at', '<=', $to))
-            ->orderBy('created_at')
             ->get();
+
+        // Idle time and age are computed (working-hours-aware / conditional on status), not plain
+        // DB columns, so sorting by them happens in PHP after fetch rather than in SQL.
+        $sort = $data['sort'] ?? 'date_encoded';
+        $rows = match ($sort) {
+            'idle_desc' => $rows->sortByDesc(fn ($d) => \App\Services\BusinessHours::secondsBetween($d->lastActionAt(), now(), $d->currentPossessor()))->values(),
+            'oldest' => $rows->sortByDesc(fn ($d) => $d->created_at->diffInSeconds($d->isClosed() ? $d->updated_at : now()))->values(),
+            'status' => $rows->sortBy('status')->values(),
+            default => $rows->sortBy('created_at')->values(),
+        };
 
         $orientation = Setting::get('doctrack_orientation', 'landscape');
 
@@ -435,12 +456,26 @@ class ReportController extends Controller
         $idleSecs = $openDocs->map(fn ($d) => \App\Services\BusinessHours::secondsBetween($d->lastActionAt(), now(), $d->currentPossessor()))->filter();
         $ageSecs = $rows->map(fn ($d) => $d->created_at->diffInSeconds($d->isClosed() ? $d->updated_at : now()));
 
+        $sortLabels = [
+            'date_encoded' => 'Date Encoded (Oldest First)',
+            'idle_desc' => 'Idle Time (Highest First)',
+            'oldest' => 'Age (Oldest First)',
+            'status' => 'Status',
+        ];
+
+        // Prefer the explicitly filtered department's name (relevant for Super Admins, who may have
+        // no department of their own); fall back to the generating user's own department.
+        $officeName = $deptId
+            ? optional(\App\Models\Department::find($deptId))->name
+            : optional($user->department)->name;
+
         $payload = [
             'reportTitle' => Setting::get('doctrack_title', 'Document Aging Report'),
-            'officeName' => optional($user->department)->name,
+            'officeName' => $officeName ?: 'All Offices',
             'generatedBy' => $user->name.($user->position ? ' — '.$user->position : ''),
             'rows' => $rows,
             'documentType' => $data['document_type'] ?? null,
+            'sortLabel' => $sortLabels[$sort] ?? $sortLabels['date_encoded'],
             'from' => $from,
             'to' => $to,
             'hospital' => $hospital,

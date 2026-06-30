@@ -6,6 +6,12 @@ Format based on [Keep a Changelog](https://keepachangelog.com).
 
 ---
 
+## 1.14.0 — 2026-07-01
+- **Idle Time explained, not changed** — verified the "0 idle time" some documents show is mathematically correct, not a bug: idle time only counts official working hours, so an action taken after 5 PM shows little or no idle time until the next business day begins. Added a footnote to the report and confirmed the Document Details page uses the exact same calculation, so both are consistent.
+- **Date Encoded column and row numbering added** — the report was missing both; every row now shows its actual encoded date/time and a running number.
+- **Sort filter added** — Document Aging Report can now be sorted by Date Encoded, by highest Idle Time, by oldest Age, or by Status, with the active sort shown in the printed header.
+- **Department and Division filters added with cascading** — the Document Aging Report now has a searchable Department dropdown that gates the Division dropdown (Division stays locked until a department is chosen), and the Staff dropdown narrows automatically to match whichever department and/or division are selected.
+
 ## 1.13.0 — 2026-06-28
 - **New report: Document Aging Report** — tracks how long a document has been open, when it last moved, and how much working-hours idle time has passed since then, alongside type, title, origin office/division, and current office/division.
 - **Available to any office, not just Accounting** — Super Admin picks which offices can run it from Report Settings, same toggle pattern as the other reports.

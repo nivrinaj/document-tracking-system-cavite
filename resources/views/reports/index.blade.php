@@ -138,11 +138,47 @@
                             </select>
                         </div>
                         <div>
-                            <label class="label">Division</label>
-                            <select x-model="dDivision" class="input">
-                                <option value="">All divisions</option>
-                                @foreach($docTrackDivisions as $dv)<option value="{{ $dv->id }}">{{ $dv->code }} — {{ $dv->name }}</option>@endforeach
-                            </select>
+                            <label class="label">Department</label>
+                            <div class="relative" @click.outside="dDeptOpen = false">
+                                <button type="button" @click="dDeptOpen = !dDeptOpen; dDeptSearch = ''" class="input-btn text-left pr-14 block">
+                                    <span class="truncate block" :class="!dDept ? 'text-gray-400' : ''" x-text="dDeptLabel"></span>
+                                </button>
+                                <div class="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5">
+                                    <button type="button" x-show="dDept" x-cloak @click.stop="dDept = ''; dDivision = ''; dUser = ''" class="w-4 h-4 grid place-items-center rounded text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                                    </button>
+                                    <svg class="w-4 h-4 text-gray-400 shrink-0 pointer-events-none transition-transform" :class="dDeptOpen && 'rotate-180'" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+                                </div>
+                                <div x-show="dDeptOpen" x-cloak x-transition.opacity class="absolute z-30 mt-1 w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-lg">
+                                    <div class="p-2 border-b border-gray-100 dark:border-gray-700"><input type="text" x-model="dDeptSearch" @click.stop class="input py-1.5 text-sm" placeholder="Search…"></div>
+                                    <div class="max-h-56 overflow-y-auto py-1 text-sm">
+                                        <button type="button" @click="dDept = ''; dDivision = ''; dUser = ''; dDeptOpen = false" class="w-full text-left px-3 py-1.5 text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700/50">All departments</button>
+                                        <template x-for="d in dFilteredDepts" :key="d.id"><button type="button" @click="dDept = String(d.id); dDivision = ''; dUser = ''; dDeptOpen = false" class="w-full text-left px-3 py-1.5 hover:bg-gray-50 dark:hover:bg-gray-700/50" x-text="d.name"></button></template>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="label">Division <span class="text-gray-400 text-xs font-normal">(pick a department first)</span></label>
+                            <div class="relative" @click.outside="dDivOpen = false">
+                                <button type="button" @click="dDept && (dDivOpen = !dDivOpen); dDivSearch = ''" class="input-btn text-left pr-14 block" :class="!dDept ? 'opacity-50 cursor-not-allowed' : ''" :disabled="!dDept">
+                                    <span class="truncate block" :class="!dDivision ? 'text-gray-400' : ''" x-text="!dDept ? 'Select department first' : dDivisionLabel"></span>
+                                </button>
+                                <div class="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5">
+                                    <button type="button" x-show="dDivision" x-cloak @click.stop="dDivision = ''; dUser = ''" class="w-4 h-4 grid place-items-center rounded text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                                    </button>
+                                    <svg class="w-4 h-4 text-gray-400 shrink-0 pointer-events-none transition-transform" :class="dDivOpen && 'rotate-180'" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+                                </div>
+                                <div x-show="dDivOpen" x-cloak x-transition.opacity class="absolute z-30 mt-1 w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-lg">
+                                    <div class="p-2 border-b border-gray-100 dark:border-gray-700"><input type="text" x-model="dDivSearch" @click.stop class="input py-1.5 text-sm" placeholder="Search…"></div>
+                                    <div class="max-h-56 overflow-y-auto py-1 text-sm">
+                                        <button type="button" @click="dDivision = ''; dUser = ''; dDivOpen = false" class="w-full text-left px-3 py-1.5 text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700/50">All divisions</button>
+                                        <template x-for="d in dFilteredDivisions" :key="d.id"><button type="button" @click="dDivision = String(d.id); dUser = ''; dDivOpen = false" class="w-full text-left px-3 py-1.5 hover:bg-gray-50 dark:hover:bg-gray-700/50" x-text="d.name"></button></template>
+                                        <p x-show="!dFilteredDivisions.length" class="px-3 py-2 text-gray-400">No divisions in this department.</p>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                         <div>
                             <label class="label">Staff / User</label>
@@ -161,9 +197,11 @@
                                     <div class="max-h-56 overflow-y-auto py-1 text-sm">
                                         <button type="button" @click="dUser = ''; dUserOpen = false" class="w-full text-left px-3 py-1.5 text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700/50">All staff</button>
                                         <template x-for="u in dFilteredUsers" :key="u.id"><button type="button" @click="dUser = String(u.id); dUserOpen = false" class="w-full text-left px-3 py-1.5 hover:bg-gray-50 dark:hover:bg-gray-700/50" x-text="u.name"></button></template>
+                                        <p x-show="!dFilteredUsers.length" class="px-3 py-2 text-gray-400">No staff match.</p>
                                     </div>
                                 </div>
                             </div>
+                            <p class="text-[11px] text-gray-400 mt-1" x-show="dDept || dDivision">Showing staff from the selected department<span x-show="dDivision">/division</span>.</p>
                         </div>
                         <div>
                             <label class="label">Status</label>
@@ -183,6 +221,15 @@
                                 <option value="exclude">Exclude hospital transactions</option>
                                 <option value="include">Include hospital transactions</option>
                                 <option value="only">Hospital transactions only</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="label">Sort by</label>
+                            <select x-model="dSort" class="input">
+                                <option value="date_encoded">Date Encoded (Oldest First)</option>
+                                <option value="idle_desc">Idle Time (Highest First)</option>
+                                <option value="oldest">Age (Oldest First)</option>
+                                <option value="status">Status</option>
                             </select>
                         </div>
                         <div>
@@ -241,11 +288,22 @@
                 tFundId: '', tHospital: 'exclude', tDateSource: '{{ $tDateSource ?? "received_by_division" }}',
                 tDateFrom: '', tDateTo: '',
                 // Document Aging Report
-                dDocType: '', dDivision: '', dUser: '', dUserOpen: false, dUserSearch: '',
-                dStatus: '', dHospital: 'exclude', dDateFrom: '', dDateTo: '',
+                dDocType: '',
+                dDept: '{{ $docTrackCanViewAll ? "" : ($docTrackOwnDeptId ?? "") }}', dDeptOpen: false, dDeptSearch: '',
+                dDivision: '', dDivOpen: false, dDivSearch: '',
+                dUser: '', dUserOpen: false, dUserSearch: '',
+                dStatus: '', dHospital: 'exclude', dSort: 'date_encoded', dDateFrom: '', dDateTo: '',
                 dUseTime: false, dTimeFrom: '', dTimeTo: '',
-                dUsers: @js($docTrackStaff->map(fn($u) => ['id' => $u->id, 'name' => $u->name])),
-                get dFilteredUsers() { const q = this.dUserSearch.toLowerCase().trim(); return this.dUsers.filter(u => !q || u.name.toLowerCase().includes(q)); },
+                dDepts: @js($docTrackDepartments->map(fn($d) => ['id' => $d->id, 'name' => $d->code.' — '.$d->name])),
+                dDivisions: @js($docTrackDivisions->map(fn($d) => ['id' => $d->id, 'name' => $d->code.' — '.$d->name, 'department_id' => $d->department_id])),
+                dUsers: @js($docTrackStaff->map(fn($u) => ['id' => $u->id, 'name' => $u->name, 'department_id' => $u->department_id, 'division_id' => $u->division_id])),
+                get dFilteredDepts() { const q = this.dDeptSearch.toLowerCase().trim(); return this.dDepts.filter(d => !q || d.name.toLowerCase().includes(q)); },
+                get dDeptLabel() { const d = this.dDepts.find(x => String(x.id) === String(this.dDept)); return d ? d.name : 'All departments'; },
+                get dVisibleDivisions() { return this.dDivisions.filter(d => !this.dDept || String(d.department_id) === String(this.dDept)); },
+                get dFilteredDivisions() { const q = this.dDivSearch.toLowerCase().trim(); return this.dVisibleDivisions.filter(d => !q || d.name.toLowerCase().includes(q)); },
+                get dDivisionLabel() { const d = this.dDivisions.find(x => String(x.id) === String(this.dDivision)); return d ? d.name : 'All divisions'; },
+                get dScopedUsers() { return this.dUsers.filter(u => (!this.dDept || String(u.department_id) === String(this.dDept)) && (!this.dDivision || String(u.division_id) === String(this.dDivision))); },
+                get dFilteredUsers() { const q = this.dUserSearch.toLowerCase().trim(); return this.dScopedUsers.filter(u => !q || u.name.toLowerCase().includes(q)); },
                 get dUserLabel() { const u = this.dUsers.find(x => String(x.id) === String(this.dUser)); return u ? u.name : 'All staff'; },
 
                 _t: null,
@@ -269,8 +327,9 @@
                         return '{{ route("reports.transmittal") }}?' + p.toString();
                     }
                     if (this.report === 'doctrack') {
-                        const p = new URLSearchParams({ hospital: this.dHospital, format });
+                        const p = new URLSearchParams({ hospital: this.dHospital, sort: this.dSort, format });
                         if (this.dDocType) p.set('document_type', this.dDocType);
+                        if (this.dDept) p.set('department_id', this.dDept);
                         if (this.dDivision) p.set('division_id', this.dDivision);
                         if (this.dUser) p.set('user_id', this.dUser);
                         if (this.dStatus) p.set('status', this.dStatus);
@@ -286,7 +345,7 @@
                 init() {
                     ['report','documentType','fundId','hospital','dateFrom','dateTo','useTime','timeFrom','timeTo',
                      'tFundId','tHospital','tDateSource','tDateFrom','tDateTo',
-                     'dDocType','dDivision','dUser','dStatus','dHospital','dDateFrom','dDateTo','dUseTime','dTimeFrom','dTimeTo'].forEach(k => this.$watch(k, () => this.debounced()));
+                     'dDocType','dDept','dDivision','dUser','dStatus','dHospital','dSort','dDateFrom','dDateTo','dUseTime','dTimeFrom','dTimeTo'].forEach(k => this.$watch(k, () => this.debounced()));
                 },
             }));
         });
