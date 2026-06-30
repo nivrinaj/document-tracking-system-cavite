@@ -69,8 +69,15 @@ deploy.ps1 does: git pull → composer install → npm install → npm run build
 2. Then output the exact deployment commands for both machines with the real version number and commit message filled in.
 3. Never give deploy commands before the version bump commit is ready — the user will push what's on disk.
 
-### Changelog entries: keep them general, not technical
-Same format as always (subject line + bullets), but keep each bullet general and plain — explain what changed and why it matters, properly enough to understand, without diving into implementation detail. Skip file paths, method/class names, migration names, and multi-clause technical breakdowns.
+### Changelog entries: strict format, no prose summary
+No bold summary line under the version heading. Every line is a bullet: `- **Short subject** — short plain description.` One bullet per distinct thing done. Keep each description general and plain (what changed and why it matters), not technical — skip file paths, method/class names, migration names, and multi-clause technical breakdowns.
+
+Example:
+```
+## 1.2.0 — 2026-01-01
+- **Forward dropdown clearable** — added a way to remove a wrongly-picked staff member instead of being stuck.
+- **Dark mode contrast fixed** — selected names were unreadable on dark backgrounds in a few places.
+```
 
 ## Things to never do
 

@@ -141,7 +141,7 @@
                                 </div>
 
                                 <div class="sm:col-span-2">
-                                    <x-rc-picker :is-hospital="$isHospital" :office-options="$rcOfficeOptions" :projects-by-office="$rcProjectsByOffice" :hospital-options="$rcHospitalOptions" />
+                                    <x-rc-picker :is-hospital="$isHospital" :office-options="$rcOfficeOptions" :projects-by-office="$rcProjectsByOffice" :hospital-options="$rcHospitalOptions" :hospital-required="$rcHospitalRequired" />
                                 </div>
 
                                 <div class="sm:col-span-2">

@@ -118,6 +118,7 @@ class DocumentController extends Controller
             'natures' => \App\Models\NatureOfTransaction::where('is_active', true)->orderBy('sort_order')->orderBy('name')->get(),
             'isHospital' => $isHospital,
             'isAccounting' => $isAccounting,
+            'rcHospitalRequired' => \App\Models\Setting::get('rc_hospital_required', '0') === '1',
         ]);
     }
 
@@ -128,9 +129,14 @@ class DocumentController extends Controller
         // The extra accounting fields (amount/fund/OBR/nature) apply only when the
         // encoder's office has the Accounting toggle on; other offices encode a
         // Voucher/Payroll with the regular fields only. Responsibility Center
-        // (office/unit + project, or the single hospital RC) is always optional.
+        // (office/unit + project) is always optional. The single hospital RC field's
+        // required-ness is Super-Admin configurable (rc_hospital_required setting).
         $acct = (bool) optional($request->user()->department)->is_accounting;
+        $isHospital = (bool) optional($request->user()->division)->is_hospital;
         $acctRule = $acct ? 'required_if:document_type,Voucher,Payroll' : 'nullable';
+        $rcRule = ($acct && $isHospital && \App\Models\Setting::get('rc_hospital_required', '0') === '1')
+            ? 'required_if:document_type,Voucher,Payroll'
+            : 'nullable';
 
         $data = $request->validate([
             'title' => ['required', 'string', 'max:255'],
@@ -140,7 +146,7 @@ class DocumentController extends Controller
             'fund_id' => ['nullable', $acctRule, 'exists:funds,id'],
             'amount' => ['nullable', $acctRule, 'numeric', 'min:0'],
             'obr_no' => ['nullable', $acctRule, 'string', 'max:100'],
-            'responsibility_center_id' => ['nullable', 'exists:responsibility_centers,id'],
+            'responsibility_center_id' => ['nullable', $rcRule, 'exists:responsibility_centers,id'],
             'responsibility_center_project_id' => ['nullable', 'exists:responsibility_center_projects,id'],
             'nature_of_transaction' => ['nullable', $acctRule, 'string', 'max:150'],
             'description' => ['nullable', 'string'],

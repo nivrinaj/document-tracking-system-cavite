@@ -110,6 +110,7 @@ Route::middleware(['auth', 'active'])->group(function () {
         Route::post('/centers/{center}/projects', [\App\Http\Controllers\AccountingController::class, 'storeProject'])->name('centers.projects.store');
         Route::put('/projects/{project}', [\App\Http\Controllers\AccountingController::class, 'updateProject'])->name('centers.projects.update');
         Route::delete('/projects/{project}', [\App\Http\Controllers\AccountingController::class, 'destroyProject'])->name('centers.projects.destroy');
+        Route::put('/hospital-rc-required', [\App\Http\Controllers\AccountingController::class, 'updateHospitalRcRequired'])->name('hospital-rc.required');
         Route::put('/overdue', [\App\Http\Controllers\AccountingController::class, 'updateOverdue'])->name('overdue.update');
         Route::post('/natures', [\App\Http\Controllers\AccountingController::class, 'storeNature'])->name('natures.store');
         Route::put('/natures/{nature}', [\App\Http\Controllers\AccountingController::class, 'updateNature'])->name('natures.update');

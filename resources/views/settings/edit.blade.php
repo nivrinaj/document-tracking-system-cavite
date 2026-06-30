@@ -34,56 +34,65 @@
                     </div>
                 </div>
 
-                <div class="mt-4">
-                    <label class="label">Logo</label>
-                    <div class="flex items-center gap-4">
-                        @if(!empty($settings['logo_path']))
-                            <img src="{{ asset('storage/'.$settings['logo_path']) }}" class="w-14 h-14 rounded-lg object-contain border border-gray-200 dark:border-gray-700 bg-white p-1">
-                        @else
-                            <div class="w-14 h-14 rounded-lg flex items-center justify-center text-white text-xl font-bold" style="background: var(--color-primary)">{{ substr($settings['app_short_name'] ?? 'P',0,1) }}</div>
-                        @endif
-                        <div>
-                            <input type="file" name="logo" accept="image/*" class="text-sm">
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-5">
+                    {{-- Logo --}}
+                    <div>
+                        <label class="label">Logo</label>
+                        <div class="rounded-2xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/40 p-4 flex flex-col items-center gap-3">
                             @if(!empty($settings['logo_path']))
-                                <label class="flex items-center gap-1 text-xs text-red-600 mt-1"><input type="checkbox" name="remove_logo" value="1"> Remove current logo</label>
+                                <img src="{{ asset('storage/'.$settings['logo_path']) }}" class="w-16 h-16 rounded-xl object-contain border border-gray-200 dark:border-gray-700 bg-white p-1.5 shadow-sm">
+                            @else
+                                <div class="w-16 h-16 rounded-xl flex items-center justify-center text-white text-2xl font-bold shadow-sm" style="background: var(--color-primary)">{{ substr($settings['app_short_name'] ?? 'P',0,1) }}</div>
                             @endif
-                            <p class="text-xs text-gray-400 mt-1">PNG/JPG, max 2 MB.</p>
+                            <x-file-drop name="logo" accept="image/*" label="Upload logo" />
+                            @if(!empty($settings['logo_path']))
+                                <label class="flex items-center gap-1.5 text-xs text-red-600 dark:text-red-400 cursor-pointer hover:underline">
+                                    <input type="checkbox" name="remove_logo" value="1" class="rounded"> Remove current logo
+                                </label>
+                            @endif
+                            <p class="text-[11px] text-gray-400 text-center">PNG/JPG, max 2 MB.</p>
                         </div>
                     </div>
-                </div>
 
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
                     {{-- Favicon --}}
                     <div>
-                        <label class="label">Favicon (browser tab icon)</label>
-                        <div class="flex items-center gap-3">
+                        <label class="label">Favicon</label>
+                        <div class="rounded-2xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/40 p-4 flex flex-col items-center gap-3">
                             @if(!empty($settings['favicon_path']))
-                                <img src="{{ asset('storage/'.$settings['favicon_path']) }}" class="w-8 h-8 rounded object-contain border border-gray-200 dark:border-gray-700 bg-white p-0.5">
+                                <img src="{{ asset('storage/'.$settings['favicon_path']) }}" class="w-16 h-16 rounded-xl object-contain border border-gray-200 dark:border-gray-700 bg-white p-2 shadow-sm">
+                            @else
+                                <div class="w-16 h-16 rounded-xl flex items-center justify-center bg-gray-200 dark:bg-gray-700 text-gray-400">
+                                    <svg class="w-7 h-7" fill="none" stroke="currentColor" stroke-width="1.6" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+                                </div>
                             @endif
-                            <div>
-                                <input type="file" name="favicon" accept="image/*,.ico" class="text-sm">
-                                @if(!empty($settings['favicon_path']))
-                                    <label class="flex items-center gap-1 text-xs text-red-600 mt-1"><input type="checkbox" name="remove_favicon" value="1"> Remove</label>
-                                @endif
-                                <p class="text-xs text-gray-400 mt-1">Square PNG/ICO, max 1 MB.</p>
-                            </div>
+                            <x-file-drop name="favicon" accept="image/*,.ico" label="Upload favicon" />
+                            @if(!empty($settings['favicon_path']))
+                                <label class="flex items-center gap-1.5 text-xs text-red-600 dark:text-red-400 cursor-pointer hover:underline">
+                                    <input type="checkbox" name="remove_favicon" value="1" class="rounded"> Remove current favicon
+                                </label>
+                            @endif
+                            <p class="text-[11px] text-gray-400 text-center">Square PNG/ICO, max 1 MB.</p>
                         </div>
                     </div>
 
                     {{-- Login background --}}
                     <div>
-                        <label class="label">Login background image</label>
-                        <div class="flex items-center gap-3">
+                        <label class="label">Login background</label>
+                        <div class="rounded-2xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/40 p-4 flex flex-col items-center gap-3">
                             @if(!empty($settings['login_bg_path']))
-                                <img src="{{ asset('storage/'.$settings['login_bg_path']) }}" class="w-14 h-10 rounded object-cover border border-gray-200 dark:border-gray-700">
+                                <img src="{{ asset('storage/'.$settings['login_bg_path']) }}" class="w-full h-16 rounded-xl object-cover border border-gray-200 dark:border-gray-700 shadow-sm">
+                            @else
+                                <div class="w-full h-16 rounded-xl flex items-center justify-center bg-gray-200 dark:bg-gray-700 text-gray-400">
+                                    <svg class="w-7 h-7" fill="none" stroke="currentColor" stroke-width="1.6" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14M14 8h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                                </div>
                             @endif
-                            <div>
-                                <input type="file" name="login_bg" accept="image/*" class="text-sm">
-                                @if(!empty($settings['login_bg_path']))
-                                    <label class="flex items-center gap-1 text-xs text-red-600 mt-1"><input type="checkbox" name="remove_login_bg" value="1"> Remove</label>
-                                @endif
-                                <p class="text-xs text-gray-400 mt-1">Wide JPG/PNG, max 4 MB. A themed gradient overlays it automatically.</p>
-                            </div>
+                            <x-file-drop name="login_bg" accept="image/*" label="Upload background" />
+                            @if(!empty($settings['login_bg_path']))
+                                <label class="flex items-center gap-1.5 text-xs text-red-600 dark:text-red-400 cursor-pointer hover:underline">
+                                    <input type="checkbox" name="remove_login_bg" value="1" class="rounded"> Remove current background
+                                </label>
+                            @endif
+                            <p class="text-[11px] text-gray-400 text-center">Wide JPG/PNG, max 4 MB. A themed gradient overlays it automatically.</p>
                         </div>
                     </div>
                 </div>

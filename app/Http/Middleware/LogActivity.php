@@ -106,6 +106,7 @@ class LogActivity
         'accounting.centers.projects.store',
         'accounting.natures.store',
         'departments.store', 'divisions.store', 'document-types.store', 'roles.store', 'documentation.store',
+        'accounting.hospital-rc.required',
     ];
 
     public function handle(Request $request, Closure $next): Response

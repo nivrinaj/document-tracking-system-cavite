@@ -6,6 +6,7 @@ use App\Models\Fund;
 use App\Models\NatureOfTransaction;
 use App\Models\ResponsibilityCenter;
 use App\Models\ResponsibilityCenterProject;
+use App\Models\Setting;
 use Illuminate\Http\Request;
 
 class AccountingController extends Controller
@@ -21,7 +22,22 @@ class AccountingController extends Controller
             'natures' => NatureOfTransaction::orderBy('sort_order')->orderBy('name')->get(),
             'department' => $dept,
             'trackableTypes' => $dept ? \App\Models\DocumentType::availableFor($dept->id)->pluck('name') : collect(),
+            'rcHospitalRequired' => Setting::get('rc_hospital_required', '0') === '1',
         ]);
+    }
+
+    /** Super Admin toggle: whether Hospital-division encoders must pick a Responsibility Center. */
+    public function updateHospitalRcRequired(Request $request)
+    {
+        $new = $request->boolean('rc_hospital_required') ? '1' : '0';
+        $old = Setting::get('rc_hospital_required', '0');
+        Setting::put('rc_hospital_required', $new);
+
+        if ($old !== $new) {
+            \App\Models\ActivityLog::record('accounting.hospital_rc_required', 'Hospital RC required '.($old === '1' ? 'ON' : 'OFF').' → '.($new === '1' ? 'ON' : 'OFF'));
+        }
+
+        return back()->with('success', 'Setting updated.');
     }
 
     /* ---------------- Overdue tracking (this office) ---------------- */

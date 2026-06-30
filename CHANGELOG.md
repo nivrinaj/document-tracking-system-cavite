@@ -6,15 +6,23 @@ Format based on [Keep a Changelog](https://keepachangelog.com).
 
 ---
 
+## 1.12.0 — 2026-06-28
+- **Dropdown icon overlap fixed for real** — the clear and caret icons on every searchable dropdown were overlapping each other. Rebuilt with a layout that can't overlap by construction, not just hand-tuned spacing.
+- **Hospital RC required/optional toggle** — Super Admin can now choose whether Hospital-division staff must pick a Responsibility Center when encoding, instead of it always being optional.
+- **Changelog format fixed** — entries are now plain bulleted lists (subject + short description), no summary paragraph.
+- **Logo/Favicon/Login background upload redesigned** — modern preview cards with drag-and-drop style pickers instead of plain file inputs.
+- **Fund editing restored to table view** — kept the original table layout, fixed the broken edit row, and added a Cancel button so a mistyped edit can be backed out without saving.
+- **Cancel buttons added** — Responsibility Center, Project, Hospital RC, and Nature of Transaction edit forms can now be cancelled the same way.
+- **Documents filter layout fixed** — every filter field now has a label, so the row lines up cleanly instead of the date range field sitting lower than its neighbors.
+
 ## 1.11.0 — 2026-06-28
-**Dropdown alignment fixes, Responsibility Center now optional, audit log detail, search filters added system-wide**
-- Fixed a layout bug where the clear ("×") button on searchable dropdowns rendered misaligned below the field instead of inside it — affected the Forward-to-staff picker and the Responsibility Center pickers.
-- Responsibility Center (office/unit and project) is now optional when encoding documents, not required. Reports show "N/A" when nothing was picked, or just the office's own code/name when a project wasn't chosen.
-- Hospital Responsibility Centers (which don't have a code) now display just their name instead of an odd leading slash.
-- Fixed the broken layout when editing a Fund in Accounting Setup.
-- Added a missing icon to the "Assign to a staff in my office" option so every choice in that dropdown is visually consistent.
-- Audit log entries for encoding a document, adding a responsibility center, and similar "create" actions now show the actual name/code instead of a generic label.
-- Added search filtering to the user, department, and division dropdowns on the most-used pages (user accounts, document filters) so they're easier to use as the lists grow.
+- **Dropdown clear button misaligned** — fixed the "×" rendering below the field instead of inside it, on the Forward-to-staff picker and the Responsibility Center pickers.
+- **Responsibility Center now optional** — office/unit and project are no longer required when encoding documents. Reports show "N/A" when nothing was picked, or just the office's own code/name when a project wasn't chosen.
+- **Hospital RC display fixed** — centers without a code now show just their name instead of an odd leading slash.
+- **Fund editing layout fixed** — editing a fund in Accounting Setup no longer breaks the table layout.
+- **Missing icon added** — "Assign to a staff in my office" now has an icon like every other option in that dropdown.
+- **Audit log detail improved** — encoding a document, adding a responsibility center, and similar actions now log the actual name/code instead of a generic label.
+- **Search filters added** — user, department, and division dropdowns on the most-used pages (user accounts, document filters) are now searchable.
 
 ## 1.10.0 — 2026-06-28
 **Responsibility Center rework (Office/Unit → Project cascading dropdowns + dedicated Hospital RC list), QR Slip design settings**

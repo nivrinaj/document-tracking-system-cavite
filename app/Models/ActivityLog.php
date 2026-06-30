@@ -98,6 +98,7 @@ class ActivityLog extends Model
             'accounting.centers.projects.store' => 'Added Project',
             'accounting.centers.projects.update' => 'Updated Project',
             'accounting.centers.projects.destroy' => 'Deleted Project',
+            'accounting.hospital_rc_required' => 'Hospital RC Requirement',
             'accounting.natures.store' => 'Added Nature of Transaction',
             'accounting.natures.destroy' => 'Deleted Nature of Transaction',
             // Roles

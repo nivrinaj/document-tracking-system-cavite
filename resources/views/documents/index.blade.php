@@ -29,52 +29,71 @@
                       get deptLabel() { const d = this.departments.find(x => String(x.id) === String(this.dept)); return d ? d.name : 'All departments'; },
                       get divLabel() { const d = this.divisions.find(x => String(x.id) === String(this.divId)); return d ? d.name : 'All divisions'; },
                   }">
-                <input type="text" name="search" value="{{ request('search') }}" placeholder="Search title / code / ref no…" class="input">
-                <select name="status" class="input">
-                    <option value="">All statuses</option>
-                    @foreach(['draft','released','received','forwarded','archived','completed'] as $s)
-                        <option value="{{ $s }}" @selected(request('status')===$s)>{{ \App\Models\Document::statusLabel($s) }}</option>
-                    @endforeach
-                </select>
+                <div>
+                    <label class="block text-[11px] text-gray-400 mb-0.5">Search</label>
+                    <input type="text" name="search" value="{{ request('search') }}" placeholder="Title / code / ref no…" class="input">
+                </div>
+                <div>
+                    <label class="block text-[11px] text-gray-400 mb-0.5">Status</label>
+                    <select name="status" class="input">
+                        <option value="">All statuses</option>
+                        @foreach(['draft','released','received','forwarded','archived','completed'] as $s)
+                            <option value="{{ $s }}" @selected(request('status')===$s)>{{ \App\Models\Document::statusLabel($s) }}</option>
+                        @endforeach
+                    </select>
+                </div>
                 @if(\App\Models\Document::priorityEnabled())
-                <select name="priority" class="input">
-                    <option value="">All priorities</option>
-                    @foreach(['urgent','high','normal','low'] as $p)
-                        <option value="{{ $p }}" @selected(request('priority')===$p)>{{ ucfirst($p) }}</option>
-                    @endforeach
-                </select>
+                <div>
+                    <label class="block text-[11px] text-gray-400 mb-0.5">Priority</label>
+                    <select name="priority" class="input">
+                        <option value="">All priorities</option>
+                        @foreach(['urgent','high','normal','low'] as $p)
+                            <option value="{{ $p }}" @selected(request('priority')===$p)>{{ ucfirst($p) }}</option>
+                        @endforeach
+                    </select>
+                </div>
                 @endif
-                <div class="relative" @click.outside="deptOpen = false">
-                    <input type="hidden" name="department_id" :value="dept">
-                    <button type="button" @click="deptOpen = !deptOpen; deptSearch = ''" class="input-btn flex items-center justify-between text-left pr-8">
-                        <span class="truncate" :class="!dept ? 'text-gray-400' : ''" x-text="deptLabel"></span>
-                        <svg class="w-4 h-4 text-gray-400 shrink-0 transition-transform" :class="deptOpen && 'rotate-180'" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
-                    </button>
-                    <button type="button" x-show="dept" x-cloak @click.stop="dept = ''; divId = ''" class="absolute right-7 top-1/2 -translate-y-1/2 w-4 h-4 grid place-items-center rounded text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors">
-                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
-                    </button>
-                    <div x-show="deptOpen" x-cloak x-transition.opacity class="absolute z-30 mt-1 w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-lg">
-                        <div class="p-2 border-b border-gray-100 dark:border-gray-700"><input type="text" x-model="deptSearch" @click.stop class="input py-1.5 text-sm" placeholder="Search…"></div>
-                        <div class="max-h-56 overflow-y-auto py-1 text-sm">
-                            <button type="button" @click="dept = ''; divId = ''; deptOpen = false" class="w-full text-left px-3 py-1.5 text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700/50">All departments</button>
-                            <template x-for="d in filteredDepts" :key="d.id"><button type="button" @click="dept = String(d.id); divId = ''; deptOpen = false" class="w-full text-left px-3 py-1.5 hover:bg-gray-50 dark:hover:bg-gray-700/50" x-text="d.name"></button></template>
+                <div>
+                    <label class="block text-[11px] text-gray-400 mb-0.5">Department</label>
+                    <div class="relative" @click.outside="deptOpen = false">
+                        <input type="hidden" name="department_id" :value="dept">
+                        <button type="button" @click="deptOpen = !deptOpen; deptSearch = ''" class="input-btn text-left pr-14 block">
+                            <span class="truncate block" :class="!dept ? 'text-gray-400' : ''" x-text="deptLabel"></span>
+                        </button>
+                        <div class="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5">
+                            <button type="button" x-show="dept" x-cloak @click.stop="dept = ''; divId = ''" class="w-4 h-4 grid place-items-center rounded text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                            </button>
+                            <svg class="w-4 h-4 text-gray-400 shrink-0 pointer-events-none transition-transform" :class="deptOpen && 'rotate-180'" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+                        </div>
+                        <div x-show="deptOpen" x-cloak x-transition.opacity class="absolute z-30 mt-1 w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-lg">
+                            <div class="p-2 border-b border-gray-100 dark:border-gray-700"><input type="text" x-model="deptSearch" @click.stop class="input py-1.5 text-sm" placeholder="Search…"></div>
+                            <div class="max-h-56 overflow-y-auto py-1 text-sm">
+                                <button type="button" @click="dept = ''; divId = ''; deptOpen = false" class="w-full text-left px-3 py-1.5 text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700/50">All departments</button>
+                                <template x-for="d in filteredDepts" :key="d.id"><button type="button" @click="dept = String(d.id); divId = ''; deptOpen = false" class="w-full text-left px-3 py-1.5 hover:bg-gray-50 dark:hover:bg-gray-700/50" x-text="d.name"></button></template>
+                            </div>
                         </div>
                     </div>
                 </div>
-                <div class="relative" @click.outside="divOpen = false">
-                    <input type="hidden" name="division_id" :value="divId">
-                    <button type="button" @click="divOpen = !divOpen; divSearch = ''" class="input-btn flex items-center justify-between text-left pr-8">
-                        <span class="truncate" :class="!divId ? 'text-gray-400' : ''" x-text="divLabel"></span>
-                        <svg class="w-4 h-4 text-gray-400 shrink-0 transition-transform" :class="divOpen && 'rotate-180'" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
-                    </button>
-                    <button type="button" x-show="divId" x-cloak @click.stop="divId = ''" class="absolute right-7 top-1/2 -translate-y-1/2 w-4 h-4 grid place-items-center rounded text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors">
-                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
-                    </button>
-                    <div x-show="divOpen" x-cloak x-transition.opacity class="absolute z-30 mt-1 w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-lg">
-                        <div class="p-2 border-b border-gray-100 dark:border-gray-700"><input type="text" x-model="divSearch" @click.stop class="input py-1.5 text-sm" placeholder="Search…"></div>
-                        <div class="max-h-56 overflow-y-auto py-1 text-sm">
-                            <button type="button" @click="divId = ''; divOpen = false" class="w-full text-left px-3 py-1.5 text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700/50">All divisions</button>
-                            <template x-for="d in filteredDivs" :key="d.id"><button type="button" @click="divId = String(d.id); divOpen = false" class="w-full text-left px-3 py-1.5 hover:bg-gray-50 dark:hover:bg-gray-700/50" x-text="d.name"></button></template>
+                <div>
+                    <label class="block text-[11px] text-gray-400 mb-0.5">Division</label>
+                    <div class="relative" @click.outside="divOpen = false">
+                        <input type="hidden" name="division_id" :value="divId">
+                        <button type="button" @click="divOpen = !divOpen; divSearch = ''" class="input-btn text-left pr-14 block">
+                            <span class="truncate block" :class="!divId ? 'text-gray-400' : ''" x-text="divLabel"></span>
+                        </button>
+                        <div class="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5">
+                            <button type="button" x-show="divId" x-cloak @click.stop="divId = ''" class="w-4 h-4 grid place-items-center rounded text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                            </button>
+                            <svg class="w-4 h-4 text-gray-400 shrink-0 pointer-events-none transition-transform" :class="divOpen && 'rotate-180'" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+                        </div>
+                        <div x-show="divOpen" x-cloak x-transition.opacity class="absolute z-30 mt-1 w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-lg">
+                            <div class="p-2 border-b border-gray-100 dark:border-gray-700"><input type="text" x-model="divSearch" @click.stop class="input py-1.5 text-sm" placeholder="Search…"></div>
+                            <div class="max-h-56 overflow-y-auto py-1 text-sm">
+                                <button type="button" @click="divId = ''; divOpen = false" class="w-full text-left px-3 py-1.5 text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700/50">All divisions</button>
+                                <template x-for="d in filteredDivs" :key="d.id"><button type="button" @click="divId = String(d.id); divOpen = false" class="w-full text-left px-3 py-1.5 hover:bg-gray-50 dark:hover:bg-gray-700/50" x-text="d.name"></button></template>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -82,7 +101,7 @@
                     <label class="block text-[11px] text-gray-400 mb-0.5">Date range (encoded)</label>
                     <div class="flex items-center gap-2">
                         <input type="date" name="date_from" value="{{ request('date_from') }}" class="input" aria-label="From">
-                        <span class="text-gray-400 text-sm">to</span>
+                        <span class="text-gray-400 text-sm shrink-0">to</span>
                         <input type="date" name="date_to" value="{{ request('date_to') }}" class="input" aria-label="To">
                     </div>
                 </div>

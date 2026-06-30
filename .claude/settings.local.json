@@ -43,7 +43,8 @@
       "Bash(php -l app/Http/Controllers/AccountingController.php)",
       "Bash(php -l app/Models/ResponsibilityCenter.php)",
       "Bash(php -l app/Models/ResponsibilityCenterProject.php)",
-      "Bash(grep -n '\\\\$c->code\\\\}/{{ \\\\$c->name\\\\|code }}/{{.*name' resources/views/accounting/index.blade.php)"
+      "Bash(grep -n '\\\\$c->code\\\\}/{{ \\\\$c->name\\\\|code }}/{{.*name' resources/views/accounting/index.blade.php)",
+      "mcp__Claude_in_Chrome__navigate"
     ]
   }
 }

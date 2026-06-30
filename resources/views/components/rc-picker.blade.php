@@ -1,11 +1,11 @@
-@props(['isHospital' => false, 'officeOptions' => [], 'projectsByOffice' => [], 'hospitalOptions' => []])
+@props(['isHospital' => false, 'officeOptions' => [], 'projectsByOffice' => [], 'hospitalOptions' => [], 'hospitalRequired' => false])
 
 {{-- Responsibility Center picker. Hospital-division encoders see one searchable dropdown
      (hospitalOptions). Everyone else sees two dependent searchable dropdowns: Office/Unit,
-     then Project (filtered by the selected office). Both are optional.
-     The clear ("x") button is always a SIBLING of its trigger button, absolutely positioned —
-     never nest a <button> inside another <button> (invalid HTML; browsers break it out of
-     the DOM, which misaligns it below the trigger). --}}
+     then Project (filtered by the selected office). Office/Unit + Project are always optional;
+     the single Hospital RC field's required-ness is Super-Admin configurable via $hospitalRequired.
+     Both icons (clear + chevron) live in ONE flex wrapper, absolutely positioned as a single
+     unit — flex-with-gap lays them out side by side with zero risk of overlap. --}}
 <div x-data="{
         isHospital: @js($isHospital),
         hOpen: false, hQ: '', hVal: '{{ old('responsibility_center_id') }}', hLabel: '',
@@ -32,17 +32,21 @@
     {{-- Hospital: single searchable dropdown --}}
     <template x-if="isHospital">
         <div>
-            <label class="label">Responsibility Center <span class="text-gray-400 text-xs font-normal">(optional)</span></label>
+            <label class="label">Responsibility Center
+                @if($hospitalRequired)<span class="text-red-500">*</span>@else<span class="text-gray-400 text-xs font-normal">(optional)</span>@endif
+            </label>
             <div class="relative">
                 <button type="button" @click="hOpen = !hOpen; hQ = ''; $nextTick(() => hOpen && $refs.hq && $refs.hq.focus())"
-                        class="input-btn flex items-center justify-between text-left pr-8">
-                    <span class="truncate" :class="!hVal ? 'text-gray-400' : ''" x-text="hVal ? hLabel : '— Select hospital RC —'"></span>
-                    <svg class="w-4 h-4 text-gray-400 shrink-0 transition-transform" :class="hOpen && 'rotate-180'" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+                        class="input-btn text-left pr-14 block">
+                    <span class="truncate block" :class="!hVal ? 'text-gray-400' : ''" x-text="hVal ? hLabel : '— Select hospital RC —'"></span>
                 </button>
-                <button type="button" x-show="hVal" x-cloak @click.stop="hVal = ''; hLabel = ''"
-                        class="absolute right-7 top-1/2 -translate-y-1/2 w-4 h-4 grid place-items-center rounded text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors" title="Clear selection">
-                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
-                </button>
+                <div class="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5">
+                    <button type="button" x-show="hVal" x-cloak @click.stop="hVal = ''; hLabel = ''"
+                            class="w-4 h-4 grid place-items-center rounded text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors" title="Clear selection">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                    </button>
+                    <svg class="w-4 h-4 text-gray-400 shrink-0 pointer-events-none transition-transform" :class="hOpen && 'rotate-180'" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+                </div>
                 <div x-show="hOpen" x-cloak x-transition.opacity class="absolute z-30 mt-1 w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-lg">
                     <div class="p-2 border-b border-gray-100 dark:border-gray-700">
                         <input x-ref="hq" type="text" x-model="hQ" @click.stop class="input py-1.5 text-sm" placeholder="Search…">
@@ -65,14 +69,16 @@
                 <label class="label">Resp. Center — Office/Unit <span class="text-gray-400 text-xs font-normal">(optional)</span></label>
                 <div class="relative">
                     <button type="button" @click="offOpen = !offOpen; offQ = ''; $nextTick(() => offOpen && $refs.offq && $refs.offq.focus())"
-                            class="input-btn flex items-center justify-between text-left pr-8">
-                        <span class="truncate" :class="!offVal ? 'text-gray-400' : ''" x-text="offVal ? offLabel : '— Select office/unit —'"></span>
-                        <svg class="w-4 h-4 text-gray-400 shrink-0 transition-transform" :class="offOpen && 'rotate-180'" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+                            class="input-btn text-left pr-14 block">
+                        <span class="truncate block" :class="!offVal ? 'text-gray-400' : ''" x-text="offVal ? offLabel : '— Select office/unit —'"></span>
                     </button>
-                    <button type="button" x-show="offVal" x-cloak @click.stop="offVal = ''; offLabel = ''; projVal = ''; projLabel = ''"
-                            class="absolute right-7 top-1/2 -translate-y-1/2 w-4 h-4 grid place-items-center rounded text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors" title="Clear selection">
-                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
-                    </button>
+                    <div class="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5">
+                        <button type="button" x-show="offVal" x-cloak @click.stop="offVal = ''; offLabel = ''; projVal = ''; projLabel = ''"
+                                class="w-4 h-4 grid place-items-center rounded text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors" title="Clear selection">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                        </button>
+                        <svg class="w-4 h-4 text-gray-400 shrink-0 pointer-events-none transition-transform" :class="offOpen && 'rotate-180'" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+                    </div>
                     <div x-show="offOpen" x-cloak x-transition.opacity class="absolute z-30 mt-1 w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-lg">
                         <div class="p-2 border-b border-gray-100 dark:border-gray-700">
                             <input x-ref="offq" type="text" x-model="offQ" @click.stop class="input py-1.5 text-sm" placeholder="Search…">
@@ -91,14 +97,16 @@
                 <label class="label">Resp. Center — Project <span class="text-gray-400 text-xs font-normal">(optional)</span></label>
                 <div class="relative">
                     <button type="button" @click="offVal && (projOpen = !projOpen); projQ = ''; $nextTick(() => projOpen && $refs.projq && $refs.projq.focus())"
-                            class="input-btn flex items-center justify-between text-left pr-8" :class="!offVal ? 'opacity-50 cursor-not-allowed' : ''" :disabled="!offVal">
-                        <span class="truncate" :class="!projVal ? 'text-gray-400' : ''" x-text="!offVal ? 'Select office/unit first' : (projVal ? projLabel : '— Select project —')"></span>
-                        <svg class="w-4 h-4 text-gray-400 shrink-0 transition-transform" :class="projOpen && 'rotate-180'" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+                            class="input-btn text-left pr-14 block" :class="!offVal ? 'opacity-50 cursor-not-allowed' : ''" :disabled="!offVal">
+                        <span class="truncate block" :class="!projVal ? 'text-gray-400' : ''" x-text="!offVal ? 'Select office/unit first' : (projVal ? projLabel : '— Select project —')"></span>
                     </button>
-                    <button type="button" x-show="projVal" x-cloak @click.stop="projVal = ''; projLabel = ''"
-                            class="absolute right-7 top-1/2 -translate-y-1/2 w-4 h-4 grid place-items-center rounded text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors" title="Clear selection">
-                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
-                    </button>
+                    <div class="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5">
+                        <button type="button" x-show="projVal" x-cloak @click.stop="projVal = ''; projLabel = ''"
+                                class="w-4 h-4 grid place-items-center rounded text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors" title="Clear selection">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                        </button>
+                        <svg class="w-4 h-4 text-gray-400 shrink-0 pointer-events-none transition-transform" :class="projOpen && 'rotate-180'" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+                    </div>
                     <div x-show="projOpen" x-cloak x-transition.opacity class="absolute z-30 mt-1 w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-lg">
                         <div class="p-2 border-b border-gray-100 dark:border-gray-700">
                             <input x-ref="projq" type="text" x-model="projQ" @click.stop class="input py-1.5 text-sm" placeholder="Search…">
