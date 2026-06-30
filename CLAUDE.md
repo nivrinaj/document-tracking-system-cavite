@@ -90,14 +90,32 @@ Example:
 - Never use `@can('accounting.manage')` for Accounting Setup nav — use `@role('Super Admin')`
 - Never use `.input` class on `<button>` elements — use `.input-btn`
 - **Never nest a `<button>` inside another `<button>`** (e.g. a clear/"×" control inside a dropdown trigger). This is invalid HTML — the browser silently closes the outer button early and hoists the inner one out of the DOM, breaking layout (the classic symptom: a clear/caret icon rendering misaligned or below its trigger instead of inside it). Always make the clear button an absolutely-positioned **sibling** of the trigger button inside a shared `position: relative` wrapper, never a child.
+- **Never position two small icons (e.g. clear-× and chevron) with two independent `right-X` absolute offsets.** This was tried, the offsets were miscalculated, and the icons overlapped each other — a second, related failure on top of the nested-button bug above, in the same UI element, in the same night. Put both icons in **one** flex wrapper (`flex items-center gap-N`) and absolutely-position only that wrapper. See "Dropdown / picker conventions" for the exact markup to copy.
 - Never introduce features, abstractions, or cleanup beyond what was asked
 - Never let "small fixes" compromise data accuracy — get calculations right the first time
-- **Never trust that custom Alpine/Blade UI "looks right" just because it compiles.** `view:cache` and `npm run build` only catch syntax errors, not broken layouts (invalid HTML nesting, misaligned flex children, etc.). For any new or edited dropdown/picker/form component, mentally trace the rendered DOM (or actually load the page) before calling it done.
+- **Never trust that custom Alpine/Blade UI "looks right" just because it compiles.** `view:cache` and `npm run build` only catch syntax errors, not broken layouts (invalid HTML nesting, misaligned flex children, overlapping absolutely-positioned elements, etc.). For any new or edited dropdown/picker/form component, mentally trace the rendered DOM (or actually load the page) before calling it done.
+- **When the user reports the same category of bug a second time, the first fix was not actually verified — do not re-patch with more of the same approach.** Stop, identify why the previous fix didn't hold (often: the fix addressed the symptom, not the structural cause), and switch to an approach that makes the bug class impossible by construction (e.g. flex layout instead of manual offset math) rather than one that is merely "more carefully calculated."
 
 ## Dropdown / picker conventions
 
+This pattern went through three broken iterations in one night before landing on something correct — see "Things to never do" for the full postmortem. The rules below are the *current, correct* implementation. **Copy this exact structure for any new searchable dropdown — do not improvise the icon positioning.**
+
 - **Searchable by default.** Any dropdown selecting from a list of users, departments, or divisions (system-wide, not just per-office short lists) must be searchable, not a plain `<select>` — these lists grow over time.
-- **Shared pattern.** Use `<x-search-select>` for a flat single-value picker, `<x-rc-picker>`-style inline Alpine blocks for dependent/cascading pairs (e.g. Department → Division). Trigger button: `.input-btn flex items-center justify-between text-left pr-8` with a `relative` wrapper. Chevron icon sits inside the trigger (decorative `<svg>`, not interactive) and rotates via `:class="open && 'rotate-180'"`. The clear ("×") button is always a sibling, absolutely positioned at `right-7 top-1/2 -translate-y-1/2` — never nested inside the trigger (see "Never nest a button" above).
+- **Shared pattern.** Use `<x-search-select>` for a flat single-value picker, `<x-rc-picker>`-style inline Alpine blocks for dependent/cascading pairs (e.g. Department → Division).
+- **Icon positioning — copy this exactly, do not invent your own offsets:**
+  ```html
+  <div class="relative">
+      <button type="button" class="input-btn text-left pr-14 block">
+          <span class="truncate block">...label...</span>
+      </button>
+      <div class="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5">
+          <button type="button" x-show="val" @click.stop="val = ''" class="w-4 h-4 ...">×-icon</button>
+          <svg class="w-4 h-4 ... pointer-events-none">chevron</svg>
+      </div>
+  </div>
+  ```
+  Both icons (clear-× and chevron) live **inside one flex wrapper** that is itself the single absolutely-positioned element (`right-3`). The wrapper's `flex items-center gap-1.5` lays the two icons out side by side automatically. **Never position the × and the chevron independently with two separate `right-X` values** — that requires hand-calculating that the offsets don't collide, which has already gone wrong twice. A single flex wrapper makes overlap structurally impossible, so there is no math to get wrong.
+  The trigger `<button>` itself contains only the label `<span>` — no icons inside it — with `pr-14` to reserve room for the icon wrapper. The chevron `<svg>` is decorative only (`pointer-events-none`, never interactive) and must never be a `<button>`.
 - **Always offer a way to clear a selection** once something is picked, unless the field is genuinely mandatory and has no "none" state.
 - **Optional fields look optional.** Use `<span class="text-gray-400 text-xs font-normal">(optional)</span>` next to the label instead of a red asterisk when a field isn't required.
 

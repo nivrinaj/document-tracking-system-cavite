@@ -530,11 +530,12 @@ class Document extends Model
      * Format a number of seconds into a compact, human duration:
      *   "45 mins", "3 hrs 10 mins", "2 days 4 hrs".
      */
-    public static function humanDuration(?int $seconds): string
+    public static function humanDuration(int|float|null $seconds): string
     {
         if ($seconds === null || $seconds < 0) {
             return '—';
         }
+        $seconds = (int) round($seconds);
         if ($seconds < 60) {
             return $seconds.' sec'.($seconds === 1 ? '' : 's');
         }

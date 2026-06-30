@@ -6,6 +6,14 @@ Format based on [Keep a Changelog](https://keepachangelog.com).
 
 ---
 
+## 1.13.0 — 2026-06-28
+- **New report: Document Aging Report** — tracks how long a document has been open, when it last moved, and how much working-hours idle time has passed since then, alongside type, title, origin office/division, and current office/division.
+- **Available to any office, not just Accounting** — Super Admin picks which offices can run it from Report Settings, same toggle pattern as the other reports.
+- **Filters for department heads and staff** — by division, by specific staff member, by document type, by status, by hospital scope, and by date (with an optional time range).
+- **Printed header shows who generated it** — organization, office, and the generating staff member's name are printed on every page.
+- **Summary line on the last page** — total documents, how many are still open, and average age/idle time, so an office can see at a glance whether documents are moving efficiently.
+- **Configurable like the other reports** — title, paper size, orientation, page number toggle, and renameable/alignable columns, all from Report Settings.
+
 ## 1.12.0 — 2026-06-28
 - **Dropdown icon overlap fixed for real** — the clear and caret icons on every searchable dropdown were overlapping each other. Rebuilt with a layout that can't overlap by construction, not just hand-tuned spacing.
 - **Hospital RC required/optional toggle** — Super Admin can now choose whether Hospital-division staff must pick a Responsibility Center when encoding, instead of it always being optional.

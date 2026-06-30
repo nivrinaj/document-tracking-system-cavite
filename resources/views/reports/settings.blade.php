@@ -10,6 +10,7 @@
             <select x-model="rpt" class="input">
                 <option value="erecord">E-Record</option>
                 <option value="transmittal">Transmittal of Reviewed Disbursement</option>
+                <option value="doctrack">Document Aging Report</option>
             </select>
             <p class="text-xs text-gray-400 mt-1">Settings below apply to the selected report.</p>
         </div>
@@ -248,6 +249,99 @@
                             <select name="align[{{ $key }}]" class="input py-1.5 w-[110px] shrink-0">
                                 @foreach(['left' => 'Left', 'center' => 'Center', 'right' => 'Right'] as $v => $l)
                                     <option value="{{ $v }}" @selected(($tAlign[$key] ?? 'center') === $v)>{{ $l }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                    @endforeach
+                </div>
+            </x-card>
+
+            <div class="flex justify-end">
+                <x-btn type="submit">Save report settings</x-btn>
+            </div>
+        </form>
+
+        {{-- ───────── Document Aging Report settings ───────── --}}
+        <form method="POST" action="{{ route('reports.settings.save') }}" class="space-y-6"
+              x-show="rpt === 'doctrack'" x-cloak>
+            @csrf @method('PUT')
+            <input type="hidden" name="_report" value="doctrack">
+
+            <x-card>
+                <h2 class="font-semibold text-sm mb-4">Document Aging Report</h2>
+                <p class="text-xs text-gray-400 -mt-3 mb-4">Tracks document age since encoding, last action, and idle time (in working hours) — useful for any office, not just Accounting.</p>
+                <div class="space-y-4">
+                    <div>
+                        <label class="label">Report title</label>
+                        <input type="text" name="doctrack_title" value="{{ old('doctrack_title', $dTitle) }}" class="input" required>
+                    </div>
+                </div>
+            </x-card>
+
+            <x-card padding="p-0">
+                <p class="text-xs font-semibold uppercase tracking-wider text-gray-400 px-4 pt-4 pb-2">Options</p>
+                <div class="rounded-xl border border-gray-200 dark:border-gray-700 divide-y divide-gray-100 dark:divide-gray-700 mx-4 mb-4">
+                    <div class="flex items-center justify-between gap-4 px-4 py-3">
+                        <span class="min-w-0">
+                            <span class="block text-sm font-medium">Paper size</span>
+                            <span class="block text-xs text-gray-400">Page dimensions for the PDF output.</span>
+                        </span>
+                        <select name="doctrack_paper" class="input w-auto shrink-0">
+                            @foreach(['a4' => 'A4', 'letter' => 'Letter', 'legal' => 'Legal'] as $v => $l)
+                                <option value="{{ $v }}" @selected(old('doctrack_paper', $dPaper) === $v)>{{ $l }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="flex items-center justify-between gap-4 px-4 py-3">
+                        <span class="min-w-0">
+                            <span class="block text-sm font-medium">Orientation</span>
+                            <span class="block text-xs text-gray-400">Page direction for the PDF output.</span>
+                        </span>
+                        <select name="doctrack_orientation" class="input w-auto shrink-0">
+                            @foreach(['landscape' => 'Landscape', 'portrait' => 'Portrait'] as $v => $l)
+                                <option value="{{ $v }}" @selected(old('doctrack_orientation', $dOrientation) === $v)>{{ $l }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <label class="flex items-center justify-between gap-4 px-4 py-3 cursor-pointer">
+                        <span class="min-w-0">
+                            <span class="block text-sm font-medium">Show page number in footer</span>
+                            <span class="block text-xs text-gray-400">Print page and generation info at the bottom of each page.</span>
+                        </span>
+                        <span class="relative inline-flex shrink-0 items-center">
+                            <input type="hidden" name="doctrack_page_number" value="0">
+                            <input type="checkbox" name="doctrack_page_number" value="1" class="peer sr-only" @checked($dPageNumber)>
+                            <span class="w-11 h-6 rounded-full bg-gray-300 dark:bg-gray-600 peer-checked:bg-[color:var(--color-primary)] transition-colors"></span>
+                            <span class="absolute left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform peer-checked:translate-x-5"></span>
+                        </span>
+                    </label>
+                </div>
+            </x-card>
+
+            <x-card>
+                <h2 class="font-semibold text-sm mb-1">Offices that may run this report</h2>
+                <p class="text-xs text-gray-400 mb-3">Available to every office — tick which ones can generate it. None ticked means only Super Admins can run it.</p>
+                <div x-data="multiSelect({
+                    items: @js($departments->map(fn($d) => ['id' => (string)$d->id, 'label' => $d->code.' — '.$d->name])),
+                    selected: @js(array_map('strval', $dOffices)),
+                    name: 'doctrack_offices[]',
+                    placeholder: '— Select offices —',
+                })">
+                    <x-reports._multi-select />
+                </div>
+            </x-card>
+
+            <x-card>
+                <h2 class="font-semibold text-sm mb-1">Column labels &amp; alignment</h2>
+                <p class="text-xs text-gray-400 mb-3">Rename and align each column. Leave blank to use the default name.</p>
+                <div class="space-y-2">
+                    @foreach($dCols as $key => $defaultLabel)
+                        <div class="flex items-center gap-3 py-1">
+                            <span class="text-sm text-gray-400 w-36 shrink-0 truncate" title="{{ $defaultLabel }}">{{ $defaultLabel }}</span>
+                            <input type="text" name="labels[{{ $key }}]" value="{{ ($dLabels[$key] ?? '') !== $defaultLabel ? ($dLabels[$key] ?? '') : '' }}" placeholder="{{ $defaultLabel }}" class="input py-1.5 flex-1 min-w-0">
+                            <select name="align[{{ $key }}]" class="input py-1.5 w-[110px] shrink-0">
+                                @foreach(['left' => 'Left', 'center' => 'Center', 'right' => 'Right'] as $v => $l)
+                                    <option value="{{ $v }}" @selected(($dAlign[$key] ?? 'center') === $v)>{{ $l }}</option>
                                 @endforeach
                             </select>
                         </div>

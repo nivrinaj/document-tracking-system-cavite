@@ -154,8 +154,19 @@ class ReportController extends Controller
         if ($this->canRunTransmittal($user)) {
             $reports['transmittal'] = Setting::get('transmittal_title', 'Transmittal of Reviewed Disbursement');
         }
+        if ($this->canRunDocTrack($user)) {
+            $reports['doctrack'] = Setting::get('doctrack_title', 'Document Aging Report');
+        }
 
         $funds = \App\Models\Fund::where('is_active', true)->orderBy('sort_order')->orderBy('name')->get();
+
+        // Document Aging Report filter data — scoped to the user's own office unless they see all.
+        $deptId = $user->canViewAllDepartments() ? null : $user->department_id;
+        $docTrackDivisions = $deptId ? Division::where('department_id', $deptId)->orderBy('name')->get(['id', 'code', 'name'])
+            : Division::orderBy('name')->get(['id', 'code', 'name', 'department_id']);
+        $docTrackStaff = User::where('is_active', true)
+            ->when($deptId, fn ($q) => $q->where('department_id', $deptId))
+            ->orderBy('name')->get(['id', 'name', 'division_id']);
 
         return view('reports.index', [
             'reports' => $reports,
@@ -163,6 +174,9 @@ class ReportController extends Controller
             'eFunds' => $funds,
             'tFunds' => $funds,
             'tDateSource' => Setting::get('transmittal_date_source', 'received_by_division'),
+            'docTypes' => \App\Models\DocumentType::availableFor($user->department_id)->pluck('name'),
+            'docTrackDivisions' => $docTrackDivisions,
+            'docTrackStaff' => $docTrackStaff,
         ]);
     }
 
@@ -329,6 +343,130 @@ class ReportController extends Controller
             ->stream($filename);
     }
 
+    /* ═══════════════ Document Aging Report ═══════════════ */
+
+    /** Columns and their default alignment (overridable in Report Settings). */
+    public const DOCTRACK_COLS = [
+        'tracking_code' => 'Code', 'title' => 'Title', 'document_type' => 'Type',
+        'origin' => 'Origin', 'current' => 'Current Location', 'status' => 'Status',
+        'age' => 'Age (since encoded)', 'last_action' => 'Last Action', 'idle' => 'Idle Time',
+    ];
+
+    private const DOCTRACK_ALIGN_DEFAULT = [
+        'tracking_code' => 'center', 'title' => 'left', 'document_type' => 'center',
+        'origin' => 'left', 'current' => 'left', 'status' => 'center',
+        'age' => 'center', 'last_action' => 'center', 'idle' => 'center',
+    ];
+
+    private function docTrackAlign(): array
+    {
+        $saved = json_decode((string) Setting::get('doctrack_align', ''), true) ?: [];
+
+        return array_merge(self::DOCTRACK_ALIGN_DEFAULT, array_intersect_key($saved, self::DOCTRACK_ALIGN_DEFAULT));
+    }
+
+    private function docTrackLabels(): array
+    {
+        $saved = json_decode((string) Setting::get('doctrack_labels', ''), true) ?: [];
+
+        return array_merge(self::DOCTRACK_COLS, array_intersect_key(array_filter($saved), self::DOCTRACK_COLS));
+    }
+
+    /** Offices allowed to run the Document Aging Report — Super Admin, or explicitly toggled-on offices. No fallback flag (any office can be enabled). */
+    private function canRunDocTrack(User $user): bool
+    {
+        if ($user->canViewAllDepartments()) {
+            return true;
+        }
+        $offices = array_values(array_filter(explode(',', (string) Setting::get('doctrack_offices', ''))));
+
+        return ! empty($offices) && in_array((string) $user->department_id, $offices, true);
+    }
+
+    public function docTrack(Request $request)
+    {
+        $user = Auth::user();
+        abort_unless($this->canRunDocTrack($user), 403);
+
+        $data = $request->validate([
+            'document_type' => ['nullable', 'string', 'max:100'],
+            'division_id' => ['nullable', 'exists:divisions,id'],
+            'user_id' => ['nullable', 'exists:users,id'],
+            'status' => ['nullable', 'in:draft,released,received,forwarded,archived,completed'],
+            'hospital' => ['nullable', 'in:exclude,include,only'],
+            'date_from' => ['nullable', 'date'],
+            'date_to' => ['nullable', 'date', 'after_or_equal:date_from'],
+            'format' => ['nullable', 'in:html,pdf'],
+        ]);
+
+        $from = $request->filled('date_from') ? Carbon::parse($data['date_from']) : null;
+        $to = $request->filled('date_to') ? Carbon::parse($data['date_to']) : null;
+        if ($from && strlen($data['date_from']) <= 10) $from = $from->startOfDay();
+        if ($to && strlen($data['date_to']) <= 10) $to = $to->endOfDay();
+
+        $deptId = $user->canViewAllDepartments() ? null : $user->department_id;
+        $hospital = $data['hospital'] ?? 'exclude';
+
+        $rows = Document::query()
+            ->with(['creator.department', 'creator.division', 'department', 'division', 'currentHolder'])
+            ->when($deptId, fn ($q) => $q->where(function ($q2) use ($deptId) {
+                // "Originates to their office" — either currently theirs, or was created by someone from that office.
+                $q2->where('department_id', $deptId)
+                    ->orWhereHas('creator', fn ($q3) => $q3->where('department_id', $deptId));
+            }))
+            ->when($data['document_type'] ?? null, fn ($q, $t) => $q->where('document_type', $t))
+            ->when($data['division_id'] ?? null, fn ($q, $d) => $q->where('division_id', $d))
+            ->when($data['user_id'] ?? null, fn ($q, $uid) => $q->where(function ($q2) use ($uid) {
+                $q2->where('created_by', $uid)->orWhere('current_holder_id', $uid);
+            }))
+            ->when($data['status'] ?? null, fn ($q, $s) => $q->where('status', $s))
+            ->when($hospital === 'only', fn ($q) => $q->where('is_hospital', true))
+            ->when($hospital === 'exclude', fn ($q) => $q->where('is_hospital', false))
+            ->when($from, fn ($q) => $q->where('created_at', '>=', $from))
+            ->when($to, fn ($q) => $q->where('created_at', '<=', $to))
+            ->orderBy('created_at')
+            ->get();
+
+        $orientation = Setting::get('doctrack_orientation', 'landscape');
+
+        // Summary stats — what makes this report useful for spotting inefficiency at a glance.
+        // Idle time is working-hours-aware (matches BusinessHours convention); age stays calendar time.
+        $openDocs = $rows->whereNotIn('status', ['archived', 'completed']);
+        $idleSecs = $openDocs->map(fn ($d) => \App\Services\BusinessHours::secondsBetween($d->lastActionAt(), now(), $d->currentPossessor()))->filter();
+        $ageSecs = $rows->map(fn ($d) => $d->created_at->diffInSeconds($d->isClosed() ? $d->updated_at : now()));
+
+        $payload = [
+            'reportTitle' => Setting::get('doctrack_title', 'Document Aging Report'),
+            'officeName' => optional($user->department)->name,
+            'generatedBy' => $user->name.($user->position ? ' — '.$user->position : ''),
+            'rows' => $rows,
+            'documentType' => $data['document_type'] ?? null,
+            'from' => $from,
+            'to' => $to,
+            'hospital' => $hospital,
+            'align' => $this->docTrackAlign(),
+            'colLabels' => $this->docTrackLabels(),
+            'perPage' => $orientation === 'portrait' ? 22 : 14,
+            'org' => Setting::get('organization', ''),
+            'appName' => Setting::get('app_name', config('app.name')),
+            'generatedAt' => now(),
+            'totalCount' => $rows->count(),
+            'openCount' => $openDocs->count(),
+            'avgIdle' => $idleSecs->count() ? (int) round($idleSecs->avg()) : null,
+            'avgAge' => $ageSecs->count() ? (int) round($ageSecs->avg()) : null,
+            'showPageNumber' => (bool) Setting::get('doctrack_page_number', true),
+        ];
+
+        if ($request->input('format') === 'html') {
+            return view('reports.doctrack', $payload + ['preview' => true]);
+        }
+
+        return Pdf::loadView('reports.doctrack', $payload)
+            ->setPaper(Setting::get('doctrack_paper', 'a4'), $orientation)
+            ->setOption('isPhpEnabled', true)
+            ->stream(str_replace(' ', '-', $payload['reportTitle']).'-'.now()->format('Ymd-His').'.pdf');
+    }
+
     /* ───────────── Report settings (Super Admin) ───────────── */
     public function settings()
     {
@@ -361,6 +499,15 @@ class ReportController extends Controller
             'tCols' => self::TRANSMITTAL_COLS,
             'tAlign' => $this->transmittalAlign(),
             'tLabels' => $this->transmittalLabels(),
+            // Document Aging Report
+            'dTitle' => Setting::get('doctrack_title', 'Document Aging Report'),
+            'dPaper' => Setting::get('doctrack_paper', 'a4'),
+            'dOrientation' => Setting::get('doctrack_orientation', 'landscape'),
+            'dPageNumber' => (bool) Setting::get('doctrack_page_number', true),
+            'dOffices' => array_values(array_filter(explode(',', (string) Setting::get('doctrack_offices', '')))),
+            'dCols' => self::DOCTRACK_COLS,
+            'dAlign' => $this->docTrackAlign(),
+            'dLabels' => $this->docTrackLabels(),
         ]);
     }
 
@@ -420,6 +567,45 @@ class ReportController extends Controller
             \App\Models\ActivityLog::record('reports.settings.save', $desc);
 
             return back()->with('success', 'Transmittal settings saved.');
+        }
+
+        if ($report === 'doctrack') {
+            $data = $request->validate([
+                'doctrack_title' => ['required', 'string', 'max:150'],
+                'doctrack_paper' => ['required', 'in:a4,letter,legal'],
+                'doctrack_orientation' => ['required', 'in:landscape,portrait'],
+                'doctrack_page_number' => ['nullable'],
+                'doctrack_offices' => ['nullable', 'array'],
+                'doctrack_offices.*' => ['integer', 'exists:departments,id'],
+                'align' => ['nullable', 'array'],
+                'align.*' => ['in:left,center,right'],
+                'labels' => ['nullable', 'array'],
+                'labels.*' => ['nullable', 'string', 'max:50'],
+            ]);
+
+            $deptCodes = \App\Models\Department::pluck('code', 'id');
+            $newOffices = implode(',', $data['doctrack_offices'] ?? []);
+
+            $changes = $this->diffSettings([
+                'Title' => ['doctrack_title', $data['doctrack_title']],
+                'Paper' => ['doctrack_paper', $data['doctrack_paper']],
+                'Orientation' => ['doctrack_orientation', $data['doctrack_orientation']],
+                'Page number' => ['doctrack_page_number', $request->boolean('doctrack_page_number') ? '1' : '0', true],
+                'Offices' => ['doctrack_offices', $newOffices, false, $deptCodes],
+            ]);
+
+            Setting::put('doctrack_title', $data['doctrack_title']);
+            Setting::put('doctrack_paper', $data['doctrack_paper']);
+            Setting::put('doctrack_orientation', $data['doctrack_orientation']);
+            Setting::put('doctrack_page_number', $request->boolean('doctrack_page_number') ? '1' : '0');
+            Setting::put('doctrack_offices', $newOffices);
+            Setting::put('doctrack_align', json_encode(array_intersect_key($data['align'] ?? [], self::DOCTRACK_COLS)));
+            Setting::put('doctrack_labels', json_encode(array_intersect_key($data['labels'] ?? [], self::DOCTRACK_COLS)));
+
+            $desc = 'Report settings (Document Aging Report)' . ($changes ? ': ' . $changes : ' saved (no changes)');
+            \App\Models\ActivityLog::record('reports.settings.save', $desc);
+
+            return back()->with('success', 'Document Aging Report settings saved.');
         }
 
         $data = $request->validate([

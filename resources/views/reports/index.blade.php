@@ -124,6 +124,94 @@
                         <button type="button" @click="refresh()" x-show="ready" class="text-sm link">&circlearrowright; Refresh preview</button>
                     </div>
                 </div>
+
+                {{-- ── Document Aging Report filters ── --}}
+                <div x-show="report === 'doctrack'" x-cloak class="mt-5 pt-5 border-t border-gray-100 dark:border-gray-700">
+                    <h3 class="font-semibold text-sm mb-4">Filters</h3>
+                    <p class="text-xs text-gray-400 -mt-2 mb-4">All filters are optional — leave blank to include every document in your office.</p>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="label">Document Type</label>
+                            <select x-model="dDocType" class="input">
+                                <option value="">All document types</option>
+                                @foreach($docTypes as $t)<option value="{{ $t }}">{{ $t }}</option>@endforeach
+                            </select>
+                        </div>
+                        <div>
+                            <label class="label">Division</label>
+                            <select x-model="dDivision" class="input">
+                                <option value="">All divisions</option>
+                                @foreach($docTrackDivisions as $dv)<option value="{{ $dv->id }}">{{ $dv->code }} — {{ $dv->name }}</option>@endforeach
+                            </select>
+                        </div>
+                        <div>
+                            <label class="label">Staff / User</label>
+                            <div class="relative" @click.outside="dUserOpen = false">
+                                <button type="button" @click="dUserOpen = !dUserOpen; dUserSearch = ''" class="input-btn text-left pr-14 block">
+                                    <span class="truncate block" :class="!dUser ? 'text-gray-400' : ''" x-text="dUserLabel"></span>
+                                </button>
+                                <div class="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5">
+                                    <button type="button" x-show="dUser" x-cloak @click.stop="dUser = ''" class="w-4 h-4 grid place-items-center rounded text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                                    </button>
+                                    <svg class="w-4 h-4 text-gray-400 shrink-0 pointer-events-none transition-transform" :class="dUserOpen && 'rotate-180'" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+                                </div>
+                                <div x-show="dUserOpen" x-cloak x-transition.opacity class="absolute z-30 mt-1 w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-lg">
+                                    <div class="p-2 border-b border-gray-100 dark:border-gray-700"><input type="text" x-model="dUserSearch" @click.stop class="input py-1.5 text-sm" placeholder="Search…"></div>
+                                    <div class="max-h-56 overflow-y-auto py-1 text-sm">
+                                        <button type="button" @click="dUser = ''; dUserOpen = false" class="w-full text-left px-3 py-1.5 text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700/50">All staff</button>
+                                        <template x-for="u in dFilteredUsers" :key="u.id"><button type="button" @click="dUser = String(u.id); dUserOpen = false" class="w-full text-left px-3 py-1.5 hover:bg-gray-50 dark:hover:bg-gray-700/50" x-text="u.name"></button></template>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="label">Status</label>
+                            <select x-model="dStatus" class="input">
+                                <option value="">Any status</option>
+                                <option value="draft">Pending Release</option>
+                                <option value="released">Released</option>
+                                <option value="received">Received</option>
+                                <option value="forwarded">Forwarded</option>
+                                <option value="archived">Archived</option>
+                                <option value="completed">Completed</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="label">Hospital Division</label>
+                            <select x-model="dHospital" class="input">
+                                <option value="exclude">Exclude hospital transactions</option>
+                                <option value="include">Include hospital transactions</option>
+                                <option value="only">Hospital transactions only</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="label">Date range <span class="text-gray-400 text-xs font-normal">(optional)</span></label>
+                            <div class="space-y-2">
+                                <input type="date" x-model="dDateFrom" class="input" aria-label="From date">
+                                <input type="date" x-model="dDateTo" class="input" aria-label="To date">
+                            </div>
+                            <p class="text-[11px] text-gray-400 mt-1">Leave blank for all dates; use one for open-ended.</p>
+                        </div>
+                        <div>
+                            <label class="inline-flex items-center gap-2 cursor-pointer select-none">
+                                <input type="checkbox" x-model="dUseTime" class="rounded border-gray-300 dark:border-gray-600 text-primary-600 focus:ring-primary-500">
+                                <span class="text-sm text-gray-600 dark:text-gray-400">Include time range</span>
+                            </label>
+                            <div x-show="dUseTime" x-cloak class="mt-2 space-y-2">
+                                <input type="time" x-model="dTimeFrom" class="input" aria-label="From time">
+                                <input type="time" x-model="dTimeTo" class="input" aria-label="To time">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-5 flex flex-wrap items-center gap-3">
+                        <x-btn type="button" @click="openPdf()" x-bind:disabled="!ready">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                            Generate PDF
+                        </x-btn>
+                        <button type="button" @click="refresh()" x-show="ready" class="text-sm link">&circlearrowright; Refresh preview</button>
+                    </div>
+                </div>
             </x-card>
 
             {{-- Right: live preview --}}
@@ -152,11 +240,19 @@
                 // Transmittal
                 tFundId: '', tHospital: 'exclude', tDateSource: '{{ $tDateSource ?? "received_by_division" }}',
                 tDateFrom: '', tDateTo: '',
+                // Document Aging Report
+                dDocType: '', dDivision: '', dUser: '', dUserOpen: false, dUserSearch: '',
+                dStatus: '', dHospital: 'exclude', dDateFrom: '', dDateTo: '',
+                dUseTime: false, dTimeFrom: '', dTimeTo: '',
+                dUsers: @js($docTrackStaff->map(fn($u) => ['id' => $u->id, 'name' => $u->name])),
+                get dFilteredUsers() { const q = this.dUserSearch.toLowerCase().trim(); return this.dUsers.filter(u => !q || u.name.toLowerCase().includes(q)); },
+                get dUserLabel() { const u = this.dUsers.find(x => String(x.id) === String(this.dUser)); return u ? u.name : 'All staff'; },
 
                 _t: null,
                 get ready() {
                     if (this.report === 'erecord') return this.documentType && this.fundId;
                     if (this.report === 'transmittal') return !!this.tFundId;
+                    if (this.report === 'doctrack') return true;
                     return false;
                 },
                 query(format) {
@@ -172,6 +268,16 @@
                         if (this.tDateTo) p.set('date_to', this.tDateTo);
                         return '{{ route("reports.transmittal") }}?' + p.toString();
                     }
+                    if (this.report === 'doctrack') {
+                        const p = new URLSearchParams({ hospital: this.dHospital, format });
+                        if (this.dDocType) p.set('document_type', this.dDocType);
+                        if (this.dDivision) p.set('division_id', this.dDivision);
+                        if (this.dUser) p.set('user_id', this.dUser);
+                        if (this.dStatus) p.set('status', this.dStatus);
+                        if (this.dDateFrom) p.set('date_from', this.dUseTime && this.dTimeFrom ? this.dDateFrom + ' ' + this.dTimeFrom : this.dDateFrom);
+                        if (this.dDateTo) p.set('date_to', this.dUseTime && this.dTimeTo ? this.dDateTo + ' ' + this.dTimeTo : this.dDateTo);
+                        return '{{ route("reports.doctrack") }}?' + p.toString();
+                    }
                     return '';
                 },
                 refresh() { if (this.ready && this.$refs.frame) this.$refs.frame.src = this.query('html'); },
@@ -179,7 +285,8 @@
                 debounced() { clearTimeout(this._t); this._t = setTimeout(() => this.refresh(), 350); },
                 init() {
                     ['report','documentType','fundId','hospital','dateFrom','dateTo','useTime','timeFrom','timeTo',
-                     'tFundId','tHospital','tDateSource','tDateFrom','tDateTo'].forEach(k => this.$watch(k, () => this.debounced()));
+                     'tFundId','tHospital','tDateSource','tDateFrom','tDateTo',
+                     'dDocType','dDivision','dUser','dStatus','dHospital','dDateFrom','dDateTo','dUseTime','dTimeFrom','dTimeTo'].forEach(k => this.$watch(k, () => this.debounced()));
                 },
             }));
         });
