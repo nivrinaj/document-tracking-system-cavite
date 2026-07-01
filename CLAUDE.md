@@ -42,7 +42,7 @@ deploy.ps1             — production deploy script (git pull → composer → n
 - **Broadcast acknowledgment layout.** Opt-in per office via `departments.broadcast_ack_layout` (DB flag, never matched by office name/code). When the *broadcasting* document's office has it on, the Concerned-staff panel for broadcasts renders as tabs by employment status → tables grouped by division, sorted not-yet-received first then by surname (columns: formal name, position, date/time received = `acknowledged_at`). Otherwise the default chip list is used.
 - **Deadlines.** The optional per-document `deadline` (a date) appears at encode/edit only when the encoder's office has `departments.deadline_enabled` AND the chosen type has `document_types.requires_deadline` — never by matching type/office name strings (same principle as `is_accounting`/`is_hospital`). The tracking-list Deadline column shows only for users whose office is deadline-enabled (Super Admin always). Countdown uses `BusinessHours` from now to `work_end` (5 PM) of the due date: light **orange** ≤ 16 working hours left, light **red** ≤ 8, plus an Overdue badge past due. Deadline highlighting takes precedence over SLA aging on a row.
 - **Accounting Setup** visible to Super Admin only (`@role('Super Admin')`), not `@can`.
-- **Version bumping.** Always check `git log --oneline` and `git tag --list` BEFORE choosing a version number. Never reuse a version.
+- **Version bumping.** Always check `git log --oneline` and `git tag --list` BEFORE choosing a version number. Never reuse a version *on the active line*. The active pre-launch line is **v1.x** — follow `config/version.php` + the newest `CHANGELOG.md` entry and increment from there. The `v2.x` tags in the repo are **historical/abandoned** from a previous versioning scheme; ignore them (they are not collisions). At deployment the project **re-baselines to v1.0.0** (and the pre-launch changelog collapses into an accordion) — until then pre-launch numbers are just sequential and don't need to be "correct".
 - **Seeders.** `deploy.ps1` runs migrations only, never seeders. Seeders are one-time manual runs.
 
 ## Deployment
@@ -70,8 +70,9 @@ deploy.ps1 does: git pull → composer install → npm install → npm run build
 
 ### After every completed version bump
 1. Bump `config/version.php` and append to `CHANGELOG.md` FIRST — before giving deploy commands.
-2. Then output the exact deployment commands for both machines with the real version number and commit message filled in.
+2. **Always output the exact `cmd` commands for BOTH machines** (dev machine push block AND server deploy block), with the real version number and commit message filled in — every batch, without being asked. Use the two `cmd` blocks above verbatim (dev = add/commit/push/tag; server = mysqldump then deploy.ps1).
 3. Never give deploy commands before the version bump commit is ready — the user will push what's on disk.
+4. `CHANGELOG.md` history stays **intact and append-only** — never rewrite or delete past entries; just add the newest version on top following the strict bullet format. The v1.0.0 re-baseline happens only at deployment.
 
 ### Changelog entries: strict format, no prose summary
 No bold summary line under the version heading. Every line is a bullet: `- **Short subject** — short plain description.` One bullet per distinct thing done. Keep each description general and plain (what changed and why it matters), not technical — skip file paths, method/class names, migration names, and multi-clause technical breakdowns.
