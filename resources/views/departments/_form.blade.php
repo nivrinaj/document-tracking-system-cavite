@@ -12,29 +12,20 @@
     <label class="label">Description</label>
     <textarea name="description" rows="2" class="input">{{ old('description', $department?->description) }}</textarea>
 </div>
-<label class="flex items-center gap-2 text-sm">
-    <input type="hidden" name="is_active" value="0">
-    <input type="checkbox" name="is_active" value="1" class="rounded text-[color:var(--color-primary)]" @checked(old('is_active', $department?->is_active ?? true))>
-    Active
-</label>
+<x-toggle name="is_active" label="Active" :checked="old('is_active', $department?->is_active ?? true)" />
 
 @php $restrictSelected = old('restricted_doc_types', $department?->restricted_doc_types ?? []); @endphp
 <div class="border-t border-gray-100 dark:border-gray-700 pt-4 mt-2"
      x-data="{ acct: {{ old('is_accounting', $department?->is_accounting) ? 'true' : 'false' }}, limit: {{ !empty($restrictSelected) ? 'true' : 'false' }}, types: @js(array_values((array) $restrictSelected)) }">
-    <label class="flex items-center gap-2 text-sm font-medium">
-        <input type="hidden" name="is_accounting" value="0">
-        <input type="checkbox" name="is_accounting" value="1" x-model="acct" class="rounded text-[color:var(--color-primary)]">
-        Voucher &amp; Payroll office
-    </label>
-    <p class="text-xs text-gray-400 ml-6">When on, this office is limited to <strong>Voucher</strong> &amp; <strong>Payroll</strong>, and encoding either shows the extra <strong>Amount / Fund / OBR / RC / Nature</strong> fields. When off, an office encoding a Voucher/Payroll sees only the regular fields.</p>
+    <x-toggle name="is_accounting" x-model="acct" label="Voucher & Payroll office">
+        <span class="block text-xs text-gray-400 mt-0.5">When on, this office is limited to <strong>Voucher</strong> &amp; <strong>Payroll</strong>, and encoding either shows the extra <strong>Amount / Fund / OBR / RC / Nature</strong> fields. When off, an office encoding a Voucher/Payroll sees only the regular fields.</span>
+    </x-toggle>
 
     {{-- Limit to document types (for non-accounting offices) --}}
     <div x-show="!acct" x-cloak class="mt-4">
-        <label class="flex items-center gap-2 text-sm font-medium">
-            <input type="checkbox" x-model="limit" class="rounded text-[color:var(--color-primary)]">
-            Limit this office to specific document types
-        </label>
-        <p class="text-xs text-gray-400 ml-6 mb-2">Leave off to allow all document types. Turn on to pick the only types this office may encode.</p>
+        <x-toggle x-model="limit" label="Limit this office to specific document types">
+            <span class="block text-xs text-gray-400 mt-0.5 mb-2">Leave off to allow all document types. Turn on to pick the only types this office may encode.</span>
+        </x-toggle>
         <div x-show="limit" x-cloak class="ml-6 flex flex-wrap gap-2">
             @forelse($documentTypes as $t)
                 <button type="button"
@@ -54,34 +45,25 @@
 
 {{-- Deadline tracking (opt-in per office) --}}
 <div class="border-t border-gray-100 dark:border-gray-700 pt-4 mt-2">
-    <label class="flex items-center gap-2 text-sm font-medium">
-        <input type="hidden" name="deadline_enabled" value="0">
-        <input type="checkbox" name="deadline_enabled" value="1" class="rounded text-[color:var(--color-primary)]" @checked(old('deadline_enabled', $department?->deadline_enabled))>
-        Enable deadlines for this office
-    </label>
-    <p class="text-xs text-gray-400 ml-6">When on, encoders in this office can set a <strong>Deadline</strong> on document types marked “requires a deadline”, and this office’s tracking list shows a Deadline column with colour warnings (orange within 16 working hours, red within 8).</p>
+    <x-toggle name="deadline_enabled" label="Enable deadlines for this office" :checked="old('deadline_enabled', $department?->deadline_enabled)">
+        <span class="block text-xs text-gray-400 mt-0.5">When on, encoders in this office can set a <strong>Deadline</strong> on document types marked “requires a deadline”, and this office’s tracking list shows a Deadline column with colour warnings (orange within 16 working hours, red within 8).</span>
+    </x-toggle>
 </div>
 
 {{-- Broadcast acknowledgment layout (opt-in per office) --}}
 <div class="border-t border-gray-100 dark:border-gray-700 pt-4 mt-2">
-    <label class="flex items-center gap-2 text-sm font-medium">
-        <input type="hidden" name="broadcast_ack_layout" value="0">
-        <input type="checkbox" name="broadcast_ack_layout" value="1" class="rounded text-[color:var(--color-primary)]" @checked(old('broadcast_ack_layout', $department?->broadcast_ack_layout))>
-        Use the tabbed acknowledgment layout for this office’s broadcasts
-    </label>
-    <p class="text-xs text-gray-400 ml-6">When on, memos broadcast by this office show recipients in tabs by employment status, grouped by division, in a table of name / position / date received — instead of the default chip list.</p>
+    <x-toggle name="broadcast_ack_layout" label="Use the tabbed acknowledgment layout for this office’s broadcasts" :checked="old('broadcast_ack_layout', $department?->broadcast_ack_layout)">
+        <span class="block text-xs text-gray-400 mt-0.5">When on, memos broadcast by this office show recipients in tabs by employment status, grouped by division, in a table of name / position / date received — instead of the default chip list.</span>
+    </x-toggle>
 </div>
 
 {{-- Completion deadline (turnaround tracking) --}}
 @php $slaSelected = old('sla_document_type', $department?->sla_document_type ?? []); @endphp
 <div class="border-t border-gray-100 dark:border-gray-700 pt-4 mt-2"
      x-data="{ sla: {{ old('sla_enabled', $department?->sla_enabled) ? 'true' : 'false' }}, types: @js(array_values((array) $slaSelected)) }">
-    <label class="flex items-center gap-2 text-sm font-medium">
-        <input type="hidden" name="sla_enabled" value="0">
-        <input type="checkbox" name="sla_enabled" value="1" x-model="sla" class="rounded text-[color:var(--color-primary)]">
-        Set a completion deadline for this department's documents
-    </label>
-    <p class="text-xs text-gray-400 ml-6">When on, documents are flagged <strong>on-time</strong> or <strong>overdue</strong> in the Processing Time &amp; Overdue report.</p>
+    <x-toggle name="sla_enabled" x-model="sla" label="Set a completion deadline for this department's documents">
+        <span class="block text-xs text-gray-400 mt-0.5">When on, documents are flagged <strong>on-time</strong> or <strong>overdue</strong> in the Processing Time &amp; Overdue report.</span>
+    </x-toggle>
 
     <div x-show="sla" x-cloak class="mt-3 space-y-4">
         <div class="max-w-xs">

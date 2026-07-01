@@ -31,7 +31,7 @@ deploy.ps1             — production deploy script (git pull → composer → n
 
 - **No hardcoded office names/codes.** Identify special offices via DB flags (`is_accounting` on departments, `is_hospital` on divisions). Never match strings like 'PACCO' or 'OPAcc' in code.
 - **Dropdown placeholders.** Every `<select>` gets a `"— Select X —"` disabled first option.
-- **Tailwind classes.** Use `.input` for text inputs, `.input-btn` for button triggers (with explicit padding), `.label`, `.field-k`. Custom components: `<x-search-select>`, `<x-file-drop>`, `<x-btn>`, `<x-card>`, `<x-badge>`, `<x-stat-card>`.
+- **Tailwind classes.** Use `.input` for text inputs, `.input-btn` for button triggers (with explicit padding), `.label`, `.field-k`. Custom components: `<x-search-select>`, `<x-file-drop>`, `<x-btn>`, `<x-card>`, `<x-badge>`, `<x-stat-card>`, `<x-toggle>`. Use `<x-toggle>` (a modern sliding switch) for on/off settings instead of bare checkboxes; it works as a normal form field (`name=` → hidden 0 + checkbox 1) and with Alpine (`x-model`). Pass checked state as `:checked="expr"` (never `@checked(...)` — that directive breaks inside a component tag).
 - **Per-fund annual sequences.** Each fund has its own sequence (starts at 1, resets yearly). Hospital funds run separately (`F{id}H`). Atomic via DB transaction + `lockForUpdate` on `TrackingSequence`.
 - **Working-hours engine.** `BusinessHours::secondsBetween()` for all time calculations (holding, idle, turnaround). Age stays calendar time.
 - **Hospital flag.** `documents.is_hospital` is set at encode time from the encoder's division. Never inferred from tracking-code text or mutable division FK.

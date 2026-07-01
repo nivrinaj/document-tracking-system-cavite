@@ -6,6 +6,14 @@ Format based on [Keep a Changelog](https://keepachangelog.com).
 
 ---
 
+## 1.17.0 — 2026-07-01
+- **Acknowledgment table aligned and clearer** — the Position column now lines up across every division block, each division header shows how many have received it (e.g. 2/6 received), and staff with no division (department heads and assistants) are listed first.
+- **All staff set to Permanent/Regular for now** — existing users default to Permanent/Regular employment status; change individuals anytime on the user page.
+- **Modern on/off toggles in department settings** — the Super-Admin department settings now use sliding toggles instead of plain checkboxes, with a reusable toggle style for the rest of the system.
+- **"Daily Working Time" capitalized** — the panel heading on the document details page is now properly capitalized.
+- **Description shown before Daily Working Time** — on the document details page the Description panel now appears above the Daily Working Time panel.
+- **Reference number removed** — the reference number field is gone from encoding, editing, and all displays; the layout was tidied so no gaps are left behind.
+
 ## 1.16.0 — 2026-07-01
 - **Separate name fields for users** — the single Full Name field is now First name, Last name, and an optional Middle name; existing users were split automatically (best-effort) and can be corrected on edit.
 - **Employment status on users** — an optional dropdown (Permanent/Regular, Casual, Co-Terminus, Job Order) added to the user form.

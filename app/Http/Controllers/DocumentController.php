@@ -148,7 +148,6 @@ class DocumentController extends Controller
 
         $data = $request->validate([
             'title' => ['required', 'string', 'max:255'],
-            'reference_no' => ['nullable', 'string', 'max:255'],
             'document_type' => ['required', 'string', 'max:100'],
             // Accounting fields — only for offices flagged is_accounting (e.g. OPAcc).
             'fund_id' => ['nullable', $acctRule, 'exists:funds,id'],
@@ -296,7 +295,6 @@ class DocumentController extends Controller
 
         $data = $request->validate([
             'title' => ['required', 'string', 'max:255'],
-            'reference_no' => ['nullable', 'string', 'max:255'],
             'document_type' => ['required', 'string', 'max:100'],
             'voucher_number' => ['nullable', 'string', 'max:100'],
             'description' => ['nullable', 'string'],

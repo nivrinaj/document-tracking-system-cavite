@@ -148,7 +148,6 @@
                                 @if($document->voucher_number)
                                     <div><dt class="{{ $k }}">Voucher No.</dt><dd class="{{ $v }} font-mono">{{ $document->voucher_number }}</dd></div>
                                 @endif
-                                <div><dt class="{{ $k }}">Reference No.</dt><dd class="{{ $v }}">{{ $document->reference_no ?? '—' }}</dd></div>
                                 <div><dt class="{{ $k }}">Source / Origin</dt><dd class="{{ $v }}">{{ $document->source ?? '—' }}</dd></div>
                                 <div><dt class="{{ $k }}">Current location</dt><dd class="{{ $v }}">{{ $document->department?->code ?? '—' }}@if($document->division) <span class="text-gray-400 font-normal">· {{ $document->division->name }}</span>@endif</dd></div>
                             </dl>
@@ -205,14 +204,27 @@
                             </dl>
                         </section>
 
-                        {{-- ── Daily working time (Super-Admin toggle) ── --}}
+                        {{-- ── Description (before Daily Working Time) ── --}}
+                        @if($document->description)
+                            <section class="{{ $card }}">
+                                <header class="{{ $secHdr }}">
+                                    <span class="{{ $ico }}" style="background: var(--color-primary)">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h10"/></svg>
+                                    </span>
+                                    <h3 class="{{ $secTitle }}">Description</h3>
+                                </header>
+                                <div class="p-4 sm:p-5 text-sm text-gray-700 dark:text-gray-200 whitespace-pre-line">{{ $document->description }}</div>
+                            </section>
+                        @endif
+
+                        {{-- ── Daily Working Time (Super-Admin toggle) ── --}}
                         @if($showBreakdown && count($breakdown))
                             <section class="{{ $card }}">
                                 <header class="{{ $secHdr }}">
                                     <span class="{{ $ico }}" style="background: var(--color-primary)">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19V6m6 13v-9m-12 9V9m18 10V3"/></svg>
                                     </span>
-                                    <h3 class="{{ $secTitle }}">Daily working time</h3>
+                                    <h3 class="{{ $secTitle }}">Daily Working Time</h3>
                                 </header>
                                 <div class="p-4 sm:p-5 space-y-3">
                                     @foreach($breakdown as $date => $info)
@@ -235,19 +247,6 @@
                                         </div>
                                     @endforeach
                                 </div>
-                            </section>
-                        @endif
-
-                        {{-- ── Description ── --}}
-                        @if($document->description)
-                            <section class="{{ $card }}">
-                                <header class="{{ $secHdr }}">
-                                    <span class="{{ $ico }}" style="background: var(--color-primary)">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h10"/></svg>
-                                    </span>
-                                    <h3 class="{{ $secTitle }}">Description</h3>
-                                </header>
-                                <div class="p-4 sm:p-5 text-sm text-gray-700 dark:text-gray-200 whitespace-pre-line">{{ $document->description }}</div>
                             </section>
                         @endif
                     </div>
@@ -354,8 +353,9 @@
                             // Group each status by division, then sort each division: people who
                             // have NOT yet received/acknowledged first, then alphabetically by surname.
                             $ackGroups[$status] = $byStatus[$status]
-                                ->groupBy(fn ($p) => $p->division?->name ?: 'No division')
-                                ->sortKeys()
+                                ->groupBy(fn ($p) => $p->division?->name ?: 'Department Heads')
+                                // Heads (no division) first, then divisions alphabetically.
+                                ->sortBy(fn ($g, $div) => $div === 'Department Heads' ? '0' : '1'.mb_strtolower($div))
                                 ->map(fn ($g) => $g->sort(function ($a, $b) {
                                     $aAck = $a->pivot->acknowledged_at ? 1 : 0;
                                     $bAck = $b->pivot->acknowledged_at ? 1 : 0;
@@ -400,10 +400,16 @@
                             @foreach($ackGroups as $status => $divs)
                                 <div x-show="tab === @js((string) $status)" x-cloak class="space-y-4">
                                     @foreach($divs as $divName => $people)
+                                        @php $divAcked = $people->filter(fn ($p) => $p->pivot->acknowledged_at)->count(); @endphp
                                         <div>
-                                            <div class="text-[11px] font-semibold uppercase tracking-wide text-gray-400 mb-1.5">{{ $divName }} <span class="text-gray-300 dark:text-gray-600">· {{ $people->count() }}</span></div>
+                                            <div class="text-[11px] font-semibold uppercase tracking-wide text-gray-400 mb-1.5">{{ $divName }} <span class="text-gray-300 dark:text-gray-600">· {{ $divAcked }}/{{ $people->count() }} received</span></div>
                                             <div class="overflow-x-auto rounded-lg border border-gray-100 dark:border-gray-700">
-                                                <table class="min-w-full text-sm">
+                                                <table class="w-full table-fixed text-sm">
+                                                    <colgroup>
+                                                        <col style="width:45%">
+                                                        <col style="width:25%">
+                                                        <col style="width:30%">
+                                                    </colgroup>
                                                     <thead class="bg-gray-50 dark:bg-gray-700/40 text-[11px] uppercase tracking-wide text-gray-400">
                                                         <tr>
                                                             <th class="text-left font-medium px-3 py-2">Name</th>
@@ -415,13 +421,13 @@
                                                         @foreach($people as $person)
                                                             @php $acked = $person->pivot->acknowledged_at ? \Illuminate\Support\Carbon::parse($person->pivot->acknowledged_at) : null; @endphp
                                                             <tr class="{{ $acked ? '' : 'bg-amber-50/50 dark:bg-amber-900/10' }}">
-                                                                <td class="px-3 py-2 font-medium whitespace-nowrap">{{ $person->formalName() }}</td>
-                                                                <td class="px-3 py-2 text-gray-500 dark:text-gray-400">{{ $person->position ?: '—' }}</td>
-                                                                <td class="px-3 py-2 whitespace-nowrap">
+                                                                <td class="px-3 py-2 font-medium truncate" title="{{ $person->formalName() }}">{{ $person->formalName() }}</td>
+                                                                <td class="px-3 py-2 text-gray-500 dark:text-gray-400 truncate" title="{{ $person->position }}">{{ $person->position ?: '—' }}</td>
+                                                                <td class="px-3 py-2 truncate">
                                                                     @if($acked)
                                                                         <span class="text-green-600 dark:text-green-400">{{ $acked->format('M d, Y g:i A') }}</span>
                                                                     @else
-                                                                        <span class="inline-flex items-center gap-1 text-amber-600 dark:text-amber-400"><span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span> Not yet received</span>
+                                                                        <span class="inline-flex items-center gap-1 text-amber-600 dark:text-amber-400"><span class="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0"></span> Not yet received</span>
                                                                     @endif
                                                                 </td>
                                                             </tr>

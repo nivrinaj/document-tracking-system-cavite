@@ -167,7 +167,7 @@
                                         @if($od === 'overdue')<span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wide bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300">Overdue</span>
                                         @elseif($od === 'warning')<span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wide bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300">Due soon</span>@endif
                                     </div>
-                                    <div class="text-xs text-gray-400">{{ $doc->document_type }} @if($doc->reference_no) · {{ $doc->reference_no }} @endif</div>
+                                    <div class="text-xs text-gray-400">{{ $doc->document_type }}</div>
                                 </td>
                                 @if(\App\Models\Document::priorityEnabled())<td class="table-td" data-label="Priority"><x-priority-badge :priority="$doc->priority" /></td>@endif
                                 <td class="table-td" data-label="Status"><x-status-badge :status="$doc->status" /></td>

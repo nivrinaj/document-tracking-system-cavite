@@ -32,10 +32,6 @@
                         <input type="text" name="voucher_number" value="{{ old('voucher_number', $document->voucher_number) }}" class="input">
                         <p class="text-xs text-gray-400 mt-1">Note: editing this does not change the existing tracking code <span class="font-mono">{{ $document->tracking_code }}</span>.</p>
                     </div>
-                    <div>
-                        <label class="label">Reference No.</label>
-                        <input type="text" name="reference_no" value="{{ old('reference_no', $document->reference_no) }}" class="input">
-                    </div>
                     @if(\App\Models\Document::priorityEnabled())
                     <div>
                         <label class="label">Priority <span class="text-red-500">*</span></label>

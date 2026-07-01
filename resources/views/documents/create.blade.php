@@ -161,11 +161,6 @@
                         </div>
                     </div>
 
-                    <div class="{{ $priorityEnabled ? '' : 'sm:col-span-2' }}">
-                        <label class="label">Reference No.</label>
-                        <input type="text" name="reference_no" value="{{ old('reference_no') }}" class="input" placeholder="e.g. MEMO-2026-001">
-                    </div>
-
                     @if($priorityEnabled)
                     <div>
                         <label class="label">Priority <span class="text-red-500">*</span></label>
