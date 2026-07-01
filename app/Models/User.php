@@ -35,10 +35,14 @@ class User extends Authenticatable
         'phone',
         'avatar',
         'is_active',
+        'must_change_password',
     ];
 
     /** Selectable employment statuses (optional on a user). */
     public const EMPLOYMENT_STATUSES = ['Permanent/Regular', 'Casual', 'Co-Terminus', 'Job Order'];
+
+    /** Shared default password offered when adding a user (must be changed on first login). */
+    public const DEFAULT_PASSWORD = 'password';
 
     /**
      * The attributes that should be hidden for serialization.
@@ -61,6 +65,7 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'is_active' => 'boolean',
+            'must_change_password' => 'boolean',
         ];
     }
 
@@ -209,6 +214,18 @@ class User extends Authenticatable
     public function isHead(): bool
     {
         return $this->hasAnyRole(['Department Head', 'Assistant Department Head', 'Super Admin']);
+    }
+
+    /** Department Head or Assistant Department Head (their whole department, all divisions). */
+    public function isDeptHeadRole(): bool
+    {
+        return $this->hasAnyRole(['Department Head', 'Assistant Department Head']);
+    }
+
+    /** Division Head (their own division only). */
+    public function isDivisionHead(): bool
+    {
+        return $this->hasRole('Division Head');
     }
 
     public function getAvatarUrlAttribute(): string

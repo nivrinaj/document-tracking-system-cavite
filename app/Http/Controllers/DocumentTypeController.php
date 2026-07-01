@@ -17,7 +17,9 @@ class DocumentTypeController extends Controller
 
     public function create()
     {
-        return view('document_types.create');
+        return view('document_types.create', [
+            'departments' => Department::orderBy('name')->get(['id', 'code', 'name']),
+        ]);
     }
 
     public function store(Request $request)
@@ -30,7 +32,10 @@ class DocumentTypeController extends Controller
 
     public function edit(DocumentType $documentType)
     {
-        return view('document_types.edit', ['type' => $documentType]);
+        return view('document_types.edit', [
+            'type' => $documentType,
+            'departments' => Department::orderBy('name')->get(['id', 'code', 'name']),
+        ]);
     }
 
     public function update(Request $request, DocumentType $documentType)
@@ -49,16 +54,24 @@ class DocumentTypeController extends Controller
 
     private function validateData(Request $request): array
     {
-        return $request->validate([
+        $data = $request->validate([
             'name' => ['required', 'string', 'max:100'],
             'requires_voucher' => ['nullable', 'boolean'],
             'requires_deadline' => ['nullable', 'boolean'],
             'allows_transmittal' => ['nullable', 'boolean'],
+            'transmittal_scope' => ['nullable', 'in:all,selected'],
+            'transmittal_departments' => ['nullable', 'array'],
+            'transmittal_departments.*' => ['integer', 'exists:departments,id'],
             'is_active' => ['nullable', 'boolean'],
-        ]) + [
+        ]);
+
+        return [
+            'name' => $data['name'],
             'requires_voucher' => $request->boolean('requires_voucher'),
             'requires_deadline' => $request->boolean('requires_deadline'),
             'allows_transmittal' => $request->boolean('allows_transmittal'),
+            'transmittal_scope' => $request->input('transmittal_scope') === 'selected' ? 'selected' : 'all',
+            'transmittal_departments' => implode(',', $data['transmittal_departments'] ?? []),
             'is_active' => $request->boolean('is_active'),
         ];
     }

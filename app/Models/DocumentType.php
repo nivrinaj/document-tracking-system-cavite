@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class DocumentType extends Model
 {
-    protected $fillable = ['name', 'requires_voucher', 'requires_deadline', 'allows_transmittal', 'is_active'];
+    protected $fillable = ['name', 'requires_voucher', 'requires_deadline', 'allows_transmittal', 'transmittal_scope', 'transmittal_departments', 'is_active'];
 
     protected $casts = [
         'requires_voucher' => 'boolean',
@@ -14,6 +14,25 @@ class DocumentType extends Model
         'allows_transmittal' => 'boolean',
         'is_active' => 'boolean',
     ];
+
+    /**
+     * Whether this type's transmittal option is usable by the given department.
+     * `transmittal_scope` is 'all' (every office) or 'selected' (only the CSV
+     * department IDs in `transmittal_departments') — mirrors the desktop-receive
+     * scope pattern (DB flag + CSV, never a name/code match).
+     */
+    public function transmittalAllowedFor(?int $departmentId): bool
+    {
+        if (! $this->allows_transmittal) {
+            return false;
+        }
+        if ($this->transmittal_scope !== 'selected') {
+            return true;
+        }
+        $allowed = array_filter(explode(',', (string) $this->transmittal_departments));
+
+        return $departmentId && in_array((string) $departmentId, $allowed, true);
+    }
 
     /**
      * Active types an office may encode. Every type is global; an office can be

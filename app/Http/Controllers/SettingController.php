@@ -14,6 +14,8 @@ class SettingController extends Controller
         return view('settings.edit', [
             'roles' => \Spatie\Permission\Models\Role::orderBy('name')->pluck('name'),
             'departments' => \App\Models\Department::orderBy('name')->get(['id', 'code', 'name']),
+            'deadlineRules' => json_decode((string) Setting::get('deadline_highlight_rules', ''), true) ?: \App\Models\Document::defaultDeadlineRules(),
+            'deadlineOverdueColor' => Setting::get('deadline_overdue_color') ?: \App\Models\Document::defaultDeadlineOverdueColor(),
         ]);
     }
 
@@ -43,6 +45,7 @@ class SettingController extends Controller
             'enable_attachments' => ['nullable', 'boolean'],
             'enable_digital_copy' => ['nullable', 'boolean'],
             'enable_messaging' => ['nullable', 'boolean'],
+            'enable_user_delete' => ['nullable', 'boolean'],
             'messaging_scope' => ['nullable', 'in:all,office'],
             'messaging_excluded_roles' => ['nullable', 'array'],
             'messaging_excluded_roles.*' => ['string'],
@@ -50,6 +53,11 @@ class SettingController extends Controller
             'records_per_page' => ['required', 'integer', 'min:5', 'max:100'],
             'support_contact' => ['nullable', 'string', 'max:255'],
             'announcement' => ['nullable', 'string', 'max:500'],
+            'global_overdue_color' => ['nullable', 'string', 'max:20'],
+            'global_rule_days' => ['nullable', 'array'],
+            'global_rule_days.*' => ['numeric', 'min:0.5'],
+            'global_rule_colors' => ['nullable', 'array'],
+            'global_rule_colors.*' => ['string', 'max:20'],
         ]);
 
         $boolKeys = [
@@ -62,6 +70,7 @@ class SettingController extends Controller
             'enable_attachments' => 'Attachments',
             'enable_digital_copy' => 'Digital copy',
             'enable_messaging' => 'Messaging',
+            'enable_user_delete' => 'Allow deleting user accounts',
         ];
 
         $changes = [];
@@ -103,6 +112,12 @@ class SettingController extends Controller
         Setting::put('messaging_excluded_roles', json_encode(array_values($request->input('messaging_excluded_roles', []))));
         Setting::put('desktop_receive_scope', $newDeskScope);
         Setting::put('desktop_receive_departments', $newDeskDepts);
+
+        Setting::put('deadline_overdue_color', $request->input('global_overdue_color') ?: \App\Models\Document::defaultDeadlineOverdueColor());
+        Setting::put('deadline_highlight_rules', json_encode(\App\Models\Document::zipDeadlineRules(
+            $request->input('global_rule_days', []),
+            $request->input('global_rule_colors', [])
+        )));
 
         // Image fields: [setting key => [form field, remove field]]
         $images = [

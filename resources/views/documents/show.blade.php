@@ -147,7 +147,7 @@
                                 <div><dt class="{{ $k }}">Type</dt><dd class="{{ $v }}">{{ $document->document_type }}</dd></div>
                                 @if($document->is_transmittal)
                                     <div><dt class="{{ $k }}">Transmittal</dt><dd class="mt-1">
-                                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 text-sm font-semibold">📦 {{ $document->transmittal_quantity }} {{ \Illuminate\Support\Str::plural($document->document_type, (int) $document->transmittal_quantity) }}</span>
+                                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 text-sm font-semibold">📄 {{ $document->transmittal_quantity }} {{ \Illuminate\Support\Str::plural($document->document_type, (int) $document->transmittal_quantity) }}</span>
                                     </dd></div>
                                 @endif
                                 @if($document->voucher_number)
@@ -337,7 +337,7 @@
                         if ($seg->holder_id) {
                             $segEnd = $seg->ended_at ?? $clockUntil;
                             $heldSeconds[$seg->holder_id] = ($heldSeconds[$seg->holder_id] ?? 0)
-                                + \App\Services\BusinessHours::secondsBetween($seg->started_at, $segEnd, $seg->holder);
+                                + $document->elapsedSeconds($seg->started_at, $segEnd, $seg->holder);
                         }
                     }
                     // Who physically holds it right now (open ledger segment). During transit

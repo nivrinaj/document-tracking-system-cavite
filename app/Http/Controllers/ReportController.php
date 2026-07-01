@@ -442,7 +442,7 @@ class ReportController extends Controller
         // DB columns, so sorting by them happens in PHP after fetch rather than in SQL.
         $sort = $data['sort'] ?? 'date_encoded';
         $rows = match ($sort) {
-            'idle_desc' => $rows->sortByDesc(fn ($d) => \App\Services\BusinessHours::secondsBetween($d->lastActionAt(), now(), $d->currentPossessor()))->values(),
+            'idle_desc' => $rows->sortByDesc(fn ($d) => $d->elapsedSeconds($d->lastActionAt(), now(), $d->currentPossessor()))->values(),
             'oldest' => $rows->sortByDesc(fn ($d) => $d->created_at->diffInSeconds($d->isClosed() ? $d->updated_at : now()))->values(),
             'status' => $rows->sortBy('status')->values(),
             default => $rows->sortBy('created_at')->values(),
@@ -453,7 +453,7 @@ class ReportController extends Controller
         // Summary stats — what makes this report useful for spotting inefficiency at a glance.
         // Idle time is working-hours-aware (matches BusinessHours convention); age stays calendar time.
         $openDocs = $rows->whereNotIn('status', ['archived', 'completed']);
-        $idleSecs = $openDocs->map(fn ($d) => \App\Services\BusinessHours::secondsBetween($d->lastActionAt(), now(), $d->currentPossessor()))->filter();
+        $idleSecs = $openDocs->map(fn ($d) => $d->elapsedSeconds($d->lastActionAt(), now(), $d->currentPossessor()))->filter();
         $ageSecs = $rows->map(fn ($d) => $d->created_at->diffInSeconds($d->isClosed() ? $d->updated_at : now()));
 
         $sortLabels = [

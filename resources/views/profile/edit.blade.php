@@ -14,10 +14,12 @@
             </div>
         </x-card>
 
+        @if(($settings['enable_user_delete'] ?? '1') === '1')
         <x-card>
             <div class="max-w-xl">
                 @include('profile.partials.delete-user-form')
             </div>
         </x-card>
+        @endif
     </div>
 </x-app-layout>

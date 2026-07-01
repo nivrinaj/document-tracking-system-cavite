@@ -17,7 +17,10 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/', fn () => redirect()->route('dashboard'));
 
-Route::middleware(['auth', 'active'])->group(function () {
+Route::middleware(['auth', 'active', 'password.changed'])->group(function () {
+
+    Route::get('/password/change', [ProfileController::class, 'mustChange'])->name('password.mustChange');
+    Route::put('/password/change', [ProfileController::class, 'mustChangeUpdate'])->name('password.mustChange.update');
 
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 

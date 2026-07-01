@@ -245,6 +245,15 @@
                         </x-toggle>
                     </div>
 
+                    <div class="border-t border-gray-100 dark:border-gray-700 pt-4">
+                        <x-toggle name="enable_user_delete" :checked="($settings['enable_user_delete'] ?? '1') === '1'" label="Allow deleting user accounts">
+                            <span class="block text-xs text-gray-400 mt-0.5">
+                                When <strong>on</strong> (default), Super Admins/managers can permanently delete a user from the Users page.
+                                When <strong>off</strong>, the Delete option is hidden and blocked, even if requested directly — deactivate accounts with the Active toggle instead.
+                            </span>
+                        </x-toggle>
+                    </div>
+
                     {{-- Messaging options (only meaningful when chat is on) --}}
                     @php $excludedRoles = json_decode($settings['messaging_excluded_roles'] ?? '[]', true) ?: []; @endphp
                     <div class="ml-7 pl-1 border-l-2 border-gray-100 dark:border-gray-700 space-y-4">
@@ -271,6 +280,11 @@
                         </div>
                     </div>
                 </div>
+            </x-card>
+
+            <x-card title="Deadline Highlighting (default)">
+                <p class="text-xs text-gray-400 -mt-1 mb-4">Colors used for the Deadline column and row highlighting wherever an office hasn't customized its own (Departments → edit, when deadlines are enabled).</p>
+                <x-deadline-rules-editor prefix="global" :rules="$deadlineRules" :overdue-color="$deadlineOverdueColor" />
             </x-card>
 
             <div class="flex justify-end">

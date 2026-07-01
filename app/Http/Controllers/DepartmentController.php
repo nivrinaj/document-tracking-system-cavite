@@ -39,12 +39,17 @@ class DepartmentController extends Controller
     public function update(Request $request, Department $department)
     {
         $wasDeadline = (bool) $department->deadline_enabled;
+        $oldTimeMode = $department->time_tracking_mode;
         $department->update($this->validateData($request, $department));
         $this->applyTypeRestriction($request, $department);
 
         if ($wasDeadline !== (bool) $department->deadline_enabled) {
             $state = $department->deadline_enabled ? 'ON' : 'OFF';
             \App\Models\ActivityLog::record('departments.update', "Deadlines turned {$state} for {$department->name} ({$department->code}, #{$department->id})", $department);
+        }
+
+        if ($oldTimeMode !== $department->time_tracking_mode) {
+            \App\Models\ActivityLog::record('departments.update', "Time tracking display for {$department->name} ({$department->code}, #{$department->id}) changed: {$oldTimeMode} → {$department->time_tracking_mode}", $department);
         }
 
         return redirect()->route('departments.index')->with('success', 'Department updated.');
@@ -92,6 +97,13 @@ class DepartmentController extends Controller
             'is_active' => ['nullable', 'boolean'],
             'is_accounting' => ['nullable', 'boolean'],
             'deadline_enabled' => ['nullable', 'boolean'],
+            'customize_deadline_colors' => ['nullable', 'boolean'],
+            'dept_overdue_color' => ['nullable', 'string', 'max:20'],
+            'dept_rule_days' => ['nullable', 'array'],
+            'dept_rule_days.*' => ['numeric', 'min:0.5'],
+            'dept_rule_colors' => ['nullable', 'array'],
+            'dept_rule_colors.*' => ['string', 'max:20'],
+            'time_tracking_mode' => ['nullable', Rule::in(['working_hours', 'calendar_days'])],
             'broadcast_ack_layout' => ['nullable', 'boolean'],
             'sla_enabled' => ['nullable', 'boolean'],
             'sla_days' => ['nullable', 'integer', 'min:1', 'max:365'],
@@ -103,6 +115,11 @@ class DepartmentController extends Controller
             'is_active' => $request->boolean('is_active'),
             'is_accounting' => $request->boolean('is_accounting'),
             'deadline_enabled' => $request->boolean('deadline_enabled'),
+            'deadline_highlight_rules' => $request->boolean('customize_deadline_colors')
+                ? \App\Models\Document::zipDeadlineRules($request->input('dept_rule_days', []), $request->input('dept_rule_colors', []))
+                : null,
+            'deadline_overdue_color' => $request->boolean('customize_deadline_colors') ? ($request->input('dept_overdue_color') ?: null) : null,
+            'time_tracking_mode' => $request->input('time_tracking_mode') === 'calendar_days' ? 'calendar_days' : 'working_hours',
             'broadcast_ack_layout' => $request->boolean('broadcast_ack_layout'),
             'sla_enabled' => $request->boolean('sla_enabled'),
         ];

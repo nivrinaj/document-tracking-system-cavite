@@ -379,7 +379,39 @@ class Document extends Model
         return $this->updated_at;
     }
 
-    /** Human elapsed (working) time since the last action, WITHOUT an "ago" suffix. */
+    /**
+     * 'calendar_days' when this document's own department has opted into plain
+     * calendar-day tracking for its internal view (departments.time_tracking_mode);
+     * otherwise 'working_hours' (the shared engine). Driven by the document's
+     * CURRENT department, so a future cross-office move naturally switches the
+     * display back to working-hours for a department that hasn't opted in.
+     */
+    public function timeTrackingMode(): string
+    {
+        return $this->department?->time_tracking_mode === 'calendar_days' ? 'calendar_days' : 'working_hours';
+    }
+
+    /**
+     * Elapsed seconds between two instants for THIS document — calendar time when
+     * its department uses calendar-day tracking, otherwise the shared working-hours
+     * engine (unaffected for every other department).
+     */
+    public function elapsedSeconds($start, $end = null, ?User $possessor = null): int
+    {
+        if (! $start) {
+            return 0;
+        }
+        if ($this->timeTrackingMode() === 'calendar_days') {
+            $start = \Illuminate\Support\Carbon::parse($start);
+            $end = $end ? \Illuminate\Support\Carbon::parse($end) : now();
+
+            return max(0, (int) $start->diffInSeconds($end));
+        }
+
+        return \App\Services\BusinessHours::secondsBetween($start, $end, $possessor);
+    }
+
+    /** Human elapsed time since the last action, WITHOUT an "ago" suffix. */
     public function elapsedSinceLastAction(): string
     {
         if (! $this->lastActionAt()) {
@@ -387,17 +419,15 @@ class Document extends Model
         }
 
         return static::humanDuration(
-            \App\Services\BusinessHours::secondsBetween($this->lastActionAt(), now(), $this->currentPossessor())
+            $this->elapsedSeconds($this->lastActionAt(), now(), $this->currentPossessor())
         );
     }
 
-    /** Total turnaround (working time) for a finished document (received -> completed). */
+    /** Total turnaround for a finished document (received -> completed). */
     public function turnaround(): ?string
     {
         if ($this->received_at && $this->completed_at) {
-            return static::humanDuration(
-                \App\Services\BusinessHours::secondsBetween($this->received_at, $this->completed_at)
-            );
+            return static::humanDuration($this->elapsedSeconds($this->received_at, $this->completed_at));
         }
 
         return null;
@@ -478,27 +508,71 @@ class Document extends Model
         return $this->deadline->copy()->setTimeFromTimeString(\App\Models\Setting::get('work_end', '17:00'));
     }
 
+    /** Default global rules, seeded the first time nothing has been configured yet. */
+    public static function defaultDeadlineRules(): array
+    {
+        return [
+            ['days' => 1, 'color' => '#f43f5e'],
+            ['days' => 2, 'color' => '#f97316'],
+        ];
+    }
+
+    public static function defaultDeadlineOverdueColor(): string
+    {
+        return '#dc2626';
+    }
+
+    /** Zip parallel "days" / "hex color" form arrays into the rules shape, dropping incomplete rows. */
+    public static function zipDeadlineRules(array $days, array $colors): array
+    {
+        $rules = [];
+        foreach ($days as $i => $d) {
+            if ($d !== null && $d !== '' && ! empty($colors[$i])) {
+                $rules[] = ['days' => (float) $d, 'color' => $colors[$i]];
+            }
+        }
+
+        return $rules;
+    }
+
     /**
-     * Row-highlight state for a still-open document with a deadline, measured in
-     * working time remaining until 5 PM on the due date:
-     *   'overdue' (past due), 'red' (<= 8 working hrs left), 'orange' (<= 16), or null.
+     * Row-highlight for a still-open document with a deadline: an overdue color,
+     * or the color of the nearest "X days before" rule reached — using this
+     * document's OWN office's custom rules if it has any (deadline_enabled +
+     * customized), otherwise the Super-Admin global defaults. Distance is
+     * measured in working time remaining until 5 PM on the due date, converted
+     * to whole working "days" using the office's configured day length so the
+     * numbers mean what an admin typed ("3 days before").
+     * Returns ['color' => '#hex', 'label' => string] or null.
      */
-    public function deadlineState(): ?string
+    public function deadlineHighlight(): ?array
     {
         $due = $this->deadlineAt();
         if (! $due || $this->isClosed()) {
             return null;
         }
+
+        $dept = $this->department;
+        $useDeptRules = $dept && $dept->deadline_enabled && ! empty($dept->deadline_highlight_rules);
+        $rules = $useDeptRules
+            ? $dept->deadline_highlight_rules
+            : (json_decode((string) \App\Models\Setting::get('deadline_highlight_rules', ''), true) ?: static::defaultDeadlineRules());
+        $overdueColor = ($dept && $dept->deadline_enabled && $dept->deadline_overdue_color)
+            ? $dept->deadline_overdue_color
+            : (\App\Models\Setting::get('deadline_overdue_color') ?: static::defaultDeadlineOverdueColor());
+
         if (now()->greaterThanOrEqualTo($due)) {
-            return 'overdue';
+            return ['color' => $overdueColor, 'label' => 'Overdue'];
         }
 
         $remaining = \App\Services\BusinessHours::secondsBetween(now(), $due);
-        if ($remaining <= 8 * 3600) {
-            return 'red';
-        }
-        if ($remaining <= 16 * 3600) {
-            return 'orange';
+        $dayLen = \App\Services\BusinessHours::dailyCapacitySeconds();
+
+        // Ascending by days so the tightest (nearest-due, most urgent) matching rule wins.
+        foreach (collect($rules)->sortBy('days') as $rule) {
+            if ($remaining <= (float) $rule['days'] * $dayLen) {
+                return ['color' => $rule['color'], 'label' => rtrim(rtrim(number_format((float) $rule['days'], 1), '0'), '.').' day(s) before'];
+            }
         }
 
         return null;
@@ -515,7 +589,7 @@ class Document extends Model
             return 0;
         }
 
-        return \App\Services\BusinessHours::secondsBetween($this->possession_started_at, now(), $this->currentPossessor());
+        return $this->elapsedSeconds($this->possession_started_at, now(), $this->currentPossessor());
     }
 
     /** Human "time with current holder", e.g. "2 days 3 hrs". */

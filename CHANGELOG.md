@@ -6,6 +6,16 @@ Format based on [Keep a Changelog](https://keepachangelog.com).
 
 ---
 
+## 1.19.0 — 2026-07-01
+- **Document Tracking filters follow who you are** — Department, Division, and Staff filters now only show up for the roles that need them (Super Admin, Department/Assistant Department Head, Division Head), pre-scoped to each person's own office/division, and the filter order now goes search → type → status → these → date range.
+- **Deadline highlight colors are now fully configurable** — Super Admin sets default "X days before deadline → color" rules and an overdue color in System Settings; any office with deadlines enabled can customize its own instead.
+- **Transmittal can be limited to specific offices per document type** — same pattern as desktop receive: allow it for every office, or pick only certain ones.
+- **Transmittal quantity field redesigned** — replaced the half-width field with a compact quantity stepper that fills the panel properly; the transmittal icon changed from a box to a page/document icon to better match what it represents.
+- **New users can start on a default password** — a toggle skips typing a password twice; those accounts are required to set their own password (with plain-language requirements) the first time they log in.
+- **Add User page reorganized** — grouped into clear sections (Personal Information, Assignment, Security, Access & Capabilities) instead of one long list of fields.
+- **Account deletion can be turned off** — a Super Admin toggle disables both the admin's "Delete" button on the Users page and the "Delete Account" option on a user's own profile.
+- **Calendar-day tracking option per office** — an office can choose to see its own documents' age/idle/turnaround in plain calendar days instead of official working hours, without affecting how any other office sees the same document.
+
 ## 1.18.0 — 2026-07-01
 - **Searchable Destination office and Division on the encode page** — the Distribution panel's office and division pickers are now searchable with a clear button, matching the rest of the system; Assignee got the same consistent look.
 - **Workflow settings modernized** — the whole Workflow panel now uses the same sliding toggle switches as the rest of the system instead of checkboxes.

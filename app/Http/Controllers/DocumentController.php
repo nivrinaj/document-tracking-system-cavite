@@ -20,6 +20,9 @@ class DocumentController extends Controller
     public function index(Request $request)
     {
         $user = $request->user();
+        $isSuperAdmin = $user->hasRole('Super Admin');
+        $isDeptHead = $user->isDeptHeadRole();
+        $isDivisionHead = $user->isDivisionHead();
 
         $query = Document::with([
             'creator.department', 'creator.division',
@@ -58,12 +61,44 @@ class DocumentController extends Controller
             $query->where('document_type', $documentType);
         }
 
-        if ($departmentId = $request->input('department_id')) {
-            $query->where('department_id', $departmentId);
+        // Department filter: Super Admin's free choice only — everyone else is
+        // implicitly their own department (no dropdown shown, nothing to trust).
+        if ($isSuperAdmin) {
+            if ($departmentId = $request->input('department_id')) {
+                $query->where('department_id', $departmentId);
+            }
+        } elseif ($user->department_id) {
+            $query->where('department_id', $user->department_id);
         }
 
-        if ($division = $request->input('division_id')) {
-            $query->where('division_id', $division);
+        // Division filter: Super Admin free choice; Dept/Asst Dept Head may pick
+        // any division that actually belongs to their own department (validated
+        // server-side, never trusted as-submitted); Division Head is hard-locked
+        // to their own division; everyone else gets no division filter.
+        if ($isSuperAdmin) {
+            if ($division = $request->input('division_id')) {
+                $query->where('division_id', $division);
+            }
+        } elseif ($isDeptHead && $user->department_id) {
+            $division = $request->input('division_id');
+            if ($division && Division::where('id', $division)->where('department_id', $user->department_id)->exists()) {
+                $query->where('division_id', $division);
+            }
+        } elseif ($isDivisionHead && $user->division_id) {
+            $query->where('division_id', $user->division_id);
+        }
+
+        // Staff filter: who currently holds the document. Super Admin can filter
+        // by anyone; Dept/Asst Dept Head only their own department's staff;
+        // Division Head only their own division's staff — all validated
+        // server-side against the submitted user_id, never trusted blindly.
+        if ($userId = $request->input('user_id')) {
+            $allowed = $isSuperAdmin
+                || ($isDeptHead && User::where('id', $userId)->where('department_id', $user->department_id)->exists())
+                || ($isDivisionHead && User::where('id', $userId)->where('division_id', $user->division_id)->exists());
+            if ($allowed) {
+                $query->where('current_holder_id', $userId);
+            }
         }
 
         if ($request->filled('date_from')) {
@@ -76,12 +111,30 @@ class DocumentController extends Controller
         $perPage = (int) \App\Models\Setting::get('records_per_page', 12);
         $documents = $query->paginate($perPage)->withQueryString();
 
+        // Staff options for the "Staff" filter dropdown — scoped per role.
+        $staffOptions = collect();
+        if ($isSuperAdmin) {
+            $staffOptions = User::where('is_active', true)->orderBy('name')->get(['id', 'name', 'department_id', 'division_id']);
+        } elseif ($isDeptHead && $user->department_id) {
+            $staffOptions = User::where('is_active', true)->where('department_id', $user->department_id)->orderBy('name')->get(['id', 'name', 'department_id', 'division_id']);
+        } elseif ($isDivisionHead && $user->division_id) {
+            $staffOptions = User::where('is_active', true)->where('division_id', $user->division_id)->orderBy('name')->get(['id', 'name', 'department_id', 'division_id']);
+        }
+
         return view('documents.index', [
             'documents' => $documents,
-            'departments' => \App\Models\Department::orderBy('name')->get(),
-            'divisions' => Division::orderBy('name')->get(['id', 'code', 'name', 'department_id']),
+            'departments' => $isSuperAdmin ? \App\Models\Department::orderBy('name')->get() : collect(),
+            'divisions' => ($isSuperAdmin || $isDeptHead)
+                ? Division::orderBy('name')->get(['id', 'code', 'name', 'department_id'])
+                : collect(),
+            'staffOptions' => $staffOptions,
             'documentTypes' => \App\Models\DocumentType::where('is_active', true)->orderBy('name')->pluck('name'),
-            'showDeadlineColumn' => (bool) optional($user->department)->deadline_enabled || $user->hasRole('Super Admin'),
+            'showDeadlineColumn' => (bool) optional($user->department)->deadline_enabled || $isSuperAdmin,
+            'isSuperAdmin' => $isSuperAdmin,
+            'isDeptHead' => $isDeptHead,
+            'isDivisionHead' => $isDivisionHead,
+            'canFilterStaff' => $isSuperAdmin || $isDeptHead || $isDivisionHead,
+            'ownDepartmentId' => $user->department_id,
         ]);
     }
 
@@ -106,7 +159,7 @@ class DocumentController extends Controller
             'documentTypes' => $types,
             'voucherTypeNames' => $types->where('requires_voucher', true)->pluck('name')->values(),
             'deadlineTypeNames' => $types->where('requires_deadline', true)->pluck('name')->values(),
-            'transmittalTypeNames' => $types->where('allows_transmittal', true)->pluck('name')->values(),
+            'transmittalTypeNames' => $types->filter(fn ($t) => $t->transmittalAllowedFor($user->department_id))->pluck('name')->values(),
             'officeDeadline' => (bool) optional($user->department)->deadline_enabled,
             'crossDept' => \App\Models\Setting::get('allow_cross_department', '0') === '1',
             'priorityEnabled' => Document::priorityEnabled(),
@@ -184,8 +237,11 @@ class DocumentController extends Controller
         // Priority is optional; default to "normal" (and force it when the feature is off).
         $data['priority'] = Document::priorityEnabled() ? ($data['priority'] ?? 'normal') : 'normal';
 
-        // Transmittal quantity only makes sense when the toggle is on.
-        $data['is_transmittal'] = $request->boolean('is_transmittal');
+        // Transmittal quantity only makes sense when the toggle is on, and only
+        // for a type/office combination actually allowed to use it (defense in
+        // depth — the encode form already hides the toggle otherwise).
+        $type = \App\Models\DocumentType::where('name', $data['document_type'])->first();
+        $data['is_transmittal'] = $request->boolean('is_transmittal') && $type?->transmittalAllowedFor($request->user()->department_id);
         if (! $data['is_transmittal']) {
             $data['transmittal_quantity'] = null;
         }
@@ -294,7 +350,9 @@ class DocumentController extends Controller
             'divisions' => Division::where('is_active', true)->orderBy('name')->get(),
             'users' => $this->assignableUsers(),
             'deadlineTypeNames' => \App\Models\DocumentType::where('requires_deadline', true)->pluck('name')->values(),
-            'transmittalTypeNames' => \App\Models\DocumentType::where('allows_transmittal', true)->pluck('name')->values(),
+            'transmittalTypeNames' => \App\Models\DocumentType::where('allows_transmittal', true)->get()
+                ->filter(fn ($t) => $t->transmittalAllowedFor(Auth::user()->department_id ?? $document->department_id))
+                ->pluck('name')->values(),
             'officeDeadline' => (bool) optional($document->department)->deadline_enabled,
         ]);
     }
@@ -320,7 +378,8 @@ class DocumentController extends Controller
             unset($data['priority']);
         }
 
-        $data['is_transmittal'] = $request->boolean('is_transmittal');
+        $type = \App\Models\DocumentType::where('name', $data['document_type'])->first();
+        $data['is_transmittal'] = $request->boolean('is_transmittal') && $type?->transmittalAllowedFor($request->user()->department_id);
         if (! $data['is_transmittal']) {
             $data['transmittal_quantity'] = null;
         }

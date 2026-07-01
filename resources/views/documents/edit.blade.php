@@ -49,14 +49,17 @@
                         <label class="label">Deadline <span class="text-gray-400 text-xs font-normal">(optional)</span></label>
                         <input type="date" name="deadline" value="{{ old('deadline', optional($document->deadline)->toDateString()) }}" class="input" :min="todayStr" x-bind:disabled="!showDeadline">
                     </div>
-                    <div class="sm:col-span-2" x-show="showTransmittal" x-cloak>
+                    <div class="sm:col-span-2 rounded-xl border border-gray-200/80 dark:border-gray-700 p-4" x-show="showTransmittal" x-cloak>
                         <x-toggle name="is_transmittal" x-model="isTransmittal">
                             <span class="block text-sm font-medium">This is a transmittal of multiple <span x-text="docType"></span></span>
                             <span class="block text-xs text-gray-400 mt-0.5">One tracking code covers several physical documents of this type.</span>
                         </x-toggle>
-                        <div x-show="isTransmittal" x-cloak class="mt-3 max-w-xs">
-                            <label class="label">Quantity <span class="text-red-500">*</span></label>
-                            <input type="number" name="transmittal_quantity" value="{{ old('transmittal_quantity', $document->transmittal_quantity) }}" class="input" min="1" max="9999" x-bind:required="isTransmittal">
+                        <div x-show="isTransmittal" x-cloak class="flex items-center justify-between gap-4 mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
+                            <div class="min-w-0">
+                                <span class="block text-sm font-medium">Quantity <span class="text-red-500">*</span></span>
+                                <span class="block text-xs text-gray-400">How many individual documents are in this transmittal.</span>
+                            </div>
+                            <x-qty-stepper name="transmittal_quantity" :value="old('transmittal_quantity', $document->transmittal_quantity)" x-bind:required="isTransmittal" />
                         </div>
                     </div>
                     <div>

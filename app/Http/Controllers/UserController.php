@@ -51,13 +51,15 @@ class UserController extends Controller
 
     public function store(Request $request)
     {
+        $useDefaultPassword = $request->boolean('use_default_password');
+
         $data = $request->validate([
             'first_name' => ['required', 'string', 'max:255'],
             'middle_name' => ['nullable', 'string', 'max:255'],
             'last_name' => ['required', 'string', 'max:255'],
             'username' => ['required', 'string', 'max:255', 'alpha_dash', 'unique:users,username'],
             'email' => ['nullable', 'email', 'unique:users,email'],
-            'password' => ['required', 'confirmed', Password::defaults()],
+            'password' => $useDefaultPassword ? ['nullable'] : ['required', 'confirmed', Password::defaults()],
             'division_id' => ['nullable', 'exists:divisions,id'],
             'department_id' => ['nullable', 'exists:departments,id'],
             'position' => ['nullable', 'string', 'max:255'],
@@ -76,7 +78,8 @@ class UserController extends Controller
             'last_name' => $data['last_name'],
             'username' => $data['username'],
             'email' => $data['email'] ?? null,
-            'password' => Hash::make($data['password']),
+            'password' => Hash::make($useDefaultPassword ? User::DEFAULT_PASSWORD : $data['password']),
+            'must_change_password' => $useDefaultPassword,
             'division_id' => $data['division_id'] ?? null,
             'department_id' => $data['department_id'] ?? null,
             'position' => $data['position'] ?? null,
@@ -93,9 +96,12 @@ class UserController extends Controller
         $this->syncDirectPermission($user, 'calendar.manage', $request->boolean('can_manage_calendar'));
 
         $dept = optional(\App\Models\Department::find($data['department_id'] ?? null))->code ?? '(none)';
-        \App\Models\ActivityLog::record('users.store', "Created user: {$data['name']} ({$data['username']}), Role: {$data['role']}, Dept: {$dept}", $user);
+        $pwNote = $useDefaultPassword ? ', started on the default password (must change on first login)' : '';
+        \App\Models\ActivityLog::record('users.store', "Created user: {$data['name']} ({$data['username']}), Role: {$data['role']}, Dept: {$dept}{$pwNote}", $user);
 
-        return redirect()->route('users.index')->with('success', 'User created.');
+        return redirect()->route('users.index')->with('success', $useDefaultPassword
+            ? "User created with the default password (\"".User::DEFAULT_PASSWORD."\"). They'll be asked to change it on first login."
+            : 'User created.');
     }
 
     public function edit(User $user)
@@ -211,6 +217,10 @@ class UserController extends Controller
 
     public function destroy(Request $request, User $user)
     {
+        if (\App\Models\Setting::get('enable_user_delete', '1') !== '1') {
+            return back()->with('error', 'Deleting user accounts is currently disabled in System Settings.');
+        }
+
         if ($user->id === $request->user()->id) {
             return back()->with('error', 'You cannot delete your own account.');
         }

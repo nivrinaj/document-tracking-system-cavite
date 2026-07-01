@@ -44,10 +44,24 @@
 </div>
 
 {{-- Deadline tracking (opt-in per office) --}}
-<div class="border-t border-gray-100 dark:border-gray-700 pt-4 mt-2">
-    <x-toggle name="deadline_enabled" label="Enable deadlines for this office" :checked="old('deadline_enabled', $department?->deadline_enabled)">
-        <span class="block text-xs text-gray-400 mt-0.5">When on, encoders in this office can set a <strong>Deadline</strong> on document types marked “requires a deadline”, and this office’s tracking list shows a Deadline column with colour warnings (orange within 16 working hours, red within 8).</span>
+<div class="border-t border-gray-100 dark:border-gray-700 pt-4 mt-2"
+     x-data="{
+        deadlineOn: {{ old('deadline_enabled', $department?->deadline_enabled) ? 'true' : 'false' }},
+        customize: {{ !empty($department?->deadline_highlight_rules) || $department?->deadline_overdue_color ? 'true' : 'false' }},
+     }">
+    <x-toggle x-model="deadlineOn" name="deadline_enabled" label="Enable deadlines for this office">
+        <span class="block text-xs text-gray-400 mt-0.5">When on, encoders in this office can set a <strong>Deadline</strong> on document types marked “requires a deadline”, and this office’s tracking list shows a Deadline column with colour highlighting as it nears.</span>
     </x-toggle>
+
+    <div x-show="deadlineOn" x-cloak class="ml-[3.25rem] mt-3 space-y-3">
+        <x-toggle x-model="customize" label="Customize highlight colors for this office">
+            <span class="block text-xs text-gray-400 mt-0.5">Otherwise this office uses the Super Admin's default colors (System Settings → Deadline Highlighting).</span>
+        </x-toggle>
+        <div x-show="customize" x-cloak>
+            <x-deadline-rules-editor prefix="dept" :rules="$department?->deadline_highlight_rules ?? []" :overdue-color="$department?->deadline_overdue_color ?: \App\Models\Document::defaultDeadlineOverdueColor()" />
+        </div>
+        <input type="hidden" name="customize_deadline_colors" :value="customize ? '1' : '0'">
+    </div>
 </div>
 
 {{-- Broadcast acknowledgment layout (opt-in per office) --}}
@@ -55,6 +69,18 @@
     <x-toggle name="broadcast_ack_layout" label="Use the tabbed acknowledgment layout for this office’s broadcasts" :checked="old('broadcast_ack_layout', $department?->broadcast_ack_layout)">
         <span class="block text-xs text-gray-400 mt-0.5">When on, memos broadcast by this office show recipients in tabs by employment status, grouped by division, in a table of name / position / date received — instead of the default chip list.</span>
     </x-toggle>
+</div>
+
+{{-- Internal time-tracking display (calendar days vs. working hours) --}}
+<div class="border-t border-gray-100 dark:border-gray-700 pt-4 mt-2"
+     x-data="{ calDays: {{ old('time_tracking_mode', $department?->time_tracking_mode) === 'calendar_days' ? 'true' : 'false' }} }">
+    <x-toggle x-model="calDays" label="Show calendar days instead of working hours for this office's documents">
+        <span class="block text-xs text-gray-400 mt-0.5">
+            For this office's own view only — age/idle/turnaround on documents currently with them count plain calendar days rather than official working hours.
+            The underlying working-hours engine keeps running unchanged for everyone else, so this stays safe to turn on/off per office as more offices get interconnected later.
+        </span>
+    </x-toggle>
+    <input type="hidden" name="time_tracking_mode" :value="calDays ? 'calendar_days' : 'working_hours'">
 </div>
 
 {{-- Completion deadline (turnaround tracking) --}}
