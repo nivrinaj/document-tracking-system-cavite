@@ -44,7 +44,11 @@
       "Bash(php -l app/Models/ResponsibilityCenter.php)",
       "Bash(php -l app/Models/ResponsibilityCenterProject.php)",
       "Bash(grep -n '\\\\$c->code\\\\}/{{ \\\\$c->name\\\\|code }}/{{.*name' resources/views/accounting/index.blade.php)",
-      "mcp__Claude_in_Chrome__navigate"
+      "mcp__Claude_in_Chrome__navigate",
+      "PowerShell(cd D:\\\\PGC; php artisan tinker --execute=\"echo 'APP TZ: '.config\\('app.timezone'\\).PHP_EOL; echo 'NOW: '.now\\(\\)->toDateTimeString\\(\\).PHP_EOL; foreach\\(['work_hours_enabled','work_start','work_end','work_lunch_start','work_lunch_end','work_days'] as \\\\$k\\){ echo \\\\$k.' = '.var_export\\(\\\\App\\\\Models\\\\Setting::get\\(\\\\$k\\),true\\).PHP_EOL; }\")",
+      "Bash(php \"C:\\\\Users\\\\IRVIN\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\D--PGC\\\\52ab1751-168c-49ad-98d9-4e7cc7460abc\\\\scratchpad\\\\diag.php\")",
+      "Bash(php diag_tmp.php)",
+      "Bash(git -C /d/PGC status --short)"
     ]
   }
 }
