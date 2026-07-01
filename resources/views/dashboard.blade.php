@@ -55,6 +55,16 @@
             </x-stat-card>
         </div>
 
+        {{-- Transmittals — only shown when there are any in view --}}
+        @if($transmittals['count'] > 0)
+            <div class="flex items-center gap-3 rounded-xl border border-indigo-100 dark:border-indigo-900/40 bg-indigo-50/60 dark:bg-indigo-900/15 px-4 py-3">
+                <span class="w-9 h-9 rounded-lg grid place-items-center bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-300 text-lg shrink-0">📦</span>
+                <div class="text-sm text-indigo-800 dark:text-indigo-200">
+                    <strong>{{ $transmittals['count'] }}</strong> transmittal {{ \Illuminate\Support\Str::plural('document', $transmittals['count']) }} covering <strong>{{ $transmittals['quantity'] }}</strong> individual {{ \Illuminate\Support\Str::plural('document', $transmittals['quantity']) }}.
+                </div>
+            </div>
+        @endif
+
         {{-- ════════ Needs your action (front and center) ════════ --}}
         @php
             $nothingPending = $toReceive->isEmpty() && $toAction->isEmpty() && $toRelease->isEmpty() && $toClaim->isEmpty() && $toAcknowledge->isEmpty();

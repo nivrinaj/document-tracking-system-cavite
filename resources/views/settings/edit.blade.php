@@ -142,125 +142,108 @@
 
             {{-- Workflow --}}
             <x-card title="Workflow">
-                <div class="space-y-4">
-                    <label class="flex items-start gap-3 cursor-pointer">
-                        <input type="hidden" name="allow_desktop_receive" value="0">
-                        <input type="checkbox" name="allow_desktop_receive" value="1" class="mt-1 rounded text-[color:var(--color-primary)]"
-                               @checked(($settings['allow_desktop_receive'] ?? '0') === '1')>
-                        <span>
-                            <span class="font-medium text-sm">Allow receiving from the desktop document page</span>
-                            <span class="block text-xs text-gray-400 mt-0.5">
-                                When <strong>off</strong> (default), staff can only tap <em>Receive</em> after scanning the QR with their phone.
-                                When <strong>on</strong>, the intended recipient can also receive from the desktop document page.
-                            </span>
+                <div class="space-y-4"
+                     x-data="{ deskOn: {{ ($settings['allow_desktop_receive'] ?? '0') === '1' ? 'true' : 'false' }}, deskScope: '{{ $settings['desktop_receive_scope'] ?? 'all' }}' }">
+                    <x-toggle name="allow_desktop_receive" x-model="deskOn" label="Allow receiving from the desktop document page">
+                        <span class="block text-xs text-gray-400 mt-0.5">
+                            When <strong>off</strong> (default), staff can only tap <em>Receive</em> after scanning the QR with their phone.
+                            When <strong>on</strong>, the intended recipient can also receive from the desktop document page.
                         </span>
-                    </label>
+                    </x-toggle>
 
-                    <label class="flex items-start gap-3 cursor-pointer border-t border-gray-100 dark:border-gray-700 pt-4">
-                        <input type="hidden" name="allow_cross_department" value="0">
-                        <input type="checkbox" name="allow_cross_department" value="1" class="mt-1 rounded text-[color:var(--color-primary)]"
-                               @checked(($settings['allow_cross_department'] ?? '0') === '1')>
-                        <span>
-                            <span class="font-medium text-sm">Allow sending documents to other departments</span>
+                    <div x-show="deskOn" x-cloak class="ml-[3.25rem] -mt-2 space-y-3">
+                        <div class="flex rounded-lg border border-gray-200 dark:border-gray-700 p-0.5 w-fit text-sm">
+                            <button type="button" @click="deskScope = 'all'" class="px-3 py-1.5 rounded-md transition-colors" :class="deskScope === 'all' ? 'bg-[color:var(--color-primary)] text-white' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'">All offices</button>
+                            <button type="button" @click="deskScope = 'selected'" class="px-3 py-1.5 rounded-md transition-colors" :class="deskScope === 'selected' ? 'bg-[color:var(--color-primary)] text-white' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'">Select offices</button>
+                        </div>
+                        <input type="hidden" name="desktop_receive_scope" :value="deskScope">
+
+                        <div x-show="deskScope === 'selected'" x-cloak>
+                            <p class="text-xs text-gray-400 mb-1.5">Only staff in these offices get the desktop option; everyone else still scans the QR.</p>
+                            <div class="max-w-md" x-data="multiSelect({
+                                items: @js($departments->map(fn($d) => ['id' => (string) $d->id, 'label' => $d->code.' — '.$d->name])),
+                                selected: @js(array_map('strval', array_filter(explode(',', (string) ($settings['desktop_receive_departments'] ?? ''))))),
+                                name: 'desktop_receive_departments[]',
+                                placeholder: '— Select offices —',
+                            })">
+                                <x-reports._multi-select />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="border-t border-gray-100 dark:border-gray-700 pt-4">
+                        <x-toggle name="allow_cross_department" :checked="($settings['allow_cross_department'] ?? '0') === '1'" label="Allow sending documents to other departments">
                             <span class="block text-xs text-gray-400 mt-0.5">
                                 When <strong>off</strong> (default), staff can only assign/forward to people in <em>their own department</em>.
                                 When <strong>on</strong>, they can pick another <strong>office → division → staff</strong> to route documents between departments.
                             </span>
-                        </span>
-                    </label>
+                        </x-toggle>
+                    </div>
 
-                    <label class="flex items-start gap-3 cursor-pointer border-t border-gray-100 dark:border-gray-700 pt-4">
-                        <input type="hidden" name="enable_priority" value="0">
-                        <input type="checkbox" name="enable_priority" value="1" class="mt-1 rounded text-[color:var(--color-primary)]"
-                               @checked(($settings['enable_priority'] ?? '0') === '1')>
-                        <span>
-                            <span class="font-medium text-sm">Enable the “Priority” field</span>
+                    <div class="border-t border-gray-100 dark:border-gray-700 pt-4">
+                        <x-toggle name="enable_priority" :checked="($settings['enable_priority'] ?? '0') === '1'" label="Enable the “Priority” field">
                             <span class="block text-xs text-gray-400 mt-0.5">
                                 When <strong>off</strong> (default), the priority field is hidden everywhere — encode form, lists, document details and reports.
                                 When <strong>on</strong>, documents can be tagged Low / Normal / High / Urgent and filtered and reported on by priority.
                             </span>
-                        </span>
-                    </label>
+                        </x-toggle>
+                    </div>
 
-                    <label class="flex items-start gap-3 cursor-pointer border-t border-gray-100 dark:border-gray-700 pt-4">
-                        <input type="hidden" name="enable_route_items" value="0">
-                        <input type="checkbox" name="enable_route_items" value="1" class="mt-1 rounded text-[color:var(--color-primary)]"
-                               @checked(($settings['enable_route_items'] ?? '0') === '1')>
-                        <span>
-                            <span class="font-medium text-sm">Enable “Route slip” multi-document tracking</span>
+                    <div class="border-t border-gray-100 dark:border-gray-700 pt-4">
+                        <x-toggle name="enable_route_items" :checked="($settings['enable_route_items'] ?? '0') === '1'" label="Enable “Route slip” multi-document tracking">
                             <span class="block text-xs text-gray-400 mt-0.5">
                                 When <strong>on</strong>, a single document/QR (a “route slip”) can list several individual documents. The holder can mark each one
                                 <strong>Cleared</strong> (good to go) or <strong>Rejected</strong> (returned to origin) — so partial outcomes (e.g. 4 cleared, 1 rejected) are tracked.
                                 When <strong>off</strong> (default), this is hidden.
                             </span>
-                        </span>
-                    </label>
+                        </x-toggle>
+                    </div>
 
-                    <label class="flex items-start gap-3 cursor-pointer border-t border-gray-100 dark:border-gray-700 pt-4">
-                        <input type="hidden" name="enable_batch_receive" value="0">
-                        <input type="checkbox" name="enable_batch_receive" value="1" class="mt-1 rounded text-[color:var(--color-primary)]"
-                               @checked(($settings['enable_batch_receive'] ?? '1') === '1')>
-                        <span>
-                            <span class="font-medium text-sm">Enable “Batch receive”</span>
+                    <div class="border-t border-gray-100 dark:border-gray-700 pt-4">
+                        <x-toggle name="enable_batch_receive" :checked="($settings['enable_batch_receive'] ?? '1') === '1'" label="Enable “Batch receive”">
                             <span class="block text-xs text-gray-400 mt-0.5">
                                 When <strong>on</strong> (default), staff can receive a whole stack of QR-tagged documents at once from the <strong>Batch receive</strong> page (scan-scan-scan, then receive).
                                 When <strong>off</strong>, documents are received one at a time as usual.
                             </span>
-                        </span>
-                    </label>
+                        </x-toggle>
+                    </div>
 
-                    <label class="flex items-start gap-3 cursor-pointer border-t border-gray-100 dark:border-gray-700 pt-4">
-                        <input type="hidden" name="enable_document_linking" value="0">
-                        <input type="checkbox" name="enable_document_linking" value="1" class="mt-1 rounded text-[color:var(--color-primary)]"
-                               @checked(($settings['enable_document_linking'] ?? '1') === '1')>
-                        <span>
-                            <span class="font-medium text-sm">Enable “Link related documents”</span>
+                    <div class="border-t border-gray-100 dark:border-gray-700 pt-4">
+                        <x-toggle name="enable_document_linking" :checked="($settings['enable_document_linking'] ?? '1') === '1'" label="Enable “Link related documents”">
                             <span class="block text-xs text-gray-400 mt-0.5">
                                 When <strong>on</strong> (default), a document can be linked to other related documents (by tracking code) so their histories cross-reference.
                                 When <strong>off</strong>, the Related-documents panel is hidden.
                             </span>
-                        </span>
-                    </label>
+                        </x-toggle>
+                    </div>
 
-                    <label class="flex items-start gap-3 cursor-pointer border-t border-gray-100 dark:border-gray-700 pt-4">
-                        <input type="hidden" name="enable_attachments" value="0">
-                        <input type="checkbox" name="enable_attachments" value="1" class="mt-1 rounded text-[color:var(--color-primary)]"
-                               @checked(($settings['enable_attachments'] ?? '0') === '1')>
-                        <span>
-                            <span class="font-medium text-sm">Enable “Supporting Documents” &amp; handover verification</span>
+                    <div class="border-t border-gray-100 dark:border-gray-700 pt-4">
+                        <x-toggle name="enable_attachments" :checked="($settings['enable_attachments'] ?? '0') === '1'" label="Enable “Supporting Documents” &amp; handover verification">
                             <span class="block text-xs text-gray-400 mt-0.5">
                                 When <strong>on</strong>, the holder can list supporting documents (a <strong>title</strong> each, with an optional PDF or captured pages).
                                 On hand-over the sender ticks each item as physically attached; the receiver ticks each item present to <strong>accept</strong>, or <strong>rejects</strong> (returns it to the sender) if something is missing.
                                 When <strong>off</strong> (default), this is hidden.
                             </span>
-                        </span>
-                    </label>
+                        </x-toggle>
+                    </div>
 
-                    <label class="flex items-start gap-3 cursor-pointer border-t border-gray-100 dark:border-gray-700 pt-4">
-                        <input type="hidden" name="enable_digital_copy" value="0">
-                        <input type="checkbox" name="enable_digital_copy" value="1" class="mt-1 rounded text-[color:var(--color-primary)]"
-                               @checked(($settings['enable_digital_copy'] ?? '0') === '1')>
-                        <span>
-                            <span class="font-medium text-sm">Enable “Digital Copy” of the document</span>
+                    <div class="border-t border-gray-100 dark:border-gray-700 pt-4">
+                        <x-toggle name="enable_digital_copy" :checked="($settings['enable_digital_copy'] ?? '0') === '1'" label="Enable “Digital Copy” of the document">
                             <span class="block text-xs text-gray-400 mt-0.5">
                                 When <strong>on</strong>, the <strong>encoder</strong> can upload one digital copy (PDF or image, max 2 MB) of the document they're encoding. Everyone concerned can view it; it does <em>not</em> affect receiving/rejecting (that stays tied to Supporting Documents).
                                 When <strong>off</strong> (default), this is hidden.
                             </span>
-                        </span>
-                    </label>
+                        </x-toggle>
+                    </div>
 
-                    <label class="flex items-start gap-3 cursor-pointer border-t border-gray-100 dark:border-gray-700 pt-4">
-                        <input type="hidden" name="enable_messaging" value="0">
-                        <input type="checkbox" name="enable_messaging" value="1" class="mt-1 rounded text-[color:var(--color-primary)]"
-                               @checked(($settings['enable_messaging'] ?? '0') === '1')>
-                        <span>
-                            <span class="font-medium text-sm">Enable in-app messaging (chat)</span>
+                    <div class="border-t border-gray-100 dark:border-gray-700 pt-4">
+                        <x-toggle name="enable_messaging" :checked="($settings['enable_messaging'] ?? '0') === '1'" label="Enable in-app messaging (chat)">
                             <span class="block text-xs text-gray-400 mt-0.5">
                                 When <strong>on</strong>, staff get a <strong>Messages</strong> area to chat with colleagues (handy to follow up or ask about a document), with live unread badges and new-message alerts.
                                 When <strong>off</strong> (default), messaging is hidden entirely.
                             </span>
-                        </span>
-                    </label>
+                        </x-toggle>
+                    </div>
 
                     {{-- Messaging options (only meaningful when chat is on) --}}
                     @php $excludedRoles = json_decode($settings['messaging_excluded_roles'] ?? '[]', true) ?: []; @endphp

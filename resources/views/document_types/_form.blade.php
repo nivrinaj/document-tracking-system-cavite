@@ -15,6 +15,11 @@
     Show a <strong>Deadline</strong> field for this type <span class="text-gray-400">(e.g. Letter) — only in offices with deadlines enabled</span>
 </label>
 <label class="flex items-center gap-2 text-sm mt-2">
+    <input type="hidden" name="allows_transmittal" value="0">
+    <input type="checkbox" name="allows_transmittal" value="1" class="rounded text-[color:var(--color-primary)]" @checked(old('allows_transmittal', $type?->allows_transmittal))>
+    Allow encoding this as a <strong>transmittal</strong> (multiple documents under one tracking code) <span class="text-gray-400">— adds a quantity field at encode time</span>
+</label>
+<label class="flex items-center gap-2 text-sm mt-2">
     <input type="hidden" name="is_active" value="0">
     <input type="checkbox" name="is_active" value="1" class="rounded text-[color:var(--color-primary)]" @checked(old('is_active', $type?->is_active ?? true))>
     Active

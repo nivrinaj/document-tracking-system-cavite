@@ -11,6 +11,9 @@
                   officeDeadline: {{ ($officeDeadline ?? false) ? 'true' : 'false' }},
                   todayStr: '{{ now()->toDateString() }}',
                   get showDeadline() { return this.officeDeadline && this.deadlineTypes.includes(this.docType); },
+                  transmittalTypes: @js($transmittalTypeNames),
+                  isTransmittal: {{ old('is_transmittal') ? 'true' : 'false' }},
+                  get showTransmittal() { return this.transmittalTypes.includes(this.docType); },
                   isAccounting: {{ ($isAccounting ?? false) ? 'true' : 'false' }},
                   get acct() { return this.isAccounting && (this.docType === 'Voucher' || this.docType === 'Payroll'); },
                   srcOffice: '{{ old('source_department_id') }}',
@@ -25,6 +28,8 @@
                   routeItems: [''],
                   srcOfficeOpen: false, srcOfficeSearch: '',
                   assigneeId: '{{ old('assignee_id') }}', assigneeOpen: false, assigneeSearch: '',
+                  toDept: '{{ old('to_department_id') }}', toDeptOpen: false, toDeptSearch: '',
+                  divOpen: false, divSearch: '',
                   divisions: @js($divisions->map(fn($d) => ['id' => $d->id, 'name' => $d->code.' — '.$d->name, 'department_id' => $d->department_id])),
                   users: @js($users->map(fn($u) => ['id' => $u->id, 'name' => $u->name, 'department_id' => $u->department_id, 'division_id' => $u->division_id, 'division' => $u->division?->code ?? 'Head'])),
                   allUsers: @js($allUsers->map(fn($u) => ['id' => $u->id, 'name' => $u->name, 'office' => $u->department?->code ?? '—', 'division' => $u->division?->code ?? 'Head'])),
@@ -38,6 +43,10 @@
                   get srcOfficeLabel() { if (this.srcOffice === '') return '— Select office —'; if (this.srcOffice === 'external') return 'Other / External client'; const o = this.offices.find(x => String(x.id) === String(this.srcOffice)); return o ? o.label + (o.mine ? ' (mine)' : '') : '— Select office —'; },
                   get filteredStaff() { const q = this.assigneeSearch.toLowerCase().trim(); return this.ownStaff.filter(u => !q || u.name.toLowerCase().includes(q)); },
                   get assigneeLabel() { if (!this.assigneeId) return '— Assign later —'; const u = this.users.find(x => String(x.id) === String(this.assigneeId)); return u ? u.name + ' — ' + u.division : '— Assign later —'; },
+                  get filteredToDepts() { const q = this.toDeptSearch.toLowerCase().trim(); return this.offices.filter(o => !o.mine && (!q || o.label.toLowerCase().includes(q))); },
+                  get toDeptLabel() { if (!this.toDept) return '— Select office —'; const o = this.offices.find(x => String(x.id) === String(this.toDept)); return o ? o.label : '— Select office —'; },
+                  get filteredOwnDivs() { const q = this.divSearch.toLowerCase().trim(); return this.ownDivs.filter(d => !q || d.name.toLowerCase().includes(q)); },
+                  get divLabel() { if (!this.div) return 'All divisions'; const d = this.divisions.find(x => String(x.id) === String(this.div)); return d ? d.name : 'All divisions'; },
               }">
             @csrf
 
@@ -58,7 +67,7 @@
 
                     <div class="sm:col-span-2">
                         <label class="label">Document Type <span class="text-red-500">*</span></label>
-                        <select name="document_type" x-model="docType" class="input" required>
+                        <select name="document_type" x-model="docType" @change="if (!showTransmittal) isTransmittal = false" class="input" required>
                             <option value="" disabled>— Select document type —</option>
                             @foreach($documentTypes as $t)
                                 <option value="{{ $t->name }}" @selected(old('document_type')===$t->name)>{{ $t->name }}</option>
@@ -176,6 +185,17 @@
                         <label class="label">Deadline <span class="text-gray-400 text-xs font-normal">(optional)</span></label>
                         <input type="date" name="deadline" value="{{ old('deadline') }}" class="input" :min="todayStr" x-bind:disabled="!showDeadline">
                         <p class="text-[11px] text-gray-400 mt-1">Due date from today onwards. The tracking list warns as it nears (orange within 16 working hours, red within 8).</p>
+                    </div>
+
+                    <div class="sm:col-span-2" x-show="showTransmittal" x-cloak>
+                        <x-toggle name="is_transmittal" x-model="isTransmittal">
+                            <span class="block text-sm font-medium">This is a transmittal of multiple <span x-text="docType"></span></span>
+                            <span class="block text-xs text-gray-400 mt-0.5">One tracking code covers several physical documents of this type — enter how many below.</span>
+                        </x-toggle>
+                        <div x-show="isTransmittal" x-cloak class="mt-3 max-w-xs">
+                            <label class="label">Quantity <span class="text-red-500">*</span></label>
+                            <input type="number" name="transmittal_quantity" value="{{ old('transmittal_quantity') }}" class="input" min="1" max="9999" placeholder="e.g. 12" x-bind:required="isTransmittal">
+                        </div>
                     </div>
 
                     <div class="sm:col-span-2">
@@ -305,19 +325,39 @@
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div>
                             <label class="label">Division</label>
-                            <select x-model="div" @change="assigneeId = ''" class="input">
-                                <option value="">All divisions</option>
-                                <template x-for="d in ownDivs" :key="d.id"><option :value="d.id" x-text="d.name"></option></template>
-                            </select>
+                            <div class="relative" @click.outside="divOpen = false">
+                                <button type="button" @click="divOpen = !divOpen; divSearch = ''" class="input-btn text-left pr-14 block">
+                                    <span class="truncate block" :class="!div ? 'text-gray-400' : ''" x-text="divLabel"></span>
+                                </button>
+                                <div class="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5">
+                                    <button type="button" x-show="div" x-cloak @click.stop="div = ''; assigneeId = ''" class="w-4 h-4 grid place-items-center rounded text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                                    </button>
+                                    <svg class="w-4 h-4 text-gray-400 shrink-0 pointer-events-none transition-transform" :class="divOpen && 'rotate-180'" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+                                </div>
+                                <div x-show="divOpen" x-cloak x-transition.opacity class="absolute z-30 mt-1 w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-lg">
+                                    <div class="p-2 border-b border-gray-100 dark:border-gray-700"><input type="text" x-model="divSearch" @click.stop class="input py-1.5 text-sm" placeholder="Search…"></div>
+                                    <div class="max-h-56 overflow-y-auto py-1 text-sm">
+                                        <button type="button" @click="div = ''; assigneeId = ''; divOpen = false" class="w-full text-left px-3 py-1.5 text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700/50">All divisions</button>
+                                        <template x-for="d in filteredOwnDivs" :key="d.id"><button type="button" @click="div = String(d.id); assigneeId = ''; divOpen = false" class="w-full text-left px-3 py-1.5 hover:bg-gray-50 dark:hover:bg-gray-700/50" x-text="d.name"></button></template>
+                                        <p x-show="!filteredOwnDivs.length" class="px-3 py-2 text-gray-400">No divisions match.</p>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                         <div>
                             <label class="label">Assignee</label>
                             <div class="relative" @click.outside="assigneeOpen = false">
                                 <input type="hidden" name="assignee_id" :value="assigneeId">
-                                <button type="button" @click="assigneeOpen = !assigneeOpen; assigneeSearch = ''" class="input-btn flex items-center justify-between text-left">
-                                    <span class="truncate" :class="!assigneeId ? 'text-gray-400' : ''" x-text="assigneeLabel"></span>
-                                    <svg class="w-4 h-4 text-gray-400 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+                                <button type="button" @click="assigneeOpen = !assigneeOpen; assigneeSearch = ''" class="input-btn text-left pr-14 block">
+                                    <span class="truncate block" :class="!assigneeId ? 'text-gray-400' : ''" x-text="assigneeLabel"></span>
                                 </button>
+                                <div class="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5">
+                                    <button type="button" x-show="assigneeId" x-cloak @click.stop="assigneeId = ''" class="w-4 h-4 grid place-items-center rounded text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                                    </button>
+                                    <svg class="w-4 h-4 text-gray-400 shrink-0 pointer-events-none transition-transform" :class="assigneeOpen && 'rotate-180'" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+                                </div>
                                 <div x-show="assigneeOpen" x-cloak x-transition.opacity class="absolute z-30 mt-1 w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-lg">
                                     <div class="p-2 border-b border-gray-100 dark:border-gray-700">
                                         <input type="text" x-model="assigneeSearch" @click.stop class="input py-1.5 text-sm" placeholder="Search staff…">
@@ -340,14 +380,25 @@
                     <div x-show="scope === 'transfer'" x-cloak class="border-t border-gray-100 dark:border-gray-700 pt-4">
                         <p class="text-xs text-gray-400 mb-3">Goes to the office's <strong>receiving pool</strong> — no specific person. Their receiving staff claims it, then assigns the exact staff inside their office.</p>
                         <label class="label">Destination office</label>
-                        <select name="to_department_id" class="input" x-bind:required="scope === 'transfer'">
-                            <option value="">— Select office —</option>
-                            @foreach($departments as $dept)
-                                @if($dept->id != $ownDeptId)
-                                    <option value="{{ $dept->id }}">{{ $dept->code }} — {{ $dept->name }}</option>
-                                @endif
-                            @endforeach
-                        </select>
+                        <div class="relative" @click.outside="toDeptOpen = false">
+                            <input type="hidden" name="to_department_id" :value="toDept">
+                            <button type="button" @click="toDeptOpen = !toDeptOpen; toDeptSearch = ''" class="input-btn text-left pr-14 block">
+                                <span class="truncate block" :class="!toDept ? 'text-gray-400' : ''" x-text="toDeptLabel"></span>
+                            </button>
+                            <div class="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5">
+                                <button type="button" x-show="toDept" x-cloak @click.stop="toDept = ''" class="w-4 h-4 grid place-items-center rounded text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                                </button>
+                                <svg class="w-4 h-4 text-gray-400 shrink-0 pointer-events-none transition-transform" :class="toDeptOpen && 'rotate-180'" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+                            </div>
+                            <div x-show="toDeptOpen" x-cloak x-transition.opacity class="absolute z-30 mt-1 w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-lg">
+                                <div class="p-2 border-b border-gray-100 dark:border-gray-700"><input type="text" x-model="toDeptSearch" @click.stop class="input py-1.5 text-sm" placeholder="Search office…"></div>
+                                <div class="max-h-56 overflow-y-auto py-1 text-sm">
+                                    <template x-for="o in filteredToDepts" :key="o.id"><button type="button" @click="toDept = String(o.id); toDeptOpen = false" class="w-full text-left px-3 py-1.5 hover:bg-gray-50 dark:hover:bg-gray-700/50" x-text="o.label"></button></template>
+                                    <p x-show="!filteredToDepts.length" class="px-3 py-2 text-gray-400">No offices match.</p>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 @endif
 

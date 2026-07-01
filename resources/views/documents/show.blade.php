@@ -145,6 +145,11 @@
                             </header>
                             <dl class="{{ $body }}">
                                 <div><dt class="{{ $k }}">Type</dt><dd class="{{ $v }}">{{ $document->document_type }}</dd></div>
+                                @if($document->is_transmittal)
+                                    <div><dt class="{{ $k }}">Transmittal</dt><dd class="mt-1">
+                                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 text-sm font-semibold">📦 {{ $document->transmittal_quantity }} {{ \Illuminate\Support\Str::plural($document->document_type, (int) $document->transmittal_quantity) }}</span>
+                                    </dd></div>
+                                @endif
                                 @if($document->voucher_number)
                                     <div><dt class="{{ $k }}">Voucher No.</dt><dd class="{{ $v }} font-mono">{{ $document->voucher_number }}</dd></div>
                                 @endif
@@ -692,7 +697,7 @@
                     <div class="space-y-3">
 
                         @can('acknowledge', $document)
-                            @php $desktopAck = ($settings['allow_desktop_receive'] ?? '0') === '1'; @endphp
+                            @php $desktopAck = \App\Models\Setting::desktopReceiveAllowedFor(auth()->user()->department_id); @endphp
                             @if($desktopAck)
                                 <form method="POST" action="{{ route('documents.acknowledge', $document) }}" class="space-y-2 p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20"
                                       data-confirm="Acknowledge that you have received this document?">
@@ -747,7 +752,7 @@
                         @endcan
 
                         @can('receive', $document)
-                            @php $desktopReceive = ($settings['allow_desktop_receive'] ?? '0') === '1'; $isClaim = $document->current_holder_id === null; @endphp
+                            @php $desktopReceive = \App\Models\Setting::desktopReceiveAllowedFor(auth()->user()->department_id); $isClaim = $document->current_holder_id === null; @endphp
                             @php
                                 $latestLog = $document->logs->first();
                                 $isReturned = $latestLog && $latestLog->action === 'rejected';

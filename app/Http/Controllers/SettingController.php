@@ -13,6 +13,7 @@ class SettingController extends Controller
     {
         return view('settings.edit', [
             'roles' => \Spatie\Permission\Models\Role::orderBy('name')->pluck('name'),
+            'departments' => \App\Models\Department::orderBy('name')->get(['id', 'code', 'name']),
         ]);
     }
 
@@ -31,6 +32,9 @@ class SettingController extends Controller
             'remove_favicon' => ['nullable', 'boolean'],
             'remove_login_bg' => ['nullable', 'boolean'],
             'allow_desktop_receive' => ['nullable', 'boolean'],
+            'desktop_receive_scope' => ['nullable', 'in:all,selected'],
+            'desktop_receive_departments' => ['nullable', 'array'],
+            'desktop_receive_departments.*' => ['integer', 'exists:departments,id'],
             'allow_cross_department' => ['nullable', 'boolean'],
             'enable_priority' => ['nullable', 'boolean'],
             'enable_route_items' => ['nullable', 'boolean'],
@@ -79,6 +83,14 @@ class SettingController extends Controller
         $newScope = $request->input('messaging_scope') === 'office' ? 'office' : 'all';
         if ($oldScope !== $newScope) $changes[] = 'Messaging scope "' . $oldScope . '" → "' . $newScope . '"';
 
+        $oldDeskScope = (string) Setting::get('desktop_receive_scope', 'all');
+        $newDeskScope = $request->input('desktop_receive_scope') === 'selected' ? 'selected' : 'all';
+        $newDeskDepts = implode(',', $data['desktop_receive_departments'] ?? []);
+        if ($oldDeskScope !== $newDeskScope || (string) Setting::get('desktop_receive_departments', '') !== $newDeskDepts) {
+            $deptNames = \App\Models\Department::whereIn('id', $data['desktop_receive_departments'] ?? [])->pluck('code')->implode(', ');
+            $changes[] = 'Desktop receive scope "' . $oldDeskScope . '" → "' . $newDeskScope . '"' . ($newDeskScope === 'selected' ? ' (' . ($deptNames ?: 'none selected') . ')' : '');
+        }
+
         foreach (['app_name', 'app_short_name', 'organization', 'primary_color', 'footer_text', 'support_contact', 'announcement', 'records_per_page'] as $key) {
             Setting::put($key, $data[$key] ?? '');
         }
@@ -89,6 +101,8 @@ class SettingController extends Controller
         }
         Setting::put('messaging_scope', $newScope);
         Setting::put('messaging_excluded_roles', json_encode(array_values($request->input('messaging_excluded_roles', []))));
+        Setting::put('desktop_receive_scope', $newDeskScope);
+        Setting::put('desktop_receive_departments', $newDeskDepts);
 
         // Image fields: [setting key => [form field, remove field]]
         $images = [

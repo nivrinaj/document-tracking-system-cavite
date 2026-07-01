@@ -6,6 +6,13 @@ Format based on [Keep a Changelog](https://keepachangelog.com).
 
 ---
 
+## 1.18.0 — 2026-07-01
+- **Searchable Destination office and Division on the encode page** — the Distribution panel's office and division pickers are now searchable with a clear button, matching the rest of the system; Assignee got the same consistent look.
+- **Workflow settings modernized** — the whole Workflow panel now uses the same sliding toggle switches as the rest of the system instead of checkboxes.
+- **Desktop receive can be limited to specific offices** — Super Admin can now allow the desktop "Receive" option for every office, or pick only certain offices, instead of it being all-or-nothing.
+- **Transmittal / batch quantity for document types** — Super Admin can mark a document type (e.g. Letter) as allowing a "transmittal," so encoders can toggle "this is a transmittal of multiple [type]" and enter how many. It shows as a badge on the tracking table and document details page, and a summary appears on the dashboard when present.
+- **Reference number field fully removed** — leftover traces cleaned up; layout stays tidy with no gaps.
+
 ## 1.17.0 — 2026-07-01
 - **Acknowledgment table aligned and clearer** — the Position column now lines up across every division block, each division header shows how many have received it (e.g. 2/6 received), and staff with no division (department heads and assistants) are listed first.
 - **All staff set to Permanent/Regular for now** — existing users default to Permanent/Regular employment status; change individuals anytime on the user page.

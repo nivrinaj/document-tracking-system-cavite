@@ -84,6 +84,13 @@ class DashboardController extends Controller
             ->select('priority', DB::raw('count(*) as total'))
             ->groupBy('priority')->pluck('total', 'priority')->toArray();
 
+        // Transmittals — smart summary of documents encoded as a "transmittal of
+        // multiple X", only shown on the dashboard when there are any.
+        $transmittals = [
+            'count' => (clone $base)->where('is_transmittal', true)->count(),
+            'quantity' => (int) (clone $base)->where('is_transmittal', true)->sum('transmittal_quantity'),
+        ];
+
         // Incoming trend: documents encoded per day for the last 14 days.
         $trend = [];
         for ($i = 13; $i >= 0; $i--) {
@@ -96,7 +103,7 @@ class DashboardController extends Controller
 
         return view('dashboard', compact(
             'stats', 'toReceive', 'toClaim', 'toAction', 'toRelease', 'toAcknowledge', 'activity',
-            'statusBreakdown', 'priorityBreakdown', 'trend', 'isHead'
+            'statusBreakdown', 'priorityBreakdown', 'trend', 'isHead', 'transmittals'
         ));
     }
 }

@@ -6,11 +6,12 @@ use Illuminate\Database\Eloquent\Model;
 
 class DocumentType extends Model
 {
-    protected $fillable = ['name', 'requires_voucher', 'requires_deadline', 'is_active'];
+    protected $fillable = ['name', 'requires_voucher', 'requires_deadline', 'allows_transmittal', 'is_active'];
 
     protected $casts = [
         'requires_voucher' => 'boolean',
         'requires_deadline' => 'boolean',
+        'allows_transmittal' => 'boolean',
         'is_active' => 'boolean',
     ];
 

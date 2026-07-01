@@ -28,6 +28,24 @@ class Setting extends Model
         Cache::forget('settings.all');
     }
 
+    /**
+     * Whether desktop receive/claim is available to a user in the given department.
+     * Master switch (`allow_desktop_receive`) must be on; when its scope is
+     * "selected", the department must be in the CSV allow-list.
+     */
+    public static function desktopReceiveAllowedFor(?int $departmentId): bool
+    {
+        if (static::get('allow_desktop_receive', '0') !== '1') {
+            return false;
+        }
+        if (static::get('desktop_receive_scope', 'all') !== 'selected') {
+            return true;
+        }
+        $allowed = array_filter(explode(',', (string) static::get('desktop_receive_departments', '')));
+
+        return $departmentId && in_array((string) $departmentId, $allowed, true);
+    }
+
     protected static function booted(): void
     {
         static::saved(fn () => Cache::forget('settings.all'));

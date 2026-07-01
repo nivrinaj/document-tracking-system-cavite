@@ -10,6 +10,9 @@
                       officeDeadline: {{ ($officeDeadline ?? false) ? 'true' : 'false' }},
                       todayStr: '{{ now()->toDateString() }}',
                       get showDeadline() { return this.officeDeadline && this.deadlineTypes.includes(this.docType); },
+                      transmittalTypes: @js($transmittalTypeNames),
+                      isTransmittal: {{ old('is_transmittal', $document->is_transmittal) ? 'true' : 'false' }},
+                      get showTransmittal() { return this.transmittalTypes.includes(this.docType); },
                   }">
                 @csrf
                 @method('PUT')
@@ -45,6 +48,16 @@
                     <div x-show="showDeadline" x-cloak>
                         <label class="label">Deadline <span class="text-gray-400 text-xs font-normal">(optional)</span></label>
                         <input type="date" name="deadline" value="{{ old('deadline', optional($document->deadline)->toDateString()) }}" class="input" :min="todayStr" x-bind:disabled="!showDeadline">
+                    </div>
+                    <div class="sm:col-span-2" x-show="showTransmittal" x-cloak>
+                        <x-toggle name="is_transmittal" x-model="isTransmittal">
+                            <span class="block text-sm font-medium">This is a transmittal of multiple <span x-text="docType"></span></span>
+                            <span class="block text-xs text-gray-400 mt-0.5">One tracking code covers several physical documents of this type.</span>
+                        </x-toggle>
+                        <div x-show="isTransmittal" x-cloak class="mt-3 max-w-xs">
+                            <label class="label">Quantity <span class="text-red-500">*</span></label>
+                            <input type="number" name="transmittal_quantity" value="{{ old('transmittal_quantity', $document->transmittal_quantity) }}" class="input" min="1" max="9999" x-bind:required="isTransmittal">
+                        </div>
                     </div>
                     <div>
                         <label class="label">Source / Origin</label>

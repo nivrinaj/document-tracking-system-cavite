@@ -53,10 +53,12 @@ class DocumentTypeController extends Controller
             'name' => ['required', 'string', 'max:100'],
             'requires_voucher' => ['nullable', 'boolean'],
             'requires_deadline' => ['nullable', 'boolean'],
+            'allows_transmittal' => ['nullable', 'boolean'],
             'is_active' => ['nullable', 'boolean'],
         ]) + [
             'requires_voucher' => $request->boolean('requires_voucher'),
             'requires_deadline' => $request->boolean('requires_deadline'),
+            'allows_transmittal' => $request->boolean('allows_transmittal'),
             'is_active' => $request->boolean('is_active'),
         ];
     }

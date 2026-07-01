@@ -44,6 +44,8 @@ class Document extends Model
         'released_at',
         'completed_at',
         'possession_started_at',
+        'is_transmittal',
+        'transmittal_quantity',
     ];
 
     protected $casts = [
@@ -56,6 +58,7 @@ class Document extends Model
         'is_broadcast' => 'boolean',
         'is_pending' => 'boolean',
         'is_hospital' => 'boolean',
+        'is_transmittal' => 'boolean',
         'amount' => 'decimal:2',
     ];
 
@@ -358,6 +361,16 @@ class Document extends Model
     public function isVoucher(): bool
     {
         return strtolower($this->document_type) === 'voucher';
+    }
+
+    /** "Transmittal of Letter · 12 documents" — null when this isn't a transmittal. */
+    public function transmittalLabel(): ?string
+    {
+        if (! $this->is_transmittal) {
+            return null;
+        }
+
+        return 'Transmittal of '.$this->document_type.' · '.$this->transmittal_quantity.' '.\Illuminate\Support\Str::plural('document', (int) $this->transmittal_quantity);
     }
 
     /** When did the document last change hands / status? */
