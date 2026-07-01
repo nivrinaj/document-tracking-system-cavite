@@ -7,6 +7,13 @@
             <div>
                 <div class="flex items-center gap-2 flex-wrap">
                     <h1 class="text-xl font-semibold">{{ $document->title }}</h1>
+                    <span x-data="{ copied: false }" class="inline-flex items-center">
+                        <button type="button" @click="navigator.clipboard?.writeText(@js($document->title)); copied = true; setTimeout(() => copied = false, 1500)"
+                                class="p-1 rounded text-gray-400 hover:text-[color:var(--color-primary)]" :title="copied ? 'Copied!' : 'Copy title'">
+                            <svg x-show="!copied" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7v8a2 2 0 002 2h6m-6-4V5a2 2 0 012-2h4.586a1 1 0 01.707.293l2.414 2.414a1 1 0 01.293.707V13a2 2 0 01-2 2h-2"/></svg>
+                            <svg x-show="copied" x-cloak class="w-4 h-4 text-green-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                        </button>
+                    </span>
                     <x-status-badge :status="$document->status" />
                     <x-priority-badge :priority="$document->priority" />
                 </div>
@@ -113,7 +120,7 @@
                         $pausedSecs = $document->totalPausedSeconds();
                         $hasAccounting = $document->fund_id || $document->amount !== null || $document->obr_no || $document->responsibility_center_id || $document->nature_of_transaction;
                         $rcLabel = $document->rcLabel();
-                        $showBreakdown = \App\Models\Setting::get('show_daily_breakdown', '0') === '1';
+                        $showBreakdown = \App\Models\Setting::get('show_daily_breakdown', '1') === '1';
                         $breakdown = $showBreakdown
                             ? \App\Services\BusinessHours::dailyDetail($document->received_at ?? $document->created_at, $document->completed_at ?? now())
                             : [];
@@ -332,6 +339,32 @@
                     // Who physically holds it right now (open ledger segment). During transit
                     // this is the sender — it's their duty until the recipient receives.
                     $possessorId = optional($document->possessions->firstWhere('ended_at', null))->holder_id;
+
+                    // Tabbed acknowledgment layout: only for broadcasts, and only when the
+                    // broadcasting office opted in (DB flag, never matched by name/code).
+                    $useAckTabs = $document->is_broadcast && optional($document->department)->broadcast_ack_layout;
+                    $ackGroups = [];
+                    if ($useAckTabs) {
+                        $order = array_merge(\App\Models\User::EMPLOYMENT_STATUSES, ['Unspecified']);
+                        $byStatus = $document->assignees->groupBy(fn ($p) => $p->employment_status ?: 'Unspecified');
+                        foreach ($order as $status) {
+                            if (! isset($byStatus[$status])) {
+                                continue;
+                            }
+                            // Group each status by division, then sort each division: people who
+                            // have NOT yet received/acknowledged first, then alphabetically by surname.
+                            $ackGroups[$status] = $byStatus[$status]
+                                ->groupBy(fn ($p) => $p->division?->name ?: 'No division')
+                                ->sortKeys()
+                                ->map(fn ($g) => $g->sort(function ($a, $b) {
+                                    $aAck = $a->pivot->acknowledged_at ? 1 : 0;
+                                    $bAck = $b->pivot->acknowledged_at ? 1 : 0;
+                                    return $aAck !== $bAck
+                                        ? $aAck <=> $bAck
+                                        : strcasecmp($a->last_name ?: $a->name, $b->last_name ?: $b->name);
+                                })->values());
+                        }
+                    }
                 @endphp
                 <x-card>
                     <div class="flex items-center justify-between mb-3">
@@ -348,6 +381,60 @@
                         </div>
                     @endif
 
+                    @if($useAckTabs)
+                        <div x-data="{ tab: '{{ array_key_first($ackGroups) }}' }">
+                            <div class="flex flex-wrap gap-1.5 mb-4 border-b border-gray-100 dark:border-gray-700">
+                                @foreach($ackGroups as $status => $divs)
+                                    @php
+                                        $statusTotal = $divs->flatten(1)->count();
+                                        $statusAcked = $divs->flatten(1)->filter(fn ($p) => $p->pivot->acknowledged_at)->count();
+                                    @endphp
+                                    <button type="button" @click="tab = @js((string) $status)"
+                                            class="px-3 py-2 text-sm font-medium border-b-2 -mb-px transition-colors"
+                                            :class="tab === @js((string) $status) ? 'border-[color:var(--color-primary)] text-[color:var(--color-primary)] dark:text-[color:var(--color-primary-light)]' : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'">
+                                        {{ $status }} <span class="text-xs text-gray-400">({{ $statusAcked }}/{{ $statusTotal }})</span>
+                                    </button>
+                                @endforeach
+                            </div>
+
+                            @foreach($ackGroups as $status => $divs)
+                                <div x-show="tab === @js((string) $status)" x-cloak class="space-y-4">
+                                    @foreach($divs as $divName => $people)
+                                        <div>
+                                            <div class="text-[11px] font-semibold uppercase tracking-wide text-gray-400 mb-1.5">{{ $divName }} <span class="text-gray-300 dark:text-gray-600">· {{ $people->count() }}</span></div>
+                                            <div class="overflow-x-auto rounded-lg border border-gray-100 dark:border-gray-700">
+                                                <table class="min-w-full text-sm">
+                                                    <thead class="bg-gray-50 dark:bg-gray-700/40 text-[11px] uppercase tracking-wide text-gray-400">
+                                                        <tr>
+                                                            <th class="text-left font-medium px-3 py-2">Name</th>
+                                                            <th class="text-left font-medium px-3 py-2">Position</th>
+                                                            <th class="text-left font-medium px-3 py-2">Date &amp; time received</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
+                                                        @foreach($people as $person)
+                                                            @php $acked = $person->pivot->acknowledged_at ? \Illuminate\Support\Carbon::parse($person->pivot->acknowledged_at) : null; @endphp
+                                                            <tr class="{{ $acked ? '' : 'bg-amber-50/50 dark:bg-amber-900/10' }}">
+                                                                <td class="px-3 py-2 font-medium whitespace-nowrap">{{ $person->formalName() }}</td>
+                                                                <td class="px-3 py-2 text-gray-500 dark:text-gray-400">{{ $person->position ?: '—' }}</td>
+                                                                <td class="px-3 py-2 whitespace-nowrap">
+                                                                    @if($acked)
+                                                                        <span class="text-green-600 dark:text-green-400">{{ $acked->format('M d, Y g:i A') }}</span>
+                                                                    @else
+                                                                        <span class="inline-flex items-center gap-1 text-amber-600 dark:text-amber-400"><span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span> Not yet received</span>
+                                                                    @endif
+                                                                </td>
+                                                            </tr>
+                                                        @endforeach
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            @endforeach
+                        </div>
+                    @else
                     <div x-data="{ showAll: false }">
                         <div class="flex flex-wrap gap-2">
                             @foreach($document->assignees as $i => $person)
@@ -388,6 +475,7 @@
                                     x-text="showAll ? 'Show fewer' : 'Show all {{ $concernedCount }} →'"></button>
                         @endif
                     </div>
+                    @endif
                 </x-card>
 
                 {{-- Digital Copy (the encoder's digitized original) --}}

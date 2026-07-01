@@ -22,16 +22,23 @@ class User extends Authenticatable
      */
     protected $fillable = [
         'name',
+        'first_name',
+        'middle_name',
+        'last_name',
         'username',
         'email',
         'password',
         'division_id',
         'department_id',
         'position',
+        'employment_status',
         'phone',
         'avatar',
         'is_active',
     ];
+
+    /** Selectable employment statuses (optional on a user). */
+    public const EMPLOYMENT_STATUSES = ['Permanent/Regular', 'Casual', 'Co-Terminus', 'Job Order'];
 
     /**
      * The attributes that should be hidden for serialization.
@@ -93,6 +100,29 @@ class User extends Authenticatable
         }
 
         return $dept ?: ($div ?: '—');
+    }
+
+    /** Compose a full name ("First Middle Last") from the structured parts. */
+    public static function composeName(?string $first, ?string $middle, ?string $last): string
+    {
+        return trim(preg_replace('/\s+/', ' ', implode(' ', array_filter([
+            trim((string) $first), trim((string) $middle), trim((string) $last),
+        ]))));
+    }
+
+    /**
+     * Formal name for tables/reports: "Surname, First M." (middle initial only).
+     * Falls back to the full display name when the split parts aren't set yet.
+     */
+    public function formalName(): string
+    {
+        if (! $this->last_name && ! $this->first_name) {
+            return $this->name ?: '—';
+        }
+        $mi = $this->middle_name ? ' '.mb_strtoupper(mb_substr(trim($this->middle_name), 0, 1)).'.' : '';
+        $first = $this->first_name ? ', '.trim($this->first_name).$mi : '';
+
+        return trim(($this->last_name ?: $this->name).$first);
     }
 
     /** May this user see documents across every department? */

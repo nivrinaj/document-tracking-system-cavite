@@ -38,8 +38,14 @@ class DepartmentController extends Controller
 
     public function update(Request $request, Department $department)
     {
+        $wasDeadline = (bool) $department->deadline_enabled;
         $department->update($this->validateData($request, $department));
         $this->applyTypeRestriction($request, $department);
+
+        if ($wasDeadline !== (bool) $department->deadline_enabled) {
+            $state = $department->deadline_enabled ? 'ON' : 'OFF';
+            \App\Models\ActivityLog::record('departments.update', "Deadlines turned {$state} for {$department->name} ({$department->code}, #{$department->id})", $department);
+        }
 
         return redirect()->route('departments.index')->with('success', 'Department updated.');
     }
@@ -85,6 +91,8 @@ class DepartmentController extends Controller
             'description' => ['nullable', 'string'],
             'is_active' => ['nullable', 'boolean'],
             'is_accounting' => ['nullable', 'boolean'],
+            'deadline_enabled' => ['nullable', 'boolean'],
+            'broadcast_ack_layout' => ['nullable', 'boolean'],
             'sla_enabled' => ['nullable', 'boolean'],
             'sla_days' => ['nullable', 'integer', 'min:1', 'max:365'],
             'sla_document_type' => ['nullable', 'array'],
@@ -94,6 +102,8 @@ class DepartmentController extends Controller
         ]) + [
             'is_active' => $request->boolean('is_active'),
             'is_accounting' => $request->boolean('is_accounting'),
+            'deadline_enabled' => $request->boolean('deadline_enabled'),
+            'broadcast_ack_layout' => $request->boolean('broadcast_ack_layout'),
             'sla_enabled' => $request->boolean('sla_enabled'),
         ];
     }

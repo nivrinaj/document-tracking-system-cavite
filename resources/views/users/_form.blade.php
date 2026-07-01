@@ -18,8 +18,16 @@
         }
      }">
     <div>
-        <label class="label">Full Name <span class="text-red-500">*</span></label>
-        <input type="text" name="name" value="{{ old('name', $user?->name) }}" class="input" required>
+        <label class="label">First Name <span class="text-red-500">*</span></label>
+        <input type="text" name="first_name" value="{{ old('first_name', $user?->first_name) }}" class="input" required>
+    </div>
+    <div>
+        <label class="label">Middle Name <span class="text-gray-400 text-xs font-normal">(optional)</span></label>
+        <input type="text" name="middle_name" value="{{ old('middle_name', $user?->middle_name) }}" class="input">
+    </div>
+    <div>
+        <label class="label">Last Name <span class="text-red-500">*</span></label>
+        <input type="text" name="last_name" value="{{ old('last_name', $user?->last_name) }}" class="input" required>
     </div>
     <div>
         <label class="label">Username <span class="text-red-500">*</span></label>
@@ -94,6 +102,15 @@
     <div>
         <label class="label">Position</label>
         <input type="text" name="position" value="{{ old('position', $user?->position) }}" class="input" placeholder="e.g. Records Officer">
+    </div>
+    <div>
+        <label class="label">Employment Status <span class="text-gray-400 text-xs font-normal">(optional)</span></label>
+        <select name="employment_status" class="input">
+            <option value="">— Select employment status —</option>
+            @foreach(\App\Models\User::EMPLOYMENT_STATUSES as $es)
+                <option value="{{ $es }}" @selected(old('employment_status', $user?->employment_status)===$es)>{{ $es }}</option>
+            @endforeach
+        </select>
     </div>
     <div>
         <label class="label">Phone</label>

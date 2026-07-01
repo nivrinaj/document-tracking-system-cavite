@@ -7,6 +7,10 @@
                   docType: '{{ old('document_type', '') }}',
                   voucherNo: '{{ old('voucher_number') }}',
                   voucherTypes: @js($voucherTypeNames),
+                  deadlineTypes: @js($deadlineTypeNames),
+                  officeDeadline: {{ ($officeDeadline ?? false) ? 'true' : 'false' }},
+                  todayStr: '{{ now()->toDateString() }}',
+                  get showDeadline() { return this.officeDeadline && this.deadlineTypes.includes(this.docType); },
                   isAccounting: {{ ($isAccounting ?? false) ? 'true' : 'false' }},
                   get acct() { return this.isAccounting && (this.docType === 'Voucher' || this.docType === 'Payroll'); },
                   srcOffice: '{{ old('source_department_id') }}',
@@ -172,6 +176,12 @@
                         </select>
                     </div>
                     @endif
+
+                    <div x-show="showDeadline" x-cloak>
+                        <label class="label">Deadline <span class="text-gray-400 text-xs font-normal">(optional)</span></label>
+                        <input type="date" name="deadline" value="{{ old('deadline') }}" class="input" :min="todayStr" x-bind:disabled="!showDeadline">
+                        <p class="text-[11px] text-gray-400 mt-1">Due date from today onwards. The tracking list warns as it nears (orange within 16 working hours, red within 8).</p>
+                    </div>
 
                     <div class="sm:col-span-2">
                         <label class="label">Description</label>

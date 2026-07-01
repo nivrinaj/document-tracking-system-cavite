@@ -4,7 +4,13 @@
     <div class="max-w-3xl mx-auto">
         <x-card>
             <form method="POST" action="{{ route('documents.update', $document) }}" class="space-y-5"
-                  x-data="{ docType: '{{ old('document_type', $document->document_type) }}' }">
+                  x-data="{
+                      docType: '{{ old('document_type', $document->document_type) }}',
+                      deadlineTypes: @js($deadlineTypeNames),
+                      officeDeadline: {{ ($officeDeadline ?? false) ? 'true' : 'false' }},
+                      todayStr: '{{ now()->toDateString() }}',
+                      get showDeadline() { return this.officeDeadline && this.deadlineTypes.includes(this.docType); },
+                  }">
                 @csrf
                 @method('PUT')
 
@@ -40,6 +46,10 @@
                         </select>
                     </div>
                     @endif
+                    <div x-show="showDeadline" x-cloak>
+                        <label class="label">Deadline <span class="text-gray-400 text-xs font-normal">(optional)</span></label>
+                        <input type="date" name="deadline" value="{{ old('deadline', optional($document->deadline)->toDateString()) }}" class="input" :min="todayStr" x-bind:disabled="!showDeadline">
+                    </div>
                     <div>
                         <label class="label">Source / Origin</label>
                         <input type="text" name="source" value="{{ old('source', $document->source) }}" class="input">

@@ -52,9 +52,11 @@ class DocumentTypeController extends Controller
         return $request->validate([
             'name' => ['required', 'string', 'max:100'],
             'requires_voucher' => ['nullable', 'boolean'],
+            'requires_deadline' => ['nullable', 'boolean'],
             'is_active' => ['nullable', 'boolean'],
         ]) + [
             'requires_voucher' => $request->boolean('requires_voucher'),
+            'requires_deadline' => $request->boolean('requires_deadline'),
             'is_active' => $request->boolean('is_active'),
         ];
     }

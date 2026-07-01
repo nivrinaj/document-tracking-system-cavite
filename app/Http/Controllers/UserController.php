@@ -52,26 +52,35 @@ class UserController extends Controller
     public function store(Request $request)
     {
         $data = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
+            'first_name' => ['required', 'string', 'max:255'],
+            'middle_name' => ['nullable', 'string', 'max:255'],
+            'last_name' => ['required', 'string', 'max:255'],
             'username' => ['required', 'string', 'max:255', 'alpha_dash', 'unique:users,username'],
             'email' => ['nullable', 'email', 'unique:users,email'],
             'password' => ['required', 'confirmed', Password::defaults()],
             'division_id' => ['nullable', 'exists:divisions,id'],
             'department_id' => ['nullable', 'exists:departments,id'],
             'position' => ['nullable', 'string', 'max:255'],
+            'employment_status' => ['nullable', Rule::in(User::EMPLOYMENT_STATUSES)],
             'phone' => ['nullable', 'string', 'max:50'],
             'role' => ['required', 'exists:roles,name'],
             'is_active' => ['nullable', 'boolean'],
         ]);
 
+        $data['name'] = User::composeName($data['first_name'], $data['middle_name'] ?? null, $data['last_name']);
+
         $user = User::create([
             'name' => $data['name'],
+            'first_name' => $data['first_name'],
+            'middle_name' => $data['middle_name'] ?? null,
+            'last_name' => $data['last_name'],
             'username' => $data['username'],
             'email' => $data['email'] ?? null,
             'password' => Hash::make($data['password']),
             'division_id' => $data['division_id'] ?? null,
             'department_id' => $data['department_id'] ?? null,
             'position' => $data['position'] ?? null,
+            'employment_status' => $data['employment_status'] ?? null,
             'phone' => $data['phone'] ?? null,
             'is_active' => $request->boolean('is_active', true),
             'email_verified_at' => now(),
@@ -102,17 +111,22 @@ class UserController extends Controller
     public function update(Request $request, User $user)
     {
         $data = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
+            'first_name' => ['required', 'string', 'max:255'],
+            'middle_name' => ['nullable', 'string', 'max:255'],
+            'last_name' => ['required', 'string', 'max:255'],
             'username' => ['required', 'string', 'max:255', 'alpha_dash', Rule::unique('users', 'username')->ignore($user->id)],
             'email' => ['nullable', 'email', Rule::unique('users', 'email')->ignore($user->id)],
             'password' => ['nullable', 'confirmed', Password::defaults()],
             'division_id' => ['nullable', 'exists:divisions,id'],
             'department_id' => ['nullable', 'exists:departments,id'],
             'position' => ['nullable', 'string', 'max:255'],
+            'employment_status' => ['nullable', Rule::in(User::EMPLOYMENT_STATUSES)],
             'phone' => ['nullable', 'string', 'max:50'],
             'role' => ['required', 'exists:roles,name'],
             'is_active' => ['nullable', 'boolean'],
         ]);
+
+        $data['name'] = User::composeName($data['first_name'], $data['middle_name'] ?? null, $data['last_name']);
 
         $oldRole = $user->roles->first()?->name ?? '';
         $oldDeptCode = optional($user->department)->code ?? '(none)';
@@ -144,13 +158,19 @@ class UserController extends Controller
             if ($old !== $new) $changes[] = $label . ' ' . ($old ? 'ON' : 'OFF') . ' → ' . ($new ? 'ON' : 'OFF');
         }
 
+        if (($user->employment_status ?? '') !== ($data['employment_status'] ?? '')) $changes[] = 'Employment status "' . ($user->employment_status ?: '(none)') . '" → "' . ($data['employment_status'] ?: '(none)') . '"';
+
         $user->update([
             'name' => $data['name'],
+            'first_name' => $data['first_name'],
+            'middle_name' => $data['middle_name'] ?? null,
+            'last_name' => $data['last_name'],
             'username' => $data['username'],
             'email' => $data['email'] ?? null,
             'division_id' => $data['division_id'] ?? null,
             'department_id' => $data['department_id'] ?? null,
             'position' => $data['position'] ?? null,
+            'employment_status' => $data['employment_status'] ?? null,
             'phone' => $data['phone'] ?? null,
             'is_active' => $request->boolean('is_active'),
         ]);

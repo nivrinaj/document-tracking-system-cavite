@@ -52,6 +52,26 @@
     </div>
 </div>
 
+{{-- Deadline tracking (opt-in per office) --}}
+<div class="border-t border-gray-100 dark:border-gray-700 pt-4 mt-2">
+    <label class="flex items-center gap-2 text-sm font-medium">
+        <input type="hidden" name="deadline_enabled" value="0">
+        <input type="checkbox" name="deadline_enabled" value="1" class="rounded text-[color:var(--color-primary)]" @checked(old('deadline_enabled', $department?->deadline_enabled))>
+        Enable deadlines for this office
+    </label>
+    <p class="text-xs text-gray-400 ml-6">When on, encoders in this office can set a <strong>Deadline</strong> on document types marked “requires a deadline”, and this office’s tracking list shows a Deadline column with colour warnings (orange within 16 working hours, red within 8).</p>
+</div>
+
+{{-- Broadcast acknowledgment layout (opt-in per office) --}}
+<div class="border-t border-gray-100 dark:border-gray-700 pt-4 mt-2">
+    <label class="flex items-center gap-2 text-sm font-medium">
+        <input type="hidden" name="broadcast_ack_layout" value="0">
+        <input type="checkbox" name="broadcast_ack_layout" value="1" class="rounded text-[color:var(--color-primary)]" @checked(old('broadcast_ack_layout', $department?->broadcast_ack_layout))>
+        Use the tabbed acknowledgment layout for this office’s broadcasts
+    </label>
+    <p class="text-xs text-gray-400 ml-6">When on, memos broadcast by this office show recipients in tabs by employment status, grouped by division, in a table of name / position / date received — instead of the default chip list.</p>
+</div>
+
 {{-- Completion deadline (turnaround tracking) --}}
 @php $slaSelected = old('sla_document_type', $department?->sla_document_type ?? []); @endphp
 <div class="border-t border-gray-100 dark:border-gray-700 pt-4 mt-2"

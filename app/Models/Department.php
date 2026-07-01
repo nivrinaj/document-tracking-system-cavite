@@ -10,9 +10,9 @@ class Department extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['name', 'code', 'description', 'is_active', 'is_accounting', 'restricted_doc_types', 'sla_enabled', 'sla_days', 'sla_document_type'];
+    protected $fillable = ['name', 'code', 'description', 'is_active', 'is_accounting', 'deadline_enabled', 'broadcast_ack_layout', 'restricted_doc_types', 'sla_enabled', 'sla_days', 'sla_document_type'];
 
-    protected $casts = ['is_active' => 'boolean', 'is_accounting' => 'boolean', 'restricted_doc_types' => 'array', 'sla_enabled' => 'boolean', 'sla_document_type' => 'array'];
+    protected $casts = ['is_active' => 'boolean', 'is_accounting' => 'boolean', 'deadline_enabled' => 'boolean', 'broadcast_ack_layout' => 'boolean', 'restricted_doc_types' => 'array', 'sla_enabled' => 'boolean', 'sla_document_type' => 'array'];
 
     /**
      * Ensure this Accounting department has its Voucher + Payroll document types,

@@ -6,6 +6,20 @@ Format based on [Keep a Changelog](https://keepachangelog.com).
 
 ---
 
+## 1.16.0 — 2026-07-01
+- **Separate name fields for users** — the single Full Name field is now First name, Last name, and an optional Middle name; existing users were split automatically (best-effort) and can be corrected on edit.
+- **Employment status on users** — an optional dropdown (Permanent/Regular, Casual, Co-Terminus, Job Order) added to the user form.
+- **New broadcast acknowledgment layout** — offices can be switched on to show broadcast recipients in tabs by employment status, each tab a table grouped by division and sorted so people who have not yet received it appear first, showing name (surname, first name, middle initial), position, and the date/time they received it. Offices without this switched on keep the current layout.
+
+## 1.15.0 — 2026-07-01
+- **Tracking "stuck at 0" was a work-suspension entry** — a leftover "TEST SUSPENSION" on the work calendar marked a whole day as non-working, so idle and holding time correctly counted zero that day; removing the stray calendar entries restored normal tracking. The timing engine was not changed.
+- **Daily working time panel shows for all documents** — the per-day working-time breakdown now appears on every document by default, still switchable off by a Super Admin.
+- **Copy the document title in one click** — added a copy button beside the title on the document details page, matching the existing copy-tracking-code button.
+- **Filter the tracking list by document type** — the Documents page now has a document-type filter alongside the existing ones.
+- **Division picker waits for a department** — on the Documents page the Division filter stays locked until a department is chosen (Super Admins can still pick freely).
+- **New Deadline feature** — offices can be switched on to use deadlines, and specific document types (e.g. Letter) can be marked to require one; encoders in those offices then get an optional Deadline date field.
+- **Deadline warnings on the tracking list** — for deadline-enabled offices, the Documents list shows a Deadline column and highlights rows light orange within 16 working hours of the due time and light red within 8, with an Overdue badge once past due.
+
 ## 1.14.0 — 2026-07-01
 - **Idle Time explained, not changed** — verified the "0 idle time" some documents show is mathematically correct, not a bug: idle time only counts official working hours, so an action taken after 5 PM shows little or no idle time until the next business day begins. Added a footnote to the report and confirmed the Document Details page uses the exact same calculation, so both are consistent.
 - **Date Encoded column and row numbering added** — the report was missing both; every row now shows its actual encoded date/time and a running number.

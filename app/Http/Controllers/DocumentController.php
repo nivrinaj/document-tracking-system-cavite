@@ -54,6 +54,10 @@ class DocumentController extends Controller
             $query->where('priority', $priority);
         }
 
+        if ($documentType = $request->input('document_type')) {
+            $query->where('document_type', $documentType);
+        }
+
         if ($departmentId = $request->input('department_id')) {
             $query->where('department_id', $departmentId);
         }
@@ -76,6 +80,8 @@ class DocumentController extends Controller
             'documents' => $documents,
             'departments' => \App\Models\Department::orderBy('name')->get(),
             'divisions' => Division::orderBy('name')->get(['id', 'code', 'name', 'department_id']),
+            'documentTypes' => \App\Models\DocumentType::where('is_active', true)->orderBy('name')->pluck('name'),
+            'showDeadlineColumn' => (bool) optional($user->department)->deadline_enabled || $user->hasRole('Super Admin'),
         ]);
     }
 
@@ -99,6 +105,8 @@ class DocumentController extends Controller
             'allUsers' => $this->recipientUsers(),
             'documentTypes' => $types,
             'voucherTypeNames' => $types->where('requires_voucher', true)->pluck('name')->values(),
+            'deadlineTypeNames' => $types->where('requires_deadline', true)->pluck('name')->values(),
+            'officeDeadline' => (bool) optional($user->department)->deadline_enabled,
             'crossDept' => \App\Models\Setting::get('allow_cross_department', '0') === '1',
             'priorityEnabled' => Document::priorityEnabled(),
             'ownDeptId' => $user->department_id,
@@ -154,6 +162,7 @@ class DocumentController extends Controller
             'source_division_id' => ['nullable', 'exists:divisions,id'],
             'source_other' => ['nullable', 'string', 'max:255'],
             'priority' => ['nullable', 'in:low,normal,high,urgent'],
+            'deadline' => ['nullable', 'date', 'after_or_equal:today'],
             'division_id' => ['nullable', 'exists:divisions,id'],
             'assignee_id' => ['nullable', 'exists:users,id'],
             'assign_remarks' => ['nullable', 'string'],
@@ -276,6 +285,8 @@ class DocumentController extends Controller
             'document' => $document,
             'divisions' => Division::where('is_active', true)->orderBy('name')->get(),
             'users' => $this->assignableUsers(),
+            'deadlineTypeNames' => \App\Models\DocumentType::where('requires_deadline', true)->pluck('name')->values(),
+            'officeDeadline' => (bool) optional($document->department)->deadline_enabled,
         ]);
     }
 
@@ -291,6 +302,7 @@ class DocumentController extends Controller
             'description' => ['nullable', 'string'],
             'source' => ['nullable', 'string', 'max:255'],
             'priority' => ['nullable', 'in:low,normal,high,urgent'],
+            'deadline' => ['nullable', 'date'],
             'division_id' => ['nullable', 'exists:divisions,id'],
         ]);
 

@@ -30,6 +30,7 @@ class Document extends Model
         'description',
         'source',
         'priority',
+        'deadline',
         'status',
         'is_pending',
         'pending_at',
@@ -51,6 +52,7 @@ class Document extends Model
         'completed_at' => 'datetime',
         'pending_at' => 'datetime',
         'possession_started_at' => 'datetime',
+        'deadline' => 'date',
         'is_broadcast' => 'boolean',
         'is_pending' => 'boolean',
         'is_hospital' => 'boolean',
@@ -444,6 +446,46 @@ class Document extends Model
         }
         if ($age >= $warnAt) {
             return 'warning';
+        }
+
+        return null;
+    }
+
+    /* ----------------------------------------------------------------
+     | Deadline (optional per-office, per-type due date)
+     * ---------------------------------------------------------------- */
+
+    /** The concrete due instant: end of the configured working day on the deadline date. */
+    public function deadlineAt(): ?\Illuminate\Support\Carbon
+    {
+        if (! $this->deadline) {
+            return null;
+        }
+
+        return $this->deadline->copy()->setTimeFromTimeString(\App\Models\Setting::get('work_end', '17:00'));
+    }
+
+    /**
+     * Row-highlight state for a still-open document with a deadline, measured in
+     * working time remaining until 5 PM on the due date:
+     *   'overdue' (past due), 'red' (<= 8 working hrs left), 'orange' (<= 16), or null.
+     */
+    public function deadlineState(): ?string
+    {
+        $due = $this->deadlineAt();
+        if (! $due || $this->isClosed()) {
+            return null;
+        }
+        if (now()->greaterThanOrEqualTo($due)) {
+            return 'overdue';
+        }
+
+        $remaining = \App\Services\BusinessHours::secondsBetween(now(), $due);
+        if ($remaining <= 8 * 3600) {
+            return 'red';
+        }
+        if ($remaining <= 16 * 3600) {
+            return 'orange';
         }
 
         return null;

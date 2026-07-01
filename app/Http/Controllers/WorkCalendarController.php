@@ -16,7 +16,7 @@ class WorkCalendarController extends Controller
         return view('work-calendar.settings', [
             'cfg' => \App\Services\BusinessHours::config(),
             'enabled' => \App\Services\BusinessHours::enabled(),
-            'showBreakdown' => Setting::get('show_daily_breakdown', '0') === '1',
+            'showBreakdown' => Setting::get('show_daily_breakdown', '1') === '1',
             'displayMode' => Setting::get('calendar_display', 'grid'),
         ]);
     }

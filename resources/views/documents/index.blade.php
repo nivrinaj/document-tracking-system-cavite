@@ -19,6 +19,7 @@
         <x-card padding="p-4">
             <form method="GET" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3"
                   x-data="{
+                      isSuperAdmin: {{ auth()->user()->hasRole('Super Admin') ? 'true' : 'false' }},
                       dept: '{{ request('department_id') }}', deptOpen: false, deptSearch: '',
                       divId: '{{ request('division_id') }}', divOpen: false, divSearch: '',
                       departments: @js($departments->map(fn($d)=>['id'=>$d->id,'name'=>$d->code.' — '.$d->name])),
@@ -54,6 +55,15 @@
                 </div>
                 @endif
                 <div>
+                    <label class="block text-[11px] text-gray-400 mb-0.5">Document type</label>
+                    <select name="document_type" class="input">
+                        <option value="">All document types</option>
+                        @foreach($documentTypes as $t)
+                            <option value="{{ $t }}" @selected(request('document_type')===$t)>{{ $t }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div>
                     <label class="block text-[11px] text-gray-400 mb-0.5">Department</label>
                     <div class="relative" @click.outside="deptOpen = false">
                         <input type="hidden" name="department_id" :value="dept">
@@ -79,8 +89,9 @@
                     <label class="block text-[11px] text-gray-400 mb-0.5">Division</label>
                     <div class="relative" @click.outside="divOpen = false">
                         <input type="hidden" name="division_id" :value="divId">
-                        <button type="button" @click="divOpen = !divOpen; divSearch = ''" class="input-btn text-left pr-14 block">
-                            <span class="truncate block" :class="!divId ? 'text-gray-400' : ''" x-text="divLabel"></span>
+                        <button type="button" @click="(dept || isSuperAdmin) && (divOpen = !divOpen); divSearch = ''"
+                                class="input-btn text-left pr-14 block" :class="(!dept && !isSuperAdmin) ? 'opacity-50 cursor-not-allowed' : ''" :disabled="!dept && !isSuperAdmin">
+                            <span class="truncate block" :class="!divId ? 'text-gray-400' : ''" x-text="(!dept && !isSuperAdmin) ? 'Select department first' : divLabel"></span>
                         </button>
                         <div class="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5">
                             <button type="button" x-show="divId" x-cloak @click.stop="divId = ''" class="w-4 h-4 grid place-items-center rounded text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors">
@@ -124,17 +135,30 @@
                             <th class="table-th">Status</th>
                             <th class="table-th">Origin (from)</th>
                             <th class="table-th">Current Holder</th>
+                            @if($showDeadlineColumn)<th class="table-th">Deadline</th>@endif
                             <th class="table-th">Updated</th>
                             <th class="table-th text-right">Action</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
                         @forelse($documents as $doc)
-                            @php $od = $doc->overdueState(); @endphp
+                            @php
+                                $od = $doc->overdueState();
+                                $dl = $showDeadlineColumn ? $doc->deadlineState() : null;
+                                // Deadline highlighting takes precedence over SLA aging when present.
+                                $tint = match (true) {
+                                    $dl === 'overdue', $dl === 'red' => 'red',
+                                    $dl === 'orange' => 'orange',
+                                    $od === 'overdue' => 'red',
+                                    $od === 'warning' => 'amber',
+                                    default => null,
+                                };
+                            @endphp
                             <tr @class([
-                                'hover:bg-gray-50 dark:hover:bg-gray-700/40' => ! $od,
-                                'bg-rose-50/70 dark:bg-rose-900/15 hover:bg-rose-50 dark:hover:bg-rose-900/25' => $od === 'overdue',
-                                'bg-amber-50/70 dark:bg-amber-900/15 hover:bg-amber-50 dark:hover:bg-amber-900/25' => $od === 'warning',
+                                'hover:bg-gray-50 dark:hover:bg-gray-700/40' => ! $tint,
+                                'bg-rose-50/70 dark:bg-rose-900/15 hover:bg-rose-50 dark:hover:bg-rose-900/25' => $tint === 'red',
+                                'bg-orange-50/70 dark:bg-orange-900/15 hover:bg-orange-50 dark:hover:bg-orange-900/25' => $tint === 'orange',
+                                'bg-amber-50/70 dark:bg-amber-900/15 hover:bg-amber-50 dark:hover:bg-amber-900/25' => $tint === 'amber',
                             ])>
                                 <td class="table-td font-mono text-xs" data-label="Tracking Code">{{ $doc->tracking_code }}</td>
                                 <td class="table-td" data-label="Title">
@@ -172,6 +196,26 @@
                                         <span class="text-gray-400">Unassigned</span>
                                     @endif
                                 </td>
+                                @if($showDeadlineColumn)
+                                    <td class="table-td" data-label="Deadline">
+                                        @if($doc->deadline)
+                                            <div @class([
+                                                'font-medium',
+                                                'text-rose-600 dark:text-rose-400' => $dl === 'overdue' || $dl === 'red',
+                                                'text-orange-600 dark:text-orange-400' => $dl === 'orange',
+                                            ])>{{ $doc->deadline->format('M j, Y') }}</div>
+                                            @if($dl === 'overdue')
+                                                <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wide bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300">Overdue</span>
+                                            @elseif($dl === 'red')
+                                                <span class="text-[11px] text-rose-500">≤ 8 working hrs left</span>
+                                            @elseif($dl === 'orange')
+                                                <span class="text-[11px] text-orange-500">≤ 16 working hrs left</span>
+                                            @endif
+                                        @else
+                                            <span class="text-gray-400">—</span>
+                                        @endif
+                                    </td>
+                                @endif
                                 <td class="table-td" data-label="Updated">
                                     <div class="flex items-center gap-2">
                                         <span class="w-2 h-2 rounded-full shrink-0
@@ -197,7 +241,7 @@
                                 </td>
                             </tr>
                         @empty
-                            <tr><td colspan="8" class="px-4 py-10 text-center text-sm text-gray-400">No documents found.</td></tr>
+                            <tr><td colspan="{{ 7 + (\App\Models\Document::priorityEnabled() ? 1 : 0) + ($showDeadlineColumn ? 1 : 0) }}" class="px-4 py-10 text-center text-sm text-gray-400">No documents found.</td></tr>
                         @endforelse
                     </tbody>
                 </table>
