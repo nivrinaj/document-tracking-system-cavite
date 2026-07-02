@@ -219,6 +219,24 @@
                                         @endif
                                     </dd>
                                 </div>
+                                @if($document->deadline)
+                                    @php $dlHighlight = $document->deadlineHighlight(); @endphp
+                                    <div>
+                                        <dt class="{{ $k }}">Deadline</dt>
+                                        <dd class="mt-1 text-sm font-semibold break-words" @if($dlHighlight) style="color: {{ $dlHighlight['color'] }}" @endif>
+                                            {{ $document->deadline->format('M d, Y') }}
+                                        </dd>
+                                        @if($dlHighlight)
+                                            @php $overdueDays = $dlHighlight['label'] === 'Overdue' ? (int) floor(now()->diffInDays($document->deadlineAt(), true)) : null; @endphp
+                                            <div class="text-[11px] mt-0.5" style="color: {{ $dlHighlight['color'] }}">
+                                                {{ $dlHighlight['label'] }}
+                                                @if($overdueDays !== null)
+                                                    ({{ $overdueDays }} calendar day{{ $overdueDays === 1 ? '' : 's' }} overdue)
+                                                @endif
+                                            </div>
+                                        @endif
+                                    </div>
+                                @endif
                             </dl>
                         </section>
 

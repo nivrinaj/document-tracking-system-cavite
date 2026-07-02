@@ -31,11 +31,11 @@
             <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
                 <tr>
                     @if($showLogo)
-                    <td valign="middle" width="48">
+                    <td valign="middle" width="64" style="padding-right:12px;">
                         @if($logoPath)
-                            <img src="{{ asset('storage/'.$logoPath) }}" alt="{{ $appName }}" height="36" style="height:36px; display:block;">
+                            <img src="{{ asset('storage/'.$logoPath) }}" alt="{{ $appName }}" height="56" style="height:56px; max-width:64px; display:block;">
                         @else
-                            <span style="display:inline-block; width:36px; height:36px; line-height:36px; text-align:center; background-color:rgba(255,255,255,0.15); color:#ffffff; font-weight:700; font-size:16px; border-radius:8px;">{{ strtoupper(substr($appName, 0, 1)) }}</span>
+                            <span style="display:inline-block; width:56px; height:56px; line-height:56px; text-align:center; background-color:rgba(255,255,255,0.15); color:#ffffff; font-weight:700; font-size:24px; border-radius:10px;">{{ strtoupper(substr($appName, 0, 1)) }}</span>
                         @endif
                     </td>
                     @endif
@@ -77,6 +77,7 @@
                     <td style="padding:10px 14px; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; color:#64748b; border-bottom:1px solid #e2e8f0;">Title</td>
                     <td style="padding:10px 14px; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; color:#64748b; border-bottom:1px solid #e2e8f0;">Deadline</td>
                     <td style="padding:10px 14px; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; color:#64748b; border-bottom:1px solid #e2e8f0;">Status</td>
+                    <td style="padding:10px 14px; border-bottom:1px solid #e2e8f0;"></td>
                 </tr>
                 @foreach($documents as $doc)
                     @php $highlight = $doc->deadlineHighlight(); @endphp
@@ -86,6 +87,13 @@
                         <td style="padding:12px 14px; font-size:13px; color:#334155; border-bottom:1px solid #f1f5f9; white-space:nowrap;">{{ optional($doc->deadline)->format('M j, Y') }}</td>
                         <td style="padding:12px 14px; font-size:12px; border-bottom:1px solid #f1f5f9; white-space:nowrap;">
                             <span style="display:inline-block; padding:3px 10px; border-radius:999px; font-weight:600; background-color:{{ $highlight['color'] ?? '#94a3b8' }}1a; color:{{ $highlight['color'] ?? '#64748b' }};">{{ $highlight['label'] ?? '—' }}</span>
+                        </td>
+                        <td style="padding:12px 14px; font-size:13px; border-bottom:1px solid #f1f5f9; white-space:nowrap;" align="center">
+                            @if($doc->exists)
+                                <a href="{{ route('documents.show', $doc->id) }}" title="Open this document" style="color:{{ $primary }}; text-decoration:none; font-weight:700;">&rarr;</a>
+                            @else
+                                <span style="color:#cbd5e1;">&rarr;</span>
+                            @endif
                         </td>
                     </tr>
                 @endforeach

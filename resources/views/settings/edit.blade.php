@@ -282,6 +282,15 @@
                 </div>
             </x-card>
 
+            <x-card title="Deadline: which statuses count (default)">
+                <p class="text-xs text-gray-400 -mt-1 mb-4">A document only starts counting toward its deadline (tracking-list highlight, overdue state) once it reaches one of the checked statuses below — e.g. a document that's only been assigned but not yet released won't show as "nearing its deadline." Applies office-wide unless a department customizes its own selection (Departments → edit, when deadlines are enabled).</p>
+                <div class="space-y-3">
+                    @foreach(\App\Models\Document::deadlineStatusOptions() as $key => $label)
+                        <x-toggle name="deadline_status_{{ $key }}" :checked="in_array($key, $deadlineIncludedStatuses)" label="{{ $label }}" />
+                    @endforeach
+                </div>
+            </x-card>
+
             <x-card title="Deadline Highlighting (default)">
                 <p class="text-xs text-gray-400 -mt-1 mb-4">Colors used for the Deadline column and row highlighting wherever an office hasn't customized its own (Departments → edit, when deadlines are enabled).</p>
                 <x-deadline-rules-editor prefix="global" :rules="$deadlineRules" :overdue-color="$deadlineOverdueColor" />

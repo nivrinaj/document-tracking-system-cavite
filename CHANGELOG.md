@@ -6,6 +6,14 @@ Format based on [Keep a Changelog](https://keepachangelog.com).
 
 ---
 
+## 1.29.0 — 2026-07-02
+- **Fixed: documents showed as "nearing deadline" before they'd even been released** — a document that's only been assigned (not yet released, forwarded, or received) no longer counts toward its own deadline warning. Which statuses count is now configurable in System Settings, with an optional per-office override in Departments → edit — both default to the corrected behavior.
+- **New: Deadline now shown on the document details page** — including how many calendar days overdue it is, right in the Timeline section.
+- **Deadline reminder emails now link straight to each document** — a small arrow on every row opens that exact document instead of only the general tracking page.
+- **Bigger logo in notification emails.**
+- **New: fully customizable email notification schedule** — set the exact time of day and how often each notification repeats (daily, weekdays only, every 4/8 hours, or hourly) directly from Notification Settings — no code changes or redeploys needed to adjust it.
+- **Notification Settings page tidied up** — "Preview an email design" and "Manually run a notification now" now sit side by side instead of stacked, saving vertical space.
+
 ## 1.28.0 — 2026-07-02
 - **Fixed: Deadline field only filled half the row on the encode and edit pages** — a stray width limit on the date field made it look cut off even though it had a full row of space available.
 - **New: Email Design Settings page** — configure the notification email's header color, organization line (e.g. "Provincial Government of Cavite"), button label, footer text, and which optional sections show, the same way the QR Tracking Slip is already customizable. Reached from the Notification Settings page.

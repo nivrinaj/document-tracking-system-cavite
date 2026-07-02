@@ -44,10 +44,12 @@
 </div>
 
 {{-- Deadline tracking (opt-in per office) --}}
+@php $deptIncludedStatuses = old('deadline_included_statuses', $department?->deadline_included_statuses ?? []); @endphp
 <div class="border-t border-gray-100 dark:border-gray-700 pt-4 mt-2"
      x-data="{
         deadlineOn: {{ old('deadline_enabled', $department?->deadline_enabled) ? 'true' : 'false' }},
         customize: {{ !empty($department?->deadline_highlight_rules) || $department?->deadline_overdue_color ? 'true' : 'false' }},
+        customizeStatuses: {{ !empty($department?->deadline_included_statuses) ? 'true' : 'false' }},
      }">
     <x-toggle x-model="deadlineOn" name="deadline_enabled" label="Enable deadlines for this office">
         <span class="block text-xs text-gray-400 mt-0.5">When on, encoders in this office can set a <strong>Deadline</strong> on document types marked “requires a deadline”, and this office’s tracking list shows a Deadline column with colour highlighting as it nears.</span>
@@ -61,6 +63,16 @@
             <x-deadline-rules-editor prefix="dept" :rules="$department?->deadline_highlight_rules ?? []" :overdue-color="$department?->deadline_overdue_color ?: \App\Models\Document::defaultDeadlineOverdueColor()" />
         </div>
         <input type="hidden" name="customize_deadline_colors" :value="customize ? '1' : '0'">
+
+        <x-toggle x-model="customizeStatuses" label="Customize which statuses count toward the deadline for this office">
+            <span class="block text-xs text-gray-400 mt-0.5">Otherwise this office uses the Super Admin's default selection (System Settings → Deadline: which statuses count).</span>
+        </x-toggle>
+        <div x-show="customizeStatuses" x-cloak class="space-y-2">
+            @foreach(\App\Models\Document::deadlineStatusOptions() as $key => $label)
+                <x-toggle name="dept_status_{{ $key }}" :checked="in_array($key, (array) $deptIncludedStatuses)" label="{{ $label }}" />
+            @endforeach
+        </div>
+        <input type="hidden" name="customize_deadline_statuses" :value="customizeStatuses ? '1' : '0'">
     </div>
 </div>
 

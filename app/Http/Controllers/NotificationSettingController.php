@@ -44,6 +44,7 @@ class NotificationSettingController extends Controller
             'notify' => ['array'],
             'notify.*.enabled' => ['nullable', 'boolean'],
             'notify.*.frequency' => ['nullable', 'string', 'max:50'],
+            'notify.*.time' => ['nullable', 'date_format:H:i'],
         ]);
 
         $changes = [];
@@ -73,12 +74,17 @@ class NotificationSettingController extends Controller
 
         $notifyChanges = [];
         $storedConfig = [];
+        $oldConfig = NotificationCatalog::config();
         foreach (NotificationCatalog::types() as $key => $meta) {
-            $wasEnabled = NotificationCatalog::enabled($key);
+            $wasEnabled = $oldConfig[$key]['enabled'];
             $isEnabled = (bool) ($data['notify'][$key]['enabled'] ?? false);
             $frequency = $data['notify'][$key]['frequency'] ?? $meta['default_frequency'];
-            $storedConfig[$key] = ['enabled' => $isEnabled, 'frequency' => $frequency];
+            $time = $data['notify'][$key]['time'] ?? $meta['default_time'];
+            $storedConfig[$key] = ['enabled' => $isEnabled, 'frequency' => $frequency, 'time' => $time];
+
             if ($wasEnabled !== $isEnabled) $notifyChanges[] = $meta['label'].' '.($wasEnabled ? 'ON' : 'OFF').' → '.($isEnabled ? 'ON' : 'OFF');
+            if ($oldConfig[$key]['frequency'] !== $frequency) $notifyChanges[] = $meta['label'].' frequency "'.$oldConfig[$key]['frequency'].'" → "'.$frequency.'"';
+            if ($oldConfig[$key]['time'] !== $time) $notifyChanges[] = $meta['label'].' time "'.$oldConfig[$key]['time'].'" → "'.$time.'"';
         }
         Setting::put('notification_config', json_encode($storedConfig));
         $changes = array_merge($changes, $notifyChanges);

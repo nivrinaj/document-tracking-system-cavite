@@ -625,6 +625,41 @@ class Document extends Model
         return '#dc2626';
     }
 
+    /** Every status a document can be in, for the deadline-status-inclusion picker (draft is the "assigned, not yet released" state — never released/forwarded/received by anyone yet). */
+    public static function deadlineStatusOptions(): array
+    {
+        return [
+            'draft' => 'Assigned (not yet released)',
+            'released' => 'Released',
+            'forwarded' => 'Forwarded',
+            'received' => 'Received',
+        ];
+    }
+
+    /** Default global selection: a document only starts counting toward its deadline once it's actually left the encoder's hands. */
+    public static function defaultDeadlineIncludedStatuses(): array
+    {
+        return ['released', 'forwarded', 'received'];
+    }
+
+    /**
+     * Which statuses count toward THIS document's deadline highlighting — this
+     * office's own override if it has customized one, otherwise the Super-Admin
+     * global default. Same id/override-vs-default shape as the highlight rules
+     * above, just for statuses instead of colors.
+     */
+    public function deadlineIncludedStatuses(): array
+    {
+        $dept = $this->department;
+        if ($dept && $dept->deadline_enabled && ! empty($dept->deadline_included_statuses)) {
+            return $dept->deadline_included_statuses;
+        }
+
+        $global = json_decode((string) \App\Models\Setting::get('deadline_included_statuses', ''), true);
+
+        return $global ?: static::defaultDeadlineIncludedStatuses();
+    }
+
     /** Zip parallel "days" / "hex color" form arrays into the rules shape, dropping incomplete rows. */
     public static function zipDeadlineRules(array $days, array $colors): array
     {
@@ -652,6 +687,9 @@ class Document extends Model
     {
         $due = $this->deadlineAt();
         if (! $due || $this->isClosed()) {
+            return null;
+        }
+        if (! in_array($this->status, $this->deadlineIncludedStatuses(), true)) {
             return null;
         }
 

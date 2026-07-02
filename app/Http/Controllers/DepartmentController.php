@@ -40,12 +40,18 @@ class DepartmentController extends Controller
     {
         $wasDeadline = (bool) $department->deadline_enabled;
         $oldTimeMode = $department->time_tracking_mode;
+        $oldIncludedStatuses = $department->deadline_included_statuses;
         $department->update($this->validateData($request, $department));
         $this->applyTypeRestriction($request, $department);
 
         if ($wasDeadline !== (bool) $department->deadline_enabled) {
             $state = $department->deadline_enabled ? 'ON' : 'OFF';
             \App\Models\ActivityLog::record('departments.update', "Deadlines turned {$state} for {$department->name} ({$department->code}, #{$department->id})", $department);
+        }
+
+        if ($oldIncludedStatuses !== $department->deadline_included_statuses) {
+            $labels = fn (?array $statuses) => $statuses ? implode(', ', array_map(fn ($s) => \App\Models\Document::deadlineStatusOptions()[$s] ?? $s, $statuses)) : '(office default)';
+            \App\Models\ActivityLog::record('departments.update', "Deadline-counted statuses for {$department->name} ({$department->code}, #{$department->id}): {$labels($oldIncludedStatuses)} → {$labels($department->deadline_included_statuses)}", $department);
         }
 
         if ($oldTimeMode !== $department->time_tracking_mode) {
@@ -103,6 +109,11 @@ class DepartmentController extends Controller
             'dept_rule_days.*' => ['numeric', 'min:0.5'],
             'dept_rule_colors' => ['nullable', 'array'],
             'dept_rule_colors.*' => ['string', 'max:20'],
+            'customize_deadline_statuses' => ['nullable', 'boolean'],
+            'dept_status_draft' => ['nullable', 'boolean'],
+            'dept_status_released' => ['nullable', 'boolean'],
+            'dept_status_forwarded' => ['nullable', 'boolean'],
+            'dept_status_received' => ['nullable', 'boolean'],
             'time_tracking_mode' => ['nullable', Rule::in(['working_hours', 'calendar_days'])],
             'calendar_days_include_weekends' => ['nullable', 'boolean'],
             'broadcast_ack_layout' => ['nullable', 'boolean'],
@@ -121,6 +132,9 @@ class DepartmentController extends Controller
                 ? \App\Models\Document::zipDeadlineRules($request->input('dept_rule_days', []), $request->input('dept_rule_colors', []))
                 : null,
             'deadline_overdue_color' => $request->boolean('customize_deadline_colors') ? ($request->input('dept_overdue_color') ?: null) : null,
+            'deadline_included_statuses' => $request->boolean('customize_deadline_statuses')
+                ? array_values(array_filter(array_keys(\App\Models\Document::deadlineStatusOptions()), fn ($s) => $request->boolean('dept_status_'.$s)))
+                : null,
             'time_tracking_mode' => $request->input('time_tracking_mode') === 'calendar_days' ? 'calendar_days' : 'working_hours',
             'calendar_days_include_weekends' => $request->boolean('calendar_days_include_weekends'),
             'broadcast_ack_layout' => $request->boolean('broadcast_ack_layout'),

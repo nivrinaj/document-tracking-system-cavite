@@ -16,6 +16,7 @@ class SettingController extends Controller
             'departments' => \App\Models\Department::orderBy('name')->get(['id', 'code', 'name']),
             'deadlineRules' => json_decode((string) Setting::get('deadline_highlight_rules', ''), true) ?: \App\Models\Document::defaultDeadlineRules(),
             'deadlineOverdueColor' => Setting::get('deadline_overdue_color') ?: \App\Models\Document::defaultDeadlineOverdueColor(),
+            'deadlineIncludedStatuses' => json_decode((string) Setting::get('deadline_included_statuses', ''), true) ?: \App\Models\Document::defaultDeadlineIncludedStatuses(),
         ]);
     }
 
@@ -58,6 +59,10 @@ class SettingController extends Controller
             'global_rule_days.*' => ['numeric', 'min:0.5'],
             'global_rule_colors' => ['nullable', 'array'],
             'global_rule_colors.*' => ['string', 'max:20'],
+            'deadline_status_draft' => ['nullable', 'boolean'],
+            'deadline_status_released' => ['nullable', 'boolean'],
+            'deadline_status_forwarded' => ['nullable', 'boolean'],
+            'deadline_status_received' => ['nullable', 'boolean'],
         ]);
 
         $boolKeys = [
@@ -118,6 +123,14 @@ class SettingController extends Controller
             $request->input('global_rule_days', []),
             $request->input('global_rule_colors', [])
         )));
+
+        $oldIncludedStatuses = json_decode((string) Setting::get('deadline_included_statuses', ''), true) ?: \App\Models\Document::defaultDeadlineIncludedStatuses();
+        $newIncludedStatuses = array_values(array_filter(array_keys(\App\Models\Document::deadlineStatusOptions()), fn ($s) => $request->boolean('deadline_status_'.$s)));
+        if ($oldIncludedStatuses !== $newIncludedStatuses) {
+            $labels = fn (array $statuses) => $statuses ? implode(', ', array_map(fn ($s) => \App\Models\Document::deadlineStatusOptions()[$s] ?? $s, $statuses)) : '(none)';
+            $changes[] = 'Deadline-counted statuses "'.$labels($oldIncludedStatuses).'" → "'.$labels($newIncludedStatuses).'"';
+        }
+        Setting::put('deadline_included_statuses', json_encode($newIncludedStatuses));
 
         // Image fields: [setting key => [form field, remove field]]
         $images = [

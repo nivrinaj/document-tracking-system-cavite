@@ -75,14 +75,16 @@
                 <div class="space-y-4 divide-y divide-gray-100 dark:divide-gray-700">
                     @foreach($types as $key => $meta)
                         @php $cfg = $config[$key]; @endphp
-                        <div class="pt-4 first:pt-0 flex flex-wrap items-start justify-between gap-3">
+                        <div class="pt-4 first:pt-0 flex flex-wrap items-start justify-between gap-3"
+                             x-data="{ freq: '{{ $cfg['frequency'] }}' }">
                             <x-toggle name="notify[{{ $key }}][enabled]" :checked="$cfg['enabled']" label="{{ $meta['label'] }}" description="{{ $meta['description'] }}" />
                             <div class="flex items-center gap-2 shrink-0">
-                                <select name="notify[{{ $key }}][frequency]" class="input py-1.5 text-sm">
+                                <select name="notify[{{ $key }}][frequency]" x-model="freq" class="input py-1.5 text-sm">
                                     @foreach($meta['frequency_options'] as $val => $label)
                                         <option value="{{ $val }}" @selected($cfg['frequency']===$val)>{{ $label }}</option>
                                     @endforeach
                                 </select>
+                                <input type="time" name="notify[{{ $key }}][time]" value="{{ $cfg['time'] }}" x-show="['daily','weekdays'].includes(freq)" x-cloak class="input py-1.5 text-sm">
                             </div>
                         </div>
                     @endforeach
@@ -105,28 +107,30 @@
             </form>
         </x-card>
 
-        <x-card title="Preview an email design">
-            <p class="text-xs text-gray-400 -mt-1 mb-3">Opens the actual email template with sample data, so you can review the look before anything is ever sent to real staff.</p>
-            <div class="flex flex-wrap gap-2">
-                @foreach($types as $key => $meta)
-                    <a href="{{ route('notification-settings.preview', $key) }}" target="_blank" class="input-btn inline-flex items-center gap-1.5 w-auto">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
-                        Preview "{{ $meta['label'] }}"
-                    </a>
-                @endforeach
-            </div>
-        </x-card>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+            <x-card title="Preview an email design">
+                <p class="text-xs text-gray-400 -mt-1 mb-3">Opens the actual email template with sample data, so you can review the look before anything is ever sent to real staff.</p>
+                <div class="flex flex-wrap gap-2">
+                    @foreach($types as $key => $meta)
+                        <a href="{{ route('notification-settings.preview', $key) }}" target="_blank" class="input-btn inline-flex items-center gap-1.5 w-auto">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                            Preview "{{ $meta['label'] }}"
+                        </a>
+                    @endforeach
+                </div>
+            </x-card>
 
-        <x-card title="Manually run a notification now">
-            <p class="text-xs text-gray-400 -mt-1 mb-3">Skips the schedule and sends immediately — useful for testing without waiting for the daily run.</p>
-            <div class="flex flex-wrap gap-2">
-                @foreach($types as $key => $meta)
-                    <form method="POST" action="{{ route('notification-settings.run', $key) }}" data-confirm="Send &quot;{{ $meta['label'] }}&quot; right now?">
-                        @csrf
-                        <x-btn type="submit" variant="secondary">Run "{{ $meta['label'] }}" now</x-btn>
-                    </form>
-                @endforeach
-            </div>
-        </x-card>
+            <x-card title="Manually run a notification now">
+                <p class="text-xs text-gray-400 -mt-1 mb-3">Skips the schedule and sends immediately — useful for testing without waiting for the daily run.</p>
+                <div class="flex flex-wrap gap-2">
+                    @foreach($types as $key => $meta)
+                        <form method="POST" action="{{ route('notification-settings.run', $key) }}" data-confirm="Send &quot;{{ $meta['label'] }}&quot; right now?">
+                            @csrf
+                            <x-btn type="submit" variant="secondary">Run "{{ $meta['label'] }}" now</x-btn>
+                        </form>
+                    @endforeach
+                </div>
+            </x-card>
+        </div>
     </div>
 </x-app-layout>
