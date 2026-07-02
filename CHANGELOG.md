@@ -6,6 +6,11 @@ Format based on [Keep a Changelog](https://keepachangelog.com).
 
 ---
 
+## 1.22.0 — 2026-07-02
+- **Roles can now be renamed safely** — a role's display name (e.g. "Department Head") can be changed from the Roles & Permissions page without breaking any feature that depends on that role, including Super Admin itself.
+- **More resilient role-based access checks throughout the system** — every place that used to check a role by its exact name (page visibility, document routing, tracking filters, danger-zone resets, chat exclusions, work calendar grouping) now checks a stable internal identifier instead, so renaming a role can never silently break functionality.
+- **Chat role-exclusion list made rename-safe** — the "exclude these roles from chat" setting now references roles by their stable ID instead of their name, so renaming an excluded role no longer un-excludes it.
+
 ## 1.21.0 — 2026-07-02
 - **Forward to Department Head available at encode time** — an encoder can now send a brand-new document straight to the Department Head as a "Send as" choice, the same way they'd assign it to a specific staff member.
 - **Fixed: running time now starts with the Department Head immediately** — forwarding to the head hands over the clock right away instead of leaving it counted against the person who forwarded it, even before anyone has clicked Receive or claimed it.

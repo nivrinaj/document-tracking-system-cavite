@@ -12,7 +12,7 @@ class SettingController extends Controller
     public function edit()
     {
         return view('settings.edit', [
-            'roles' => \Spatie\Permission\Models\Role::orderBy('name')->pluck('name'),
+            'roles' => \Spatie\Permission\Models\Role::orderBy('name')->get(['id', 'name', 'system_key']),
             'departments' => \App\Models\Department::orderBy('name')->get(['id', 'code', 'name']),
             'deadlineRules' => json_decode((string) Setting::get('deadline_highlight_rules', ''), true) ?: \App\Models\Document::defaultDeadlineRules(),
             'deadlineOverdueColor' => Setting::get('deadline_overdue_color') ?: \App\Models\Document::defaultDeadlineOverdueColor(),
@@ -48,7 +48,7 @@ class SettingController extends Controller
             'enable_user_delete' => ['nullable', 'boolean'],
             'messaging_scope' => ['nullable', 'in:all,office'],
             'messaging_excluded_roles' => ['nullable', 'array'],
-            'messaging_excluded_roles.*' => ['string'],
+            'messaging_excluded_roles.*' => ['integer', 'exists:roles,id'],
             'tracking_prefix' => ['required', 'string', 'max:10', 'alpha_dash'],
             'records_per_page' => ['required', 'integer', 'min:5', 'max:100'],
             'support_contact' => ['nullable', 'string', 'max:255'],
@@ -168,7 +168,7 @@ class SettingController extends Controller
      */
     public function resetData(Request $request)
     {
-        abort_unless($request->user()->hasRole('Super Admin'), 403);
+        abort_unless($request->user()->hasSystemRole(\App\Models\User::SYS_SUPER_ADMIN), 403);
 
         $target = $request->input('target', 'documents');
 
@@ -192,7 +192,7 @@ class SettingController extends Controller
                 // first — otherwise deletion fails or leaves orphans. Keep Super Admins
                 // so you don't lock yourself out: everything goes except Super Admin.
                 $clearDocuments();
-                $deleted = \App\Models\User::whereDoesntHave('roles', fn ($q) => $q->where('name', 'Super Admin'))->get();
+                $deleted = \App\Models\User::whereDoesntHave('roles', fn ($q) => $q->where('system_key', \App\Models\User::SYS_SUPER_ADMIN))->get();
                 $deleted->each->delete();
                 $msg = "Deleted {$deleted->count()} user(s) and all documents/history. Only Super Admin account(s) remain.";
                 break;
@@ -211,7 +211,7 @@ class SettingController extends Controller
 
             case 'all':
                 $clearDocuments();
-                \App\Models\User::whereDoesntHave('roles', fn ($q) => $q->where('name', 'Super Admin'))->get()->each->delete();
+                \App\Models\User::whereDoesntHave('roles', fn ($q) => $q->where('system_key', \App\Models\User::SYS_SUPER_ADMIN))->get()->each->delete();
                 \App\Models\Division::query()->delete();
                 \App\Models\Department::query()->delete();
                 $msg = 'Everything cleared (documents, non–Super-Admin users, divisions, departments). Ready for real data.';

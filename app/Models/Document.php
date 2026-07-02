@@ -139,8 +139,8 @@ class Document extends Model
             return $query;
         }
 
-        $isDeptHead = $user->hasAnyRole(['Department Head', 'Assistant Department Head']) && $user->department_id;
-        $isDivHead = $user->hasRole('Division Head') && $user->division_id;
+        $isDeptHead = $user->isDeptHeadRole() && $user->department_id;
+        $isDivHead = $user->isDivisionHead() && $user->division_id;
 
         return $query->where(function ($q) use ($user, $isDeptHead, $isDivHead) {
             // Always: documents that concern the user personally (cross-office included).
@@ -155,7 +155,7 @@ class Document extends Model
                     $w->where('documents.department_id', $user->department_id)
                         ->where('documents.status', 'forwarded')
                         ->whereNotNull('documents.forwarded_to_head_at')
-                        ->whereHas('currentHolder.roles', fn ($r) => $r->where('name', 'Department Head'));
+                        ->whereHas('currentHolder.roles', fn ($r) => $r->where('system_key', User::SYS_DEPARTMENT_HEAD));
                 });
             }
 
@@ -285,7 +285,7 @@ class Document extends Model
         return static::departmentHeadFor($this->department_id);
     }
 
-    /** The Department Head user for a given department (by role + FK, never by name), if any. */
+    /** The Department Head user for a given department (by role's stable system_key + department_id FK, never by name), if any. */
     public static function departmentHeadFor(?int $departmentId): ?User
     {
         if (! $departmentId) {
@@ -294,7 +294,7 @@ class Document extends Model
 
         return User::where('is_active', true)
             ->where('department_id', $departmentId)
-            ->whereHas('roles', fn ($q) => $q->where('name', 'Department Head'))
+            ->whereHas('roles', fn ($q) => $q->where('system_key', User::SYS_DEPARTMENT_HEAD))
             ->first();
     }
 

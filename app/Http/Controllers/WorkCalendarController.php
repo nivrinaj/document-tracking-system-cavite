@@ -131,9 +131,9 @@ class WorkCalendarController extends Controller
     private function groupedStaff(\App\Models\Department $dept): array
     {
         $users = User::where('department_id', $dept->id)->with(['roles:id,name', 'division:id,code,name'])->get();
-        $isHead = fn ($u) => $u->hasRole('Department Head');
-        $isAsst = fn ($u) => $u->hasRole('Assistant Department Head');
-        $isDivHead = fn ($u) => $u->hasRole('Division Head');
+        $isHead = fn ($u) => $u->hasSystemRole(User::SYS_DEPARTMENT_HEAD);
+        $isAsst = fn ($u) => $u->hasSystemRole(User::SYS_ASSISTANT_DEPARTMENT_HEAD);
+        $isDivHead = fn ($u) => $u->hasSystemRole(User::SYS_DIVISION_HEAD);
 
         $groups = [];
 

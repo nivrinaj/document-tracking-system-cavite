@@ -38,7 +38,7 @@ class AppServiceProvider extends ServiceProvider
         // Admin the right overrides) so a completed/closed document doesn't show
         // nonsensical actions.
         Gate::before(function ($user, $ability) {
-            if (! $user->hasRole('Super Admin')) {
+            if (! $user->hasSystemRole(\App\Models\User::SYS_SUPER_ADMIN)) {
                 return null;
             }
             $documentAbilities = ['view', 'receive', 'forward', 'transfer', 'pending', 'resume', 'distribute', 'archive', 'release', 'assign', 'update', 'delete', 'reopen', 'acknowledge'];

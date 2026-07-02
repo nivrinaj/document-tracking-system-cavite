@@ -45,6 +45,28 @@ class User extends Authenticatable
     public const DEFAULT_PASSWORD = 'password';
 
     /**
+     * Stable keys for the "system" roles the application's own logic depends
+     * on — `roles.system_key`, never `roles.name` (a free-text label an admin
+     * can rename anytime from the Roles & Permissions page without breaking
+     * anything). Always check via hasSystemRole(), never hasRole('Some Name').
+     */
+    public const SYS_SUPER_ADMIN = 'super_admin';
+
+    public const SYS_DEPARTMENT_HEAD = 'department_head';
+
+    public const SYS_ASSISTANT_DEPARTMENT_HEAD = 'assistant_department_head';
+
+    public const SYS_DIVISION_HEAD = 'division_head';
+
+    public const SYS_STAFF = 'staff';
+
+    /** Whether this user holds one of the given stable system roles (never matched by the role's display name). */
+    public function hasSystemRole(string|array $keys): bool
+    {
+        return $this->roles()->whereIn('system_key', (array) $keys)->exists();
+    }
+
+    /**
      * The attributes that should be hidden for serialization.
      *
      * @var list<string>
@@ -139,7 +161,7 @@ class User extends Authenticatable
     /** May this user encode (create) new documents? Per-account, plus Super Admin. */
     public function canEncode(): bool
     {
-        if ($this->hasRole('Super Admin')) {
+        if ($this->hasSystemRole(self::SYS_SUPER_ADMIN)) {
             return true;
         }
 
@@ -153,7 +175,7 @@ class User extends Authenticatable
     /** May this user transfer a document to ANOTHER office's claim pool? */
     public function canTransferOffice(): bool
     {
-        if ($this->hasRole('Super Admin')) {
+        if ($this->hasSystemRole(self::SYS_SUPER_ADMIN)) {
             return true;
         }
         try {
@@ -166,7 +188,7 @@ class User extends Authenticatable
     /** May this user claim/receive documents transferred from ANOTHER office? */
     public function canClaimFromOffice(): bool
     {
-        if ($this->hasRole('Super Admin')) {
+        if ($this->hasSystemRole(self::SYS_SUPER_ADMIN)) {
             return true;
         }
         try {
@@ -203,7 +225,7 @@ class User extends Authenticatable
         }
         $excluded = \App\Models\Conversation::excludedRoles();
 
-        return empty($excluded) || ! $this->hasAnyRole($excluded);
+        return empty($excluded) || ! $this->roles()->whereIn('id', $excluded)->exists();
     }
 
     /* ----------------------------------------------------------------
@@ -213,19 +235,19 @@ class User extends Authenticatable
     /** Department head or assistant head can see everything in the department. */
     public function isHead(): bool
     {
-        return $this->hasAnyRole(['Department Head', 'Assistant Department Head', 'Super Admin']);
+        return $this->hasSystemRole([self::SYS_DEPARTMENT_HEAD, self::SYS_ASSISTANT_DEPARTMENT_HEAD, self::SYS_SUPER_ADMIN]);
     }
 
     /** Department Head or Assistant Department Head (their whole department, all divisions). */
     public function isDeptHeadRole(): bool
     {
-        return $this->hasAnyRole(['Department Head', 'Assistant Department Head']);
+        return $this->hasSystemRole([self::SYS_DEPARTMENT_HEAD, self::SYS_ASSISTANT_DEPARTMENT_HEAD]);
     }
 
     /** Division Head (their own division only). */
     public function isDivisionHead(): bool
     {
-        return $this->hasRole('Division Head');
+        return $this->hasSystemRole(self::SYS_DIVISION_HEAD);
     }
 
     public function getAvatarUrlAttribute(): string

@@ -28,7 +28,7 @@ class Conversation extends Model
         return \App\Models\Setting::get('messaging_scope', 'all') === 'office' ? 'office' : 'all';
     }
 
-    /** Role names barred from chat entirely (e.g. Governor, Vice Governor). */
+    /** Role IDs barred from chat entirely (e.g. Governor, Vice Governor) — stored as IDs, never names, so a role rename never breaks this. */
     public static function excludedRoles(): array
     {
         return json_decode((string) \App\Models\Setting::get('messaging_excluded_roles', '[]'), true) ?: [];
@@ -45,7 +45,7 @@ class Conversation extends Model
         return User::where('is_active', true)
             ->where('id', '!=', $actor->id)
             ->when(self::scope() === 'office' && $actor->department_id, fn ($q) => $q->where('department_id', $actor->department_id))
-            ->when(! empty($excluded), fn ($q) => $q->whereDoesntHave('roles', fn ($r) => $r->whereIn('name', $excluded)));
+            ->when(! empty($excluded), fn ($q) => $q->whereDoesntHave('roles', fn ($r) => $r->whereIn('id', $excluded)));
     }
 
     /**
@@ -57,7 +57,7 @@ class Conversation extends Model
     {
         $excluded = self::excludedRoles();
         $memberQuery = User::where('is_active', true)
-            ->when(! empty($excluded), fn ($q) => $q->whereDoesntHave('roles', fn ($r) => $r->whereIn('name', $excluded)));
+            ->when(! empty($excluded), fn ($q) => $q->whereDoesntHave('roles', fn ($r) => $r->whereIn('id', $excluded)));
 
         if ($scope === 'division') {
             if (! $actor->division_id) {

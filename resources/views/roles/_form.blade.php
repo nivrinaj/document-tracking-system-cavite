@@ -1,6 +1,6 @@
 <div>
     <label class="label">Role Name <span class="text-red-500">*</span></label>
-    <input type="text" name="name" value="{{ old('name', $role->name) }}" class="input max-w-sm" {{ $role->name === 'Super Admin' ? 'readonly' : '' }} required>
+    <input type="text" name="name" value="{{ old('name', $role->name) }}" class="input max-w-sm" required>
 </div>
 
 <div class="mt-5">

@@ -17,7 +17,7 @@
                         </div>
                         <div class="flex gap-2">
                             <x-edit-button :href="route('roles.edit', $role)" />
-                            @if(!in_array($role->name, ['Super Admin','Department Head','Assistant Department Head','Receiving Staff','Staff']))
+                            @if($role->system_key === null)
                                 <x-delete-button :action="route('roles.destroy', $role)" confirm="Delete the role {{ $role->name }}?" />
                             @endif
                         </div>
@@ -26,7 +26,7 @@
                         @forelse($role->permissions->take(12) as $perm)
                             <span class="text-[11px] px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300">{{ $perm->name }}</span>
                         @empty
-                            <span class="text-xs text-gray-400">No explicit permissions @if($role->name==='Super Admin')(full access via Super Admin)@endif</span>
+                            <span class="text-xs text-gray-400">No explicit permissions @if($role->system_key === \App\Models\User::SYS_SUPER_ADMIN)(full access via Super Admin)@endif</span>
                         @endforelse
                         @if($role->permissions->count() > 12)<span class="text-[11px] text-gray-400">+{{ $role->permissions->count()-12 }} more</span>@endif
                     </div>

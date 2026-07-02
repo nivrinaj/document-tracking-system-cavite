@@ -27,7 +27,7 @@ class DocumentPolicy
      */
     protected function canOverride(User $user): bool
     {
-        return $user->hasRole('Super Admin');
+        return $user->hasSystemRole(User::SYS_SUPER_ADMIN);
     }
 
     /**
@@ -50,14 +50,14 @@ class DocumentPolicy
         }
 
         // Department head / assistant head: the entire own department.
-        if ($user->hasAnyRole(['Department Head', 'Assistant Department Head']) && $user->department_id) {
+        if ($user->isDeptHeadRole() && $user->department_id) {
             return $document->department_id === $user->department_id
                 || $document->creator?->department_id === $user->department_id
                 || $document->assignees()->where('users.department_id', $user->department_id)->exists();
         }
 
         // Division head: only their own division's scope.
-        if ($user->hasRole('Division Head') && $user->division_id) {
+        if ($user->isDivisionHead() && $user->division_id) {
             return ($document->division_id === $user->division_id && $document->department_id === $user->department_id)
                 || $document->creator?->division_id === $user->division_id
                 || $document->assignees()->where('users.division_id', $user->division_id)->exists();
@@ -76,7 +76,7 @@ class DocumentPolicy
     /** Only Super Admin can bring a finished document back to active (e.g. accidental completion). */
     public function reopen(User $user, Document $document): bool
     {
-        return $user->hasRole('Super Admin') && $document->isClosed();
+        return $user->hasSystemRole(User::SYS_SUPER_ADMIN) && $document->isClosed();
     }
 
     /**

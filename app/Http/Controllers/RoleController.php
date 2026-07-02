@@ -57,10 +57,9 @@ class RoleController extends Controller
             'permissions.*' => ['string', 'exists:permissions,name'],
         ]);
 
-        // Protect the Super Admin role name.
-        if ($role->name !== 'Super Admin') {
-            $role->update(['name' => $data['name']]);
-        }
+        // system_key (not name) is the stable identity system logic depends on,
+        // so renaming any role — including Super Admin's display label — is safe.
+        $role->update(['name' => $data['name']]);
 
         $role->syncPermissions($data['permissions'] ?? []);
 
@@ -69,7 +68,7 @@ class RoleController extends Controller
 
     public function destroy(Role $role)
     {
-        if (in_array($role->name, ['Super Admin', 'Department Head', 'Assistant Department Head', 'Receiving Staff', 'Staff'])) {
+        if ($role->system_key !== null) {
             return back()->with('error', 'Core roles cannot be deleted.');
         }
 

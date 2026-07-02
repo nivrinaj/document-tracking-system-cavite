@@ -268,12 +268,12 @@
                             <span class="label">Exclude these roles from chat</span>
                             <p class="text-xs text-gray-400 -mt-1 mb-2">Selected roles can't use chat and won't appear as someone to message (e.g. Governor, Vice Governor, Chiefs of Staff).</p>
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1.5 max-h-56 overflow-y-auto pr-1">
-                                @foreach($roles as $roleName)
-                                    @continue($roleName === 'Super Admin')
+                                @foreach($roles as $role)
+                                    @continue($role->system_key === \App\Models\User::SYS_SUPER_ADMIN)
                                     <label class="flex items-center gap-2 text-sm">
-                                        <input type="checkbox" name="messaging_excluded_roles[]" value="{{ $roleName }}"
-                                               class="rounded text-[color:var(--color-primary)]" @checked(in_array($roleName, $excludedRoles))>
-                                        {{ $roleName }}
+                                        <input type="checkbox" name="messaging_excluded_roles[]" value="{{ $role->id }}"
+                                               class="rounded text-[color:var(--color-primary)]" @checked(in_array($role->id, $excludedRoles))>
+                                        {{ $role->name }}
                                     </label>
                                 @endforeach
                             </div>
@@ -292,7 +292,7 @@
             </div>
         </form>
 
-        @role('Super Admin')
+        @if(auth()->user()->hasSystemRole(App\Models\User::SYS_SUPER_ADMIN))
         <div class="bg-white dark:bg-gray-800 border border-red-200 dark:border-red-900/50 rounded-xl shadow-sm">
             <div class="px-5 py-3 border-b border-red-100 dark:border-red-900/40 font-semibold text-sm text-red-600">⚠ Danger Zone</div>
             <div class="p-5 space-y-3">
@@ -338,6 +338,6 @@
                 </div>
             </div>
         </div>
-        @endrole
+        @endif
     </div>
 </x-app-layout>

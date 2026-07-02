@@ -20,7 +20,7 @@ class DocumentController extends Controller
     public function index(Request $request)
     {
         $user = $request->user();
-        $isSuperAdmin = $user->hasRole('Super Admin');
+        $isSuperAdmin = $user->hasSystemRole(\App\Models\User::SYS_SUPER_ADMIN);
         $isDeptHead = $user->isDeptHeadRole();
         $isDivisionHead = $user->isDivisionHead();
 

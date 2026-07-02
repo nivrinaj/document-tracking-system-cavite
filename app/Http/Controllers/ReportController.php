@@ -97,7 +97,7 @@ class ReportController extends Controller
         $divisions = array_filter(explode(',', (string) Setting::get('transmittal_divisions', '')));
         if (empty($divisions)) return true;
 
-        $isHead = $user->hasRole(['Department Head', 'Assistant Department Head']);
+        $isHead = $user->isDeptHeadRole();
         return $isHead || in_array((string) $user->division_id, $divisions, true);
     }
 
