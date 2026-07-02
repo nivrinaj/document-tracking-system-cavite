@@ -68,25 +68,57 @@
                     <option value="active" @selected(request('status')==='active')>Active</option>
                     <option value="inactive" @selected(request('status')==='inactive')>Inactive</option>
                 </select>
+                <select name="per_page" class="input" onchange="this.form.submit()">
+                    @foreach([12, 25, 50, 100] as $n)
+                        <option value="{{ $n }}" @selected($perPage == $n)>{{ $n }} rows</option>
+                    @endforeach
+                </select>
                 <div class="sm:col-span-2 lg:col-span-4 flex gap-2"><x-btn type="submit">Filter</x-btn><x-btn :href="route('users.index')" variant="secondary">Reset</x-btn></div>
             </form>
         </x-card>
 
-        <x-card padding="p-0">
+        @php
+            $canBulkDelete = ($settings['enable_user_delete'] ?? '1') === '1';
+            $selectableIds = $users->filter(fn ($u) => $u->id !== auth()->id() && ! $u->hasSystemRole(\App\Models\User::SYS_SUPER_ADMIN))->pluck('id');
+        @endphp
+        <x-card padding="p-0" @if($canBulkDelete) x-data="{ selected: [], allIds: @js($selectableIds) }" @endif>
+            @if($canBulkDelete)
+            <div x-show="selected.length > 0" x-cloak class="flex items-center justify-between gap-3 px-4 py-3 bg-indigo-50 dark:bg-indigo-900/20 border-b border-gray-100 dark:border-gray-700">
+                <span class="text-sm font-medium" x-text="selected.length + ' selected'"></span>
+                <form method="POST" action="{{ route('users.bulkDestroy') }}" data-confirm="Delete the selected user(s)? This cannot be undone.">
+                    @csrf
+                    <template x-for="id in selected" :key="id"><input type="hidden" name="ids[]" :value="id"></template>
+                    <x-btn type="submit" variant="danger">Delete Selected</x-btn>
+                </form>
+            </div>
+            @endif
             <div class="overflow-x-auto">
                 <table class="r-table min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                     <thead class="bg-gray-50 dark:bg-gray-700/40">
-                        <tr><th class="table-th">Name</th><th class="table-th">Department</th><th class="table-th">Division</th><th class="table-th">Role</th><th class="table-th">Status</th><th class="table-th text-right">Action</th></tr>
+                        <tr>
+                            @if($canBulkDelete)
+                            <th class="table-th w-8">
+                                <input type="checkbox" class="rounded" :checked="allIds.length > 0 && selected.length === allIds.length" @change="selected = $event.target.checked ? [...allIds] : []">
+                            </th>
+                            @endif
+                            <th class="table-th">Name</th><th class="table-th">Department</th><th class="table-th">Division</th><th class="table-th">Role</th><th class="table-th">Status</th><th class="table-th text-right">Action</th></tr>
                     </thead>
                     <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
                         @forelse($users as $user)
                             <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/40">
+                                @if($canBulkDelete)
+                                <td class="table-td" data-label="">
+                                    @if($user->id !== auth()->id() && ! $user->hasSystemRole(\App\Models\User::SYS_SUPER_ADMIN))
+                                        <input type="checkbox" class="rounded" value="{{ $user->id }}" x-model="selected">
+                                    @endif
+                                </td>
+                                @endif
                                 <td class="table-td" data-label="Name">
                                     <div class="flex items-center gap-3 justify-end sm:justify-start">
                                         <img src="{{ $user->avatar_url }}" class="w-8 h-8 rounded-full">
                                         <div>
                                             <div class="font-medium">{{ $user->name }}</div>
-                                            <div class="text-xs text-gray-400">{{ $user->email }}</div>
+                                            <div class="text-xs text-gray-400">{{ $user->username }} · {{ $user->email }}</div>
                                         </div>
                                     </div>
                                 </td>
@@ -117,7 +149,7 @@
                                 </td>
                             </tr>
                         @empty
-                            <tr><td colspan="6" class="px-4 py-10 text-center text-sm text-gray-400">No users found.</td></tr>
+                            <tr><td colspan="{{ $canBulkDelete ? 7 : 6 }}" class="px-4 py-10 text-center text-sm text-gray-400">No users found.</td></tr>
                         @endforelse
                     </tbody>
                 </table>

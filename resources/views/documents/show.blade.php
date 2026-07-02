@@ -440,26 +440,21 @@
                                         <div>
                                             <div class="text-[11px] font-semibold uppercase tracking-wide text-gray-400 mb-1.5">{{ $divName }} <span class="text-gray-300 dark:text-gray-600">· {{ $divAcked }}/{{ $people->count() }} received</span></div>
                                             <div class="overflow-x-auto rounded-lg border border-gray-100 dark:border-gray-700">
-                                                <table class="w-full table-fixed text-sm">
-                                                    <colgroup>
-                                                        <col style="width:45%">
-                                                        <col style="width:25%">
-                                                        <col style="width:30%">
-                                                    </colgroup>
+                                                <table class="w-full text-sm">
                                                     <thead class="bg-gray-50 dark:bg-gray-700/40 text-[11px] uppercase tracking-wide text-gray-400">
                                                         <tr>
-                                                            <th class="text-left font-medium px-3 py-2">Name</th>
                                                             <th class="text-left font-medium px-3 py-2">Position</th>
-                                                            <th class="text-left font-medium px-3 py-2">Date &amp; time received</th>
+                                                            <th class="text-left font-medium px-3 py-2">Name</th>
+                                                            <th class="text-left font-medium px-3 py-2 whitespace-nowrap">Date &amp; time received</th>
                                                         </tr>
                                                     </thead>
                                                     <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
                                                         @foreach($people as $person)
                                                             @php $acked = $person->pivot->acknowledged_at ? \Illuminate\Support\Carbon::parse($person->pivot->acknowledged_at) : null; @endphp
                                                             <tr class="{{ $acked ? '' : 'bg-amber-50/50 dark:bg-amber-900/10' }}">
-                                                                <td class="px-3 py-2 font-medium truncate" title="{{ $person->formalName() }}">{{ $person->formalName() }}</td>
-                                                                <td class="px-3 py-2 text-gray-500 dark:text-gray-400 truncate" title="{{ $person->position }}">{{ $person->position ?: '—' }}</td>
-                                                                <td class="px-3 py-2 truncate">
+                                                                <td class="px-3 py-2 text-gray-500 dark:text-gray-400">{{ $person->position ?: '—' }}</td>
+                                                                <td class="px-3 py-2 font-medium">{{ $person->formalName() }}</td>
+                                                                <td class="px-3 py-2 whitespace-nowrap">
                                                                     @if($acked)
                                                                         <span class="text-green-600 dark:text-green-400">{{ $acked->format('M d, Y g:i A') }}</span>
                                                                     @else

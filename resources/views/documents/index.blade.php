@@ -164,6 +164,14 @@
                         <input type="date" name="date_to" value="{{ request('date_to') }}" class="input" aria-label="To">
                     </div>
                 </div>
+                <div>
+                    <label class="block text-[11px] text-gray-400 mb-0.5">Rows per page</label>
+                    <select name="per_page" class="input" onchange="this.form.submit()">
+                        @foreach([12, 25, 50, 100] as $n)
+                            <option value="{{ $n }}" @selected($perPage == $n)>{{ $n }}</option>
+                        @endforeach
+                    </select>
+                </div>
                 <div class="sm:col-span-2 lg:col-span-3 flex gap-2">
                     <x-btn type="submit">Filter</x-btn>
                     <x-btn :href="route('documents.index')" variant="secondary">Reset</x-btn>

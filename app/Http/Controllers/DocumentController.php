@@ -108,7 +108,10 @@ class DocumentController extends Controller
             $query->whereDate('created_at', '<=', $request->date('date_to'));
         }
 
-        $perPage = (int) \App\Models\Setting::get('records_per_page', 12);
+        $perPage = (int) $request->input('per_page', \App\Models\Setting::get('records_per_page', 12));
+        if (! in_array($perPage, [12, 25, 50, 100], true)) {
+            $perPage = (int) \App\Models\Setting::get('records_per_page', 12);
+        }
         $documents = $query->paginate($perPage)->withQueryString();
 
         // Staff options for the "Staff" filter dropdown — scoped per role.
@@ -123,6 +126,7 @@ class DocumentController extends Controller
 
         return view('documents.index', [
             'documents' => $documents,
+            'perPage' => $perPage,
             'departments' => $isSuperAdmin ? \App\Models\Department::orderBy('name')->get() : collect(),
             'divisions' => ($isSuperAdmin || $isDeptHead)
                 ? Division::orderBy('name')->get(['id', 'code', 'name', 'department_id'])

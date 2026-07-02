@@ -32,8 +32,14 @@ class UserController extends Controller
             $query->where('is_active', $status === 'active');
         }
 
+        $perPage = (int) $request->input('per_page', \App\Models\Setting::get('records_per_page', 12));
+        if (! in_array($perPage, [12, 25, 50, 100], true)) {
+            $perPage = (int) \App\Models\Setting::get('records_per_page', 12);
+        }
+
         return view('users.index', [
-            'users' => $query->paginate((int) \App\Models\Setting::get('records_per_page', 12))->withQueryString(),
+            'users' => $query->paginate($perPage)->withQueryString(),
+            'perPage' => $perPage,
             'departments' => \App\Models\Department::orderBy('name')->get(),
             'divisions' => Division::orderBy('name')->get(),
             'roles' => \Spatie\Permission\Models\Role::orderBy('name')->get(),
@@ -228,6 +234,51 @@ class UserController extends Controller
         $user->delete();
 
         return back()->with('success', 'User deleted.');
+    }
+
+    /** Bulk-delete selected users. Always skips your own account and Super Admin accounts (same protection resetData() already applies), so you can't accidentally lock yourself out. */
+    public function bulkDestroy(Request $request)
+    {
+        if (\App\Models\Setting::get('enable_user_delete', '1') !== '1') {
+            return back()->with('error', 'Deleting user accounts is currently disabled in System Settings.');
+        }
+
+        $ids = array_filter((array) $request->input('ids', []));
+        if (empty($ids)) {
+            return back()->with('error', 'No users selected.');
+        }
+
+        $users = User::whereIn('id', $ids)->get();
+        $deletedNames = [];
+        $skippedSelf = false;
+        $skippedSuperAdmin = 0;
+
+        foreach ($users as $user) {
+            if ($user->id === $request->user()->id) {
+                $skippedSelf = true;
+
+                continue;
+            }
+            if ($user->hasSystemRole(User::SYS_SUPER_ADMIN)) {
+                $skippedSuperAdmin++;
+
+                continue;
+            }
+            $deletedNames[] = $user->name;
+            $user->delete();
+        }
+
+        if (empty($deletedNames)) {
+            return back()->with('error', 'No users were deleted'.($skippedSuperAdmin ? ' — Super Admin accounts are protected from bulk delete' : '').'.');
+        }
+
+        \App\Models\ActivityLog::record('users.bulkDestroy', 'Bulk-deleted '.count($deletedNames).' user(s): '.implode(', ', $deletedNames));
+
+        $msg = count($deletedNames).' user(s) deleted.';
+        if ($skippedSelf) $msg .= ' Your own account was skipped.';
+        if ($skippedSuperAdmin) $msg .= " {$skippedSuperAdmin} Super Admin account(s) were skipped.";
+
+        return back()->with('success', $msg);
     }
 
     public function show(User $user)

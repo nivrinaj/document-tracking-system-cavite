@@ -30,6 +30,14 @@ class AppServiceProvider extends ServiceProvider
             \Illuminate\Support\Facades\URL::forceScheme('https');
         }
 
+        // Apply Super-Admin-configured SMTP settings (Notification Settings page)
+        // to the runtime mail config. No-ops until "mail_enabled" is turned on.
+        try {
+            \App\Services\MailSettings::apply();
+        } catch (\Throwable $e) {
+            // settings table may not exist yet (e.g. before first migrate)
+        }
+
         // Register policies.
         Gate::policy(Document::class, DocumentPolicy::class);
 

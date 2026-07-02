@@ -70,6 +70,7 @@ Route::middleware(['auth', 'active', 'password.changed'])->group(function () {
     Route::get('/documents/{document}/print', [DocumentController::class, 'print'])->name('documents.print');
 
     /* -------------------- Admin modules -------------------- */
+    Route::post('/users/bulk-destroy', [UserController::class, 'bulkDestroy'])->name('users.bulkDestroy')->middleware('permission:users.manage');
     Route::resource('users', UserController::class)->middleware('permission:users.manage');
     Route::resource('departments', DepartmentController::class)->middleware('permission:departments.manage');
     Route::resource('divisions', DivisionController::class)->middleware('permission:divisions.manage');
@@ -163,6 +164,11 @@ Route::middleware(['auth', 'active', 'password.changed'])->group(function () {
         Route::put('/backups/config', [\App\Http\Controllers\BackupController::class, 'saveConfig'])->name('backups.config');
         Route::get('/backups/{filename}/download', [\App\Http\Controllers\BackupController::class, 'download'])->name('backups.download')->where('filename', '[A-Za-z0-9_\-\.]+');
         Route::delete('/backups/{filename}', [\App\Http\Controllers\BackupController::class, 'destroy'])->name('backups.destroy')->where('filename', '[A-Za-z0-9_\-\.]+');
+
+        Route::get('/notifications/settings', [\App\Http\Controllers\NotificationSettingController::class, 'edit'])->name('notification-settings.edit');
+        Route::put('/notifications/settings', [\App\Http\Controllers\NotificationSettingController::class, 'update'])->name('notification-settings.update');
+        Route::post('/notifications/settings/test', [\App\Http\Controllers\NotificationSettingController::class, 'sendTest'])->name('notification-settings.test');
+        Route::post('/notifications/settings/run/{type}', [\App\Http\Controllers\NotificationSettingController::class, 'runNow'])->name('notification-settings.run')->where('type', '[a-z_]+');
     });
 
     /* -------------------- Profile (Breeze) -------------------- */

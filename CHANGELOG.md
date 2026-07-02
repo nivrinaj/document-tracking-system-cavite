@@ -6,6 +6,13 @@ Format based on [Keep a Changelog](https://keepachangelog.com).
 
 ---
 
+## 1.25.0 — 2026-07-02
+- **Bulk delete on the Users page** — select several accounts with checkboxes and delete them all at once instead of one at a time. Your own account and any Super Admin account are always protected and can't be selected.
+- **Rows-per-page control** — both the Users page and Document Tracking now have a dropdown to show 12, 25, 50, or 100 rows at a time.
+- **Username shown in the Users table** — makes it easier to find someone when searching, without opening each account.
+- **Fixed: long position titles and names crowding each other in the acknowledgment table** — the Position and Name columns on the document details page now size themselves to fit their content instead of cutting text off with "…", and Position now shows first.
+- **New: Email Notification Settings** — a new Super Admin page to configure outgoing email (SMTP) and turn on/off specific notification types, with a "send test email" button and a "run now" option for testing without waiting. The first notification wired up is a daily deadline-reminder digest, emailing each staff member a summary of the documents they're holding that are approaching or past their deadline.
+
 ## 1.24.0 — 2026-07-02
 - **New: mysqldump path is now configurable from the Backups page** — Super Admin can set where the `mysqldump` program lives directly from the Backups screen instead of editing server files by hand. The value is checked immediately so a typo is caught right away instead of only failing during a backup attempt.
 
