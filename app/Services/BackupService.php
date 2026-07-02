@@ -132,6 +132,18 @@ class BackupService
         return round($bytes / (1024 ** $power), $precision).' '.$units[$power];
     }
 
+    /**
+     * The mysqldump binary path actually in effect — a Super-Admin-set GUI
+     * value (Setting) takes priority over the .env default, so the path can
+     * be fixed from the Backups page instead of hand-editing .env on the server.
+     */
+    public static function mysqldumpPath(): string
+    {
+        $override = trim((string) \App\Models\Setting::get('backup_mysqldump_path', ''));
+
+        return $override !== '' ? $override : config('backup.mysqldump_path');
+    }
+
     private function disk()
     {
         return Storage::disk('backups');
@@ -145,7 +157,7 @@ class BackupService
         $result = Process::timeout(300)
             ->env(['MYSQL_PWD' => $conn['password'] ?? ''])
             ->run([
-                config('backup.mysqldump_path'),
+                self::mysqldumpPath(),
                 '--host='.$conn['host'],
                 '--port='.$conn['port'],
                 '--user='.$conn['username'],

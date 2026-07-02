@@ -31,6 +31,24 @@
             </form>
         </div>
 
+        <x-card title="Configuration">
+            <form method="POST" action="{{ route('backups.config') }}" class="space-y-3">
+                @csrf
+                @method('PUT')
+                <div>
+                    <label class="label">mysqldump path <span class="text-gray-400 text-xs font-normal">(optional)</span></label>
+                    <input type="text" name="mysqldump_path" value="{{ old('mysqldump_path', $mysqldumpOverride) }}"
+                           placeholder="Leave blank to use the default: {{ $mysqldumpOverride === '' ? $mysqldumpPath : '' }}"
+                           class="input max-w-xl">
+                    <p class="text-xs text-gray-400 mt-1">
+                        Only needed if <code>mysqldump</code> isn't reachable on the server's PATH.
+                        Currently using: <span class="font-mono">{{ $mysqldumpPath }}</span>
+                    </p>
+                </div>
+                <x-btn type="submit" variant="secondary">Save</x-btn>
+            </form>
+        </x-card>
+
         <x-card padding="p-0">
             <table class="r-table min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                 <thead class="bg-gray-50 dark:bg-gray-700/40">

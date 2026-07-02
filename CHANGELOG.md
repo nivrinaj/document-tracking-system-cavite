@@ -6,6 +6,9 @@ Format based on [Keep a Changelog](https://keepachangelog.com).
 
 ---
 
+## 1.24.0 — 2026-07-02
+- **New: mysqldump path is now configurable from the Backups page** — Super Admin can set where the `mysqldump` program lives directly from the Backups screen instead of editing server files by hand. The value is checked immediately so a typo is caught right away instead of only failing during a backup attempt.
+
 ## 1.23.1 — 2026-07-02
 - **Fixed: Backups page crashed with a server error** — the file-size display relied on a PHP extension (`intl`) that isn't guaranteed to be installed everywhere; sizes are now formatted without that dependency, so the page works regardless of server configuration.
 

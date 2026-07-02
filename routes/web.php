@@ -160,6 +160,7 @@ Route::middleware(['auth', 'active', 'password.changed'])->group(function () {
 
         Route::get('/backups', [\App\Http\Controllers\BackupController::class, 'index'])->name('backups.index');
         Route::post('/backups', [\App\Http\Controllers\BackupController::class, 'store'])->name('backups.store');
+        Route::put('/backups/config', [\App\Http\Controllers\BackupController::class, 'saveConfig'])->name('backups.config');
         Route::get('/backups/{filename}/download', [\App\Http\Controllers\BackupController::class, 'download'])->name('backups.download')->where('filename', '[A-Za-z0-9_\-\.]+');
         Route::delete('/backups/{filename}', [\App\Http\Controllers\BackupController::class, 'destroy'])->name('backups.destroy')->where('filename', '[A-Za-z0-9_\-\.]+');
     });
