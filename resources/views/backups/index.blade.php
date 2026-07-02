@@ -3,16 +3,16 @@
 
     <div class="space-y-5">
         <div class="[grid-template-columns:repeat(auto-fit,minmax(150px,1fr))] grid gap-4">
-            <x-stat-card label="Database size" :value="\Illuminate\Support\Number::fileSize($usage['db_size'], precision: 1)" color="blue">
+            <x-stat-card label="Database size" :value="\App\Services\BackupService::formatBytes($usage['db_size'])" color="blue">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M4 7v10c0 1.657 3.582 3 8 3s8-1.343 8-3V7M4 7c0 1.657 3.582 3 8 3s8-1.343 8-3M4 7c0-1.657 3.582-3 8-3s8 1.343 8 3"/>
             </x-stat-card>
-            <x-stat-card label="Attachments size" :value="\Illuminate\Support\Number::fileSize($usage['attachments_size'], precision: 1)" color="amber">
+            <x-stat-card label="Attachments size" :value="\App\Services\BackupService::formatBytes($usage['attachments_size'])" color="amber">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/>
             </x-stat-card>
-            <x-stat-card label="Backups size" :value="\Illuminate\Support\Number::fileSize($usage['backups_size'], precision: 1)" color="primary">
+            <x-stat-card label="Backups size" :value="\App\Services\BackupService::formatBytes($usage['backups_size'])" color="primary">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M5 8h14M5 8a2 2 0 01-2-2V5a2 2 0 012-2h14a2 2 0 012 2v1a2 2 0 01-2 2M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"/>
             </x-stat-card>
-            <x-stat-card label="Server disk free" :value="\Illuminate\Support\Number::fileSize($usage['free_bytes'], precision: 1)" :color="$usage['used_percent'] !== null && $usage['used_percent'] >= 90 ? 'red' : ($usage['used_percent'] !== null && $usage['used_percent'] >= 75 ? 'amber' : 'green')">
+            <x-stat-card label="Server disk free" :value="\App\Services\BackupService::formatBytes($usage['free_bytes'])" :color="$usage['used_percent'] !== null && $usage['used_percent'] >= 90 ? 'red' : ($usage['used_percent'] !== null && $usage['used_percent'] >= 75 ? 'amber' : 'green')">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M7 8h.01M17 16h.01M7 16h.01"/>
             </x-stat-card>
         </div>
@@ -40,7 +40,7 @@
                     @forelse($backups as $backup)
                         <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/40">
                             <td class="table-td font-medium" data-label="Filename">{{ $backup['filename'] }}</td>
-                            <td class="table-td" data-label="Size">{{ \Illuminate\Support\Number::fileSize($backup['size'], precision: 1) }}</td>
+                            <td class="table-td" data-label="Size">{{ \App\Services\BackupService::formatBytes($backup['size']) }}</td>
                             <td class="table-td" data-label="Created">{{ $backup['modified_at']->format('M j, Y g:i A') }}</td>
                             <td class="table-td text-right whitespace-nowrap" data-label="">
                                 <div class="inline-flex gap-2">

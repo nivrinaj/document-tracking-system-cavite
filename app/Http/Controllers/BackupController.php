@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Models\ActivityLog;
 use App\Services\BackupService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Number;
 
 class BackupController extends Controller
 {
@@ -33,7 +32,7 @@ class BackupController extends Controller
 
         ActivityLog::record(
             'backups.store',
-            'Created a backup: '.$result['filename'].' ('.Number::fileSize($result['size'], precision: 1).')'
+            'Created a backup: '.$result['filename'].' ('.BackupService::formatBytes($result['size']).')'
         );
 
         return back()->with('success', 'Backup created: '.$result['filename']);

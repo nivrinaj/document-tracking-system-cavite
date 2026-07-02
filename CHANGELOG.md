@@ -6,6 +6,9 @@ Format based on [Keep a Changelog](https://keepachangelog.com).
 
 ---
 
+## 1.23.1 — 2026-07-02
+- **Fixed: Backups page crashed with a server error** — the file-size display relied on a PHP extension (`intl`) that isn't guaranteed to be installed everywhere; sizes are now formatted without that dependency, so the page works regardless of server configuration.
+
 ## 1.23.0 — 2026-07-02
 - **New: Backups module** — Super Admin can now create a one-click backup (full database + every attachment, bundled into one downloadable file) from a new Backups page, see all past backups with their size and date, download any of them, and delete old ones. Restoring is intentionally left out of the web interface — that stays a deliberate, manual action to prevent an accidental one-click wipe of current data.
 - **New: Storage &amp; disk visibility** — the Backups page also shows database size, attachment storage size, backups storage size, and how much free space is left on the server, with a warning banner when the server disk is running low.

@@ -116,6 +116,22 @@ class BackupService
         ];
     }
 
+    /**
+     * Plain-PHP byte formatter — deliberately not Illuminate\Support\Number::fileSize(),
+     * which requires the intl extension. Avoids adding a second required PHP
+     * extension (on top of zip) just to print "12.3 MB".
+     */
+    public static function formatBytes(int $bytes, int $precision = 1): string
+    {
+        if ($bytes <= 0) {
+            return '0 B';
+        }
+        $units = ['B', 'KB', 'MB', 'GB', 'TB'];
+        $power = min((int) floor(log($bytes, 1024)), count($units) - 1);
+
+        return round($bytes / (1024 ** $power), $precision).' '.$units[$power];
+    }
+
     private function disk()
     {
         return Storage::disk('backups');
