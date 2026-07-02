@@ -512,6 +512,32 @@ class DocumentController extends Controller
         return back()->with('success', 'Document forwarded.');
     }
 
+    public function forwardToHead(Request $request, Document $document, DocumentService $service)
+    {
+        $this->authorize('forwardToHead', $document);
+
+        $data = $request->validate([
+            'remarks' => ['nullable', 'string'],
+        ]);
+
+        if ($missing = $this->missingChecklist($document, $request)) {
+            return back()->with('error', $missing);
+        }
+
+        $service->forwardToHead($document, $request->user(), $data['remarks'] ?? null);
+
+        return back()->with('success', 'Document forwarded to the Department Head.');
+    }
+
+    public function claimFromHead(Request $request, Document $document, DocumentService $service)
+    {
+        $this->authorize('claimFromHead', $document);
+
+        $service->claimFromHead($document, $request->user());
+
+        return back()->with('success', 'Document claimed — it now shows as with you.');
+    }
+
     public function pending(Request $request, Document $document, DocumentService $service)
     {
         $this->authorize('pending', $document);

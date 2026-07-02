@@ -6,6 +6,11 @@ Format based on [Keep a Changelog](https://keepachangelog.com).
 
 ---
 
+## 1.20.0 — 2026-07-02
+- **Deadline field layout fixed** — the Deadline date field on the encode page no longer looks like a stray half-width field.
+- **Calendar-days tracking: weekend option** — an office using calendar-day tracking can now choose whether Saturday/Sunday count toward the total or are skipped entirely; the "Daily Working Time" panel (a working-hours-only visualization) is now correctly hidden for offices using calendar days, instead of still showing business-hour blocks.
+- **New: Forward to Department Head** — an office can opt in to a "Forward to Department Head" action; any other staff in that office can then "Get from Department Head" to claim it (whoever acts first becomes the holder), while the Department Head still sees the normal Receive button. How long it waited before being claimed is tracked and shown.
+
 ## 1.19.0 — 2026-07-01
 - **Document Tracking filters follow who you are** — Department, Division, and Staff filters now only show up for the roles that need them (Super Admin, Department/Assistant Department Head, Division Head), pre-scoped to each person's own office/division, and the filter order now goes search → type → status → these → date range.
 - **Deadline highlight colors are now fully configurable** — Super Admin sets default "X days before deadline → color" rules and an overdue color in System Settings; any office with deadlines enabled can customize its own instead.

@@ -63,6 +63,13 @@ class DocumentPolicy
                 || $document->assignees()->where('users.division_id', $user->division_id)->exists();
         }
 
+        // Sitting in the Department Head queue: every active staff member in that
+        // same department can see it (otherwise they could never find the "Get
+        // from Department Head" button to claim it).
+        if ($document->isAwaitingHeadClaim() && $user->department_id === $document->department_id) {
+            return true;
+        }
+
         return false;
     }
 
@@ -135,6 +142,45 @@ class DocumentPolicy
 
         return ($document->current_holder_id === $user->id && $document->status === 'received')
             || $this->canOverride($user);
+    }
+
+    /**
+     * Forward specifically to the Department Head — opt-in per office
+     * (departments.forward_to_head_enabled), only when that office actually has
+     * a Department Head, and never offered to the head forwarding to themselves.
+     */
+    public function forwardToHead(User $user, Document $document): bool
+    {
+        if (! $this->forward($user, $document)) {
+            return false;
+        }
+        if (! optional($document->department)->forward_to_head_enabled) {
+            return false;
+        }
+        $head = $document->departmentHead();
+
+        return $head && $head->id !== $user->id;
+    }
+
+    /**
+     * Claim a document currently sitting with the Department Head — any other
+     * active staff member in the SAME department (never the head themselves,
+     * who uses the normal Receive button instead).
+     */
+    public function claimFromHead(User $user, Document $document): bool
+    {
+        if ($document->isClosed() || ! $user->can('documents.receive')) {
+            return false;
+        }
+        if (! optional($document->department)->forward_to_head_enabled) {
+            return false;
+        }
+        if (! $document->isAwaitingHeadClaim()) {
+            return false;
+        }
+
+        return $document->departmentHead()?->id !== $user->id
+            && $user->department_id === $document->department_id;
     }
 
     /** Archive/complete also requires having received it first (or override). */

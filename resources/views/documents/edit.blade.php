@@ -45,9 +45,9 @@
                         </select>
                     </div>
                     @endif
-                    <div x-show="showDeadline" x-cloak>
+                    <div class="sm:col-span-2" x-show="showDeadline" x-cloak>
                         <label class="label">Deadline <span class="text-gray-400 text-xs font-normal">(optional)</span></label>
-                        <input type="date" name="deadline" value="{{ old('deadline', optional($document->deadline)->toDateString()) }}" class="input" :min="todayStr" x-bind:disabled="!showDeadline">
+                        <input type="date" name="deadline" value="{{ old('deadline', optional($document->deadline)->toDateString()) }}" class="input max-w-xs" :min="todayStr" x-bind:disabled="!showDeadline">
                     </div>
                     <div class="sm:col-span-2 rounded-xl border border-gray-200/80 dark:border-gray-700 p-4" x-show="showTransmittal" x-cloak>
                         <x-toggle name="is_transmittal" x-model="isTransmittal">

@@ -120,7 +120,11 @@
                         $pausedSecs = $document->totalPausedSeconds();
                         $hasAccounting = $document->fund_id || $document->amount !== null || $document->obr_no || $document->responsibility_center_id || $document->nature_of_transaction;
                         $rcLabel = $document->rcLabel();
-                        $showBreakdown = \App\Models\Setting::get('show_daily_breakdown', '1') === '1';
+                        // This panel visualizes the working-hours window specifically, so it's
+                        // hidden (not just recalculated) for a department using calendar-days
+                        // tracking — that's the whole point of the mode: hide working hours.
+                        $showBreakdown = \App\Models\Setting::get('show_daily_breakdown', '1') === '1'
+                            && $document->timeTrackingMode() !== 'calendar_days';
                         $breakdown = $showBreakdown
                             ? \App\Services\BusinessHours::dailyDetail($document->received_at ?? $document->created_at, $document->completed_at ?? now())
                             : [];
@@ -690,7 +694,8 @@
                     $canAct = $u->can('assign', $document) || $u->can('release', $document) || $u->can('receive', $document)
                         || $u->can('forward', $document) || $u->can('transfer', $document) || $u->can('archive', $document)
                         || $u->can('pending', $document) || $u->can('resume', $document) || $u->can('delete', $document)
-                        || $u->can('distribute', $document) || $u->can('acknowledge', $document) || $u->can('reopen', $document);
+                        || $u->can('distribute', $document) || $u->can('acknowledge', $document) || $u->can('reopen', $document)
+                        || $u->can('forwardToHead', $document) || $u->can('claimFromHead', $document);
                 @endphp
                 @if($canAct || $document->isClosed())
                 <x-card title="Actions">
@@ -813,6 +818,21 @@
                             @endif
                         @endcan
 
+                        @can('claimFromHead', $document)
+                            @php $waitLabel = \App\Models\Document::humanDuration($document->headQueueWaitSeconds()); @endphp
+                            <form method="POST" action="{{ route('documents.claimFromHead', $document) }}"
+                                  data-confirm="Claim this document from the Department Head? It will show as currently with you.">
+                                @csrf
+                                <div class="p-3 rounded-lg bg-violet-50 dark:bg-violet-900/20 space-y-2">
+                                    <p class="text-xs text-violet-700 dark:text-violet-300">
+                                        📋 This document was forwarded to <strong>{{ $document->departmentHead()?->name }}</strong> (Department Head) and is waiting in the queue — <strong>{{ $waitLabel }}</strong> so far.
+                                        Any staff in your office may pick it up.
+                                    </p>
+                                    <x-btn type="submit" class="w-full">Get from Department Head</x-btn>
+                                </div>
+                            </form>
+                        @endcan
+
                         @can('forward', $document)
                             <button @click="panel = panel === 'forward' ? null : 'forward'" class="w-full flex items-center gap-2.5 px-4 py-2.5 rounded-lg bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 text-sm font-medium hover:opacity-90 transition">
                                 <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 8l4-4m0 0l4 4M7 4v12m4 4h6a2 2 0 002-2V8"/></svg>
@@ -832,6 +852,22 @@
                                     @endif
                                     <textarea name="remarks" rows="2" class="input" placeholder="Details about this action (required)" required></textarea>
                                     <x-btn type="submit" class="w-full" x-bind:disabled="present.length < {{ $reqF }}" ::class="present.length < {{ $reqF }} ? 'opacity-50 pointer-events-none' : ''">Forward</x-btn>
+                                </form>
+                            </div>
+                        @endcan
+
+                        @can('forwardToHead', $document)
+                            <button @click="panel = panel === 'forwardhead' ? null : 'forwardhead'" class="w-full flex items-center gap-2.5 px-4 py-2.5 rounded-lg bg-violet-50 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300 text-sm font-medium hover:opacity-90 transition">
+                                <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m6-1.13a4 4 0 10-4-4 4 4 0 004 4zm6-1a4 4 0 10-4-4"/></svg>
+                                Forward to Department Head
+                            </button>
+                            <div x-show="panel === 'forwardhead'" x-cloak class="p-3 rounded-lg bg-gray-50 dark:bg-gray-700/40">
+                                <form method="POST" action="{{ route('documents.forwardToHead', $document) }}" class="space-y-2"
+                                      data-confirm="Forward this document to {{ $document->departmentHead()?->name }} (Department Head)? Any staff in your office will be able to claim it from the queue.">
+                                    @csrf
+                                    <p class="text-xs text-gray-500 dark:text-gray-400">Goes to <strong>{{ $document->departmentHead()?->name }}</strong>. Any staff in your office can also pick it up with “Get from Department Head” — whoever acts first becomes the holder.</p>
+                                    <textarea name="remarks" rows="2" class="input" placeholder="Details about this action (optional)"></textarea>
+                                    <x-btn type="submit" class="w-full">Forward to Department Head</x-btn>
                                 </form>
                             </div>
                         @endcan

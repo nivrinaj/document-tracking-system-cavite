@@ -366,6 +366,66 @@ class DocumentService
         });
     }
 
+    /**
+     * Forward specifically to this document's Department Head (opt-in per office
+     * via departments.forward_to_head_enabled). Any other active staff in the same
+     * department can then claim it via claimFromHead() instead of waiting on the
+     * head specifically — the head still sees the normal Receive button.
+     */
+    public function forwardToHead(Document $document, User $actor, ?string $remarks = null): Document
+    {
+        return DB::transaction(function () use ($document, $actor, $remarks) {
+            $head = $document->departmentHead();
+            $from = $document->current_holder_id;
+
+            $document->update([
+                'status' => 'forwarded',
+                'current_holder_id' => $head->id,
+                'forwarded_to_head_at' => now(),
+            ]);
+            $this->addAssignee($document, $head->id);
+            $this->log($document, 'forwarded', $actor, toUserId: $head->id, fromUserId: $from,
+                remarks: $remarks ?: 'Forwarded to the Department Head.');
+            $this->notify($head->id, $actor, $document, 'forwarded', $remarks);
+
+            // Let the rest of the department know it's available to pick up too.
+            $others = User::where('is_active', true)
+                ->where('department_id', $document->department_id)
+                ->whereNotIn('id', [$head->id, $actor->id])
+                ->get();
+            foreach ($others as $o) {
+                $o->notify(new \App\Notifications\DocumentRouted($document, 'forwarded', $actor->name, 'Available to claim from the Department Head queue.'));
+            }
+
+            return $document->refresh();
+        });
+    }
+
+    /**
+     * A staff member (not the Department Head) claims a document currently sitting
+     * with the head — they become the current holder immediately, same as a normal
+     * receive. Logs how long it waited in the queue.
+     */
+    public function claimFromHead(Document $document, User $actor): Document
+    {
+        return DB::transaction(function () use ($document, $actor) {
+            $waitSecs = $document->headQueueWaitSeconds();
+            $waitLabel = $waitSecs !== null ? Document::humanDuration($waitSecs) : null;
+
+            $document->update([
+                'status' => 'received',
+                'current_holder_id' => $actor->id,
+                'received_at' => $document->received_at ?? now(),
+            ]);
+            $this->addAssignee($document, $actor->id);
+            $this->openPossession($document, $actor->id, $actor->department_id ?? $document->department_id);
+            $this->log($document, 'received', $actor,
+                remarks: 'Claimed from the Department Head queue'.($waitLabel ? " (waited {$waitLabel})." : '.'));
+
+            return $document->refresh();
+        });
+    }
+
     /** Archive / complete the document. Always requires remarks. */
     public function archive(Document $document, User $actor, string $remarks, bool $completed = false): Document
     {

@@ -71,9 +71,16 @@
     </x-toggle>
 </div>
 
+{{-- Forward to Department Head (opt-in per office) --}}
+<div class="border-t border-gray-100 dark:border-gray-700 pt-4 mt-2">
+    <x-toggle name="forward_to_head_enabled" label="Enable “Forward to Department Head”" :checked="old('forward_to_head_enabled', $department?->forward_to_head_enabled)">
+        <span class="block text-xs text-gray-400 mt-0.5">When on, staff in this office can forward a document straight to the Department Head instead of a specific person. Any other staff in the office can then “Get from Department Head” to claim it — whoever acts first becomes the holder. Requires this office to actually have a Department Head account.</span>
+    </x-toggle>
+</div>
+
 {{-- Internal time-tracking display (calendar days vs. working hours) --}}
 <div class="border-t border-gray-100 dark:border-gray-700 pt-4 mt-2"
-     x-data="{ calDays: {{ old('time_tracking_mode', $department?->time_tracking_mode) === 'calendar_days' ? 'true' : 'false' }} }">
+     x-data="{ calDays: {{ old('time_tracking_mode', $department?->time_tracking_mode) === 'calendar_days' ? 'true' : 'false' }}, includeWeekends: {{ old('calendar_days_include_weekends', $department?->calendar_days_include_weekends ?? true) ? 'true' : 'false' }} }">
     <x-toggle x-model="calDays" label="Show calendar days instead of working hours for this office's documents">
         <span class="block text-xs text-gray-400 mt-0.5">
             For this office's own view only — age/idle/turnaround on documents currently with them count plain calendar days rather than official working hours.
@@ -81,6 +88,12 @@
         </span>
     </x-toggle>
     <input type="hidden" name="time_tracking_mode" :value="calDays ? 'calendar_days' : 'working_hours'">
+
+    <div x-show="calDays" x-cloak class="ml-[3.25rem] mt-3">
+        <x-toggle x-model="includeWeekends" name="calendar_days_include_weekends" label="Include weekends">
+            <span class="block text-xs text-gray-400 mt-0.5">On: Saturday and Sunday count fully toward the total. Off: weekends are skipped entirely (only Monday–Friday count, each as a full day).</span>
+        </x-toggle>
+    </div>
 </div>
 
 {{-- Completion deadline (turnaround tracking) --}}

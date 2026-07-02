@@ -104,7 +104,9 @@ class DepartmentController extends Controller
             'dept_rule_colors' => ['nullable', 'array'],
             'dept_rule_colors.*' => ['string', 'max:20'],
             'time_tracking_mode' => ['nullable', Rule::in(['working_hours', 'calendar_days'])],
+            'calendar_days_include_weekends' => ['nullable', 'boolean'],
             'broadcast_ack_layout' => ['nullable', 'boolean'],
+            'forward_to_head_enabled' => ['nullable', 'boolean'],
             'sla_enabled' => ['nullable', 'boolean'],
             'sla_days' => ['nullable', 'integer', 'min:1', 'max:365'],
             'sla_document_type' => ['nullable', 'array'],
@@ -120,7 +122,9 @@ class DepartmentController extends Controller
                 : null,
             'deadline_overdue_color' => $request->boolean('customize_deadline_colors') ? ($request->input('dept_overdue_color') ?: null) : null,
             'time_tracking_mode' => $request->input('time_tracking_mode') === 'calendar_days' ? 'calendar_days' : 'working_hours',
+            'calendar_days_include_weekends' => $request->boolean('calendar_days_include_weekends'),
             'broadcast_ack_layout' => $request->boolean('broadcast_ack_layout'),
+            'forward_to_head_enabled' => $request->boolean('forward_to_head_enabled'),
             'sla_enabled' => $request->boolean('sla_enabled'),
         ];
     }

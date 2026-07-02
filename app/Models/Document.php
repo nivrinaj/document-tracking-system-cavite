@@ -46,6 +46,7 @@ class Document extends Model
         'possession_started_at',
         'is_transmittal',
         'transmittal_quantity',
+        'forwarded_to_head_at',
     ];
 
     protected $casts = [
@@ -54,6 +55,7 @@ class Document extends Model
         'completed_at' => 'datetime',
         'pending_at' => 'datetime',
         'possession_started_at' => 'datetime',
+        'forwarded_to_head_at' => 'datetime',
         'deadline' => 'date',
         'is_broadcast' => 'boolean',
         'is_pending' => 'boolean',
@@ -142,6 +144,17 @@ class Document extends Model
             $q->where('created_by', $user->id)
                 ->orWhere('current_holder_id', $user->id)
                 ->orWhereHas('assignees', fn ($a) => $a->where('users.id', $user->id));
+
+            // Sitting in the Department Head queue: every active staff member in that
+            // same department, so they can find it and "Get from Department Head".
+            if ($user->department_id) {
+                $q->orWhere(function ($w) use ($user) {
+                    $w->where('documents.department_id', $user->department_id)
+                        ->where('documents.status', 'forwarded')
+                        ->whereNotNull('documents.forwarded_to_head_at')
+                        ->whereHas('currentHolder.roles', fn ($r) => $r->where('name', 'Department Head'));
+                });
+            }
 
             if ($isDeptHead) {
                 $q->orWhere('documents.department_id', $user->department_id)
@@ -261,6 +274,40 @@ class Document extends Model
     public function currentHolder(): BelongsTo
     {
         return $this->belongsTo(User::class, 'current_holder_id');
+    }
+
+    /** The Department Head for this document's CURRENT department (by role + department_id FK, never by name). */
+    public function departmentHead(): ?User
+    {
+        if (! $this->department_id) {
+            return null;
+        }
+
+        return User::where('is_active', true)
+            ->where('department_id', $this->department_id)
+            ->whereHas('roles', fn ($q) => $q->where('name', 'Department Head'))
+            ->first();
+    }
+
+    /** Sitting with the Department Head, forwarded there via forwardToHead(), not yet claimed/received by anyone. */
+    public function isAwaitingHeadClaim(): bool
+    {
+        if (! $this->forwarded_to_head_at || $this->status !== 'forwarded') {
+            return false;
+        }
+        $head = $this->departmentHead();
+
+        return $head && $this->current_holder_id === $head->id;
+    }
+
+    /** How long the document has been waiting in the Department Head queue, honoring this office's time-tracking mode. */
+    public function headQueueWaitSeconds(): ?int
+    {
+        if (! $this->forwarded_to_head_at) {
+            return null;
+        }
+
+        return $this->elapsedSeconds($this->forwarded_to_head_at, now());
     }
 
     public function logs(): HasMany
@@ -404,11 +451,38 @@ class Document extends Model
         if ($this->timeTrackingMode() === 'calendar_days') {
             $start = \Illuminate\Support\Carbon::parse($start);
             $end = $end ? \Illuminate\Support\Carbon::parse($end) : now();
+            if ($end->lessThanOrEqualTo($start)) {
+                return 0;
+            }
 
-            return max(0, (int) $start->diffInSeconds($end));
+            return ($this->department?->calendar_days_include_weekends ?? true)
+                ? (int) $start->diffInSeconds($end)
+                : static::weekdaySeconds($start, $end);
         }
 
         return \App\Services\BusinessHours::secondsBetween($start, $end, $possessor);
+    }
+
+    /** Full 24h per weekday between two instants, Saturday/Sunday excluded entirely. */
+    protected static function weekdaySeconds(\Illuminate\Support\Carbon $start, \Illuminate\Support\Carbon $end): int
+    {
+        $seconds = 0;
+        $cursor = $start->copy()->startOfDay();
+        $guard = 0;
+        while ($cursor->lessThan($end) && $guard++ < 3660) {
+            if (! in_array($cursor->isoWeekday(), [6, 7], true)) {
+                $dayStart = $cursor->copy();
+                $dayEnd = $cursor->copy()->addDay();
+                $s = $start->greaterThan($dayStart) ? $start : $dayStart;
+                $e = $end->lessThan($dayEnd) ? $end : $dayEnd;
+                if ($e->greaterThan($s)) {
+                    $seconds += $s->diffInSeconds($e);
+                }
+            }
+            $cursor->addDay();
+        }
+
+        return $seconds;
     }
 
     /** Human elapsed time since the last action, WITHOUT an "ago" suffix. */

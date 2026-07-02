@@ -26,6 +26,8 @@ class LogActivity
         'documents.release' => 'Released a document',
         'documents.receive' => 'Received a document',
         'documents.forward' => 'Forwarded a document',
+        'documents.forwardToHead' => 'Forwarded a document to the Department Head',
+        'documents.claimFromHead' => 'Claimed a document from the Department Head queue',
         'documents.transfer' => 'Transferred a document to another office',
         'documents.archive' => 'Archived a document',
         'documents.acknowledge' => 'Acknowledged a document',

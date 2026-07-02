@@ -45,6 +45,8 @@ Route::middleware(['auth', 'active', 'password.changed'])->group(function () {
     Route::post('/documents/{document}/release', [DocumentController::class, 'release'])->name('documents.release');
     Route::post('/documents/{document}/receive', [DocumentController::class, 'receive'])->name('documents.receive');
     Route::post('/documents/{document}/forward', [DocumentController::class, 'forward'])->name('documents.forward');
+    Route::post('/documents/{document}/forward-to-head', [DocumentController::class, 'forwardToHead'])->name('documents.forwardToHead');
+    Route::post('/documents/{document}/claim-from-head', [DocumentController::class, 'claimFromHead'])->name('documents.claimFromHead');
     Route::post('/documents/{document}/archive', [DocumentController::class, 'archive'])->name('documents.archive');
     Route::post('/documents/{document}/transfer', [DocumentController::class, 'transfer'])->name('documents.transfer');
     Route::post('/documents/{document}/pending', [DocumentController::class, 'pending'])->name('documents.pending');
