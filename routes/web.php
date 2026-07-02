@@ -150,6 +150,9 @@ Route::middleware(['auth', 'active', 'password.changed'])->group(function () {
         Route::put('/reports/settings', [ReportController::class, 'saveSettings'])->name('reports.settings.save');
         Route::get('/qr-slip/settings', [\App\Http\Controllers\QrSlipController::class, 'edit'])->name('qr-slip.settings');
         Route::put('/qr-slip/settings', [\App\Http\Controllers\QrSlipController::class, 'update'])->name('qr-slip.settings.save');
+        Route::get('/email-design/settings', [\App\Http\Controllers\EmailDesignController::class, 'edit'])->name('email-design.settings');
+        Route::put('/email-design/settings', [\App\Http\Controllers\EmailDesignController::class, 'update'])->name('email-design.settings.save');
+        Route::get('/notifications/logs', [\App\Http\Controllers\EmailLogController::class, 'index'])->name('email-logs.index');
         Route::resource('document-types', \App\Http\Controllers\DocumentTypeController::class)->except('show');
         Route::get('/changelog', [\App\Http\Controllers\ChangelogController::class, 'index'])->name('changelog.index');
         Route::get('/documentation', [DocumentationController::class, 'index'])->name('documentation.index');

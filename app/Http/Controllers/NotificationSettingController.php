@@ -97,14 +97,19 @@ class NotificationSettingController extends Controller
             return back()->with('error', 'Turn on and save email notifications first, then send a test.');
         }
 
+        $subject = 'Test email — '.config('app.name');
+
         try {
-            Mail::raw('This is a test email from '.config('app.name').' — your SMTP settings are working correctly.', function ($message) use ($data) {
-                $message->to($data['test_email'])->subject('Test email — '.config('app.name'));
+            Mail::raw('This is a test email from '.config('app.name').' — your SMTP settings are working correctly.', function ($message) use ($data, $subject) {
+                $message->to($data['test_email'])->subject($subject);
             });
         } catch (\Throwable $e) {
+            \App\Models\EmailLog::record('test', $data['test_email'], $subject, 'failed', $e->getMessage());
+
             return back()->with('error', 'Test email failed: '.$e->getMessage());
         }
 
+        \App\Models\EmailLog::record('test', $data['test_email'], $subject, 'sent');
         ActivityLog::record('notifications.settings.test', 'Sent a test email to '.$data['test_email']);
 
         return back()->with('success', 'Test email sent to '.$data['test_email'].' — check the inbox (and spam folder).');

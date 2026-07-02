@@ -34,6 +34,7 @@ class SendDeadlineReminders extends Command
             ->filter(fn ($d) => ! $d->isClosed() && $d->deadlineHighlight() !== null);
 
         $sent = 0;
+        $failed = 0;
         $skippedNoEmail = 0;
 
         foreach ($documents->groupBy('current_holder_id') as $docs) {
@@ -43,11 +44,24 @@ class SendDeadlineReminders extends Command
 
                 continue;
             }
-            Mail::to($user->email)->send(new DeadlineReminderMail($user, $docs));
-            $sent++;
+
+            $mailable = new DeadlineReminderMail($user, $docs);
+            $subject = $mailable->envelope()->subject;
+
+            try {
+                Mail::to($user->email)->send($mailable);
+                \App\Models\EmailLog::record('deadline_reminder', $user->email, $subject, 'sent');
+                $sent++;
+            } catch (\Throwable $e) {
+                // One bad recipient (e.g. an invalid address) should never stop the
+                // rest of the batch from going out — log it and keep going.
+                \App\Models\EmailLog::record('deadline_reminder', $user->email, $subject, 'failed', $e->getMessage());
+                $failed++;
+            }
         }
 
         $this->info("Sent {$sent} reminder email(s)."
+            .($failed ? " {$failed} failed." : '')
             .($skippedNoEmail ? " Skipped {$skippedNoEmail} holder(s) with no email address on file." : ''));
 
         return self::SUCCESS;

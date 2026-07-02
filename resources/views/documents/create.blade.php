@@ -185,7 +185,7 @@
 
                     <div class="sm:col-span-2" x-show="showDeadline" x-cloak>
                         <label class="label">Deadline <span class="text-gray-400 text-xs font-normal">(optional)</span></label>
-                        <input type="date" name="deadline" value="{{ old('deadline') }}" class="input max-w-xs" :min="todayStr" x-bind:disabled="!showDeadline">
+                        <input type="date" name="deadline" value="{{ old('deadline') }}" class="input" :min="todayStr" x-bind:disabled="!showDeadline">
                         <p class="text-[11px] text-gray-400 mt-1">Due date from today onwards. The tracking list highlights it as it nears, per the office's configured colors.</p>
                     </div>
 

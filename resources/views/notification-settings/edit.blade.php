@@ -2,6 +2,16 @@
     <x-slot name="header">Notification Settings</x-slot>
 
     <div class="space-y-5">
+        <div class="flex justify-end gap-4">
+            <a href="{{ route('email-logs.index') }}" class="inline-flex items-center gap-1.5 text-sm link">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                Email log
+            </a>
+            <a href="{{ route('email-design.settings') }}" class="inline-flex items-center gap-1.5 text-sm link">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 4a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H4a1 1 0 01-1-1V4zm0 12a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H4a1 1 0 01-1-1v-4zM14 4a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1V4zm3 12h2m-5 0h.01M14 19h2m-2-3v3m5-3v3"/></svg>
+                Email design settings
+            </a>
+        </div>
         <form method="POST" action="{{ route('notification-settings.update') }}" class="space-y-5">
             @csrf
             @method('PUT')

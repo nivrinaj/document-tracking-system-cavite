@@ -1,8 +1,13 @@
 @php
-    $primary = \App\Models\Setting::get('primary_color', '#4f46e5');
+    $primary = \App\Models\Setting::get('email_header_color') ?: \App\Models\Setting::get('primary_color', '#4f46e5');
     $appName = \App\Models\Setting::get('app_name', config('app.name'));
-    $orgName = \App\Models\Setting::get('organization', '');
+    $orgLine = \App\Models\Setting::get('email_org_line') ?: \App\Models\Setting::get('organization', '');
     $logoPath = \App\Models\Setting::get('logo_path', '');
+    $showLogo = \App\Models\Setting::get('email_show_logo', '1') === '1';
+    $showCta = \App\Models\Setting::get('email_show_cta', '1') === '1';
+    $ctaLabel = \App\Models\Setting::get('email_cta_label', 'View My Documents');
+    $footerText = \App\Models\Setting::get('email_footer_text', 'This is an automated message. Please do not reply directly to this email.');
+    $showSupportLine = \App\Models\Setting::get('email_show_support_line', '1') === '1';
     $supportContact = \App\Models\Setting::get('support_contact', '');
     $loginUrl = route('documents.index');
     $greetingName = $user->first_name ?: $user->name;
@@ -25,15 +30,20 @@
         <td style="background-color:{{ $primary }}; padding:28px 32px;">
             <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
                 <tr>
-                    <td valign="middle">
+                    @if($showLogo)
+                    <td valign="middle" width="48">
                         @if($logoPath)
                             <img src="{{ asset('storage/'.$logoPath) }}" alt="{{ $appName }}" height="36" style="height:36px; display:block;">
                         @else
                             <span style="display:inline-block; width:36px; height:36px; line-height:36px; text-align:center; background-color:rgba(255,255,255,0.15); color:#ffffff; font-weight:700; font-size:16px; border-radius:8px;">{{ strtoupper(substr($appName, 0, 1)) }}</span>
                         @endif
                     </td>
-                    <td valign="middle" align="right" style="color:#ffffff; font-size:13px; letter-spacing:0.4px; opacity:0.9;">
-                        Document Tracking
+                    @endif
+                    <td valign="middle" align="{{ $showLogo ? 'right' : 'left' }}">
+                        @if($orgLine)
+                            <div style="color:#ffffff; font-size:14px; font-weight:600; line-height:18px;">{{ $orgLine }}</div>
+                        @endif
+                        <div style="color:#ffffff; font-size:12px; letter-spacing:0.3px; opacity:0.85; line-height:16px;">{{ $appName }}</div>
                     </td>
                 </tr>
             </table>
@@ -84,17 +94,19 @@
     </tr>
 
     {{-- CTA --}}
+    @if($showCta)
     <tr>
         <td style="padding:28px 32px 8px 32px;" align="center">
             <table role="presentation" cellpadding="0" cellspacing="0">
                 <tr>
                     <td style="border-radius:8px; background-color:{{ $primary }};">
-                        <a href="{{ $loginUrl }}" style="display:inline-block; padding:12px 28px; font-size:14px; font-weight:600; color:#ffffff; text-decoration:none;">View My Documents</a>
+                        <a href="{{ $loginUrl }}" style="display:inline-block; padding:12px 28px; font-size:14px; font-weight:600; color:#ffffff; text-decoration:none;">{{ $ctaLabel }}</a>
                     </td>
                 </tr>
             </table>
         </td>
     </tr>
+    @endif
 
     {{-- Divider --}}
     <tr>
@@ -107,9 +119,9 @@
     <tr>
         <td style="padding:20px 32px 32px 32px;">
             <p style="margin:0 0 6px 0; font-size:12px; line-height:19px; color:#94a3b8;">
-                This is an automated message from {{ $appName }}{{ $orgName ? ' — '.$orgName : '' }}. Please do not reply directly to this email.
+                {{ $footerText }}
             </p>
-            @if($supportContact)
+            @if($showSupportLine && $supportContact)
                 <p style="margin:0; font-size:12px; line-height:19px; color:#94a3b8;">Need help? Contact {{ $supportContact }}.</p>
             @endif
         </td>

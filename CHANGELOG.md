@@ -6,6 +6,11 @@ Format based on [Keep a Changelog](https://keepachangelog.com).
 
 ---
 
+## 1.28.0 — 2026-07-02
+- **Fixed: Deadline field only filled half the row on the encode and edit pages** — a stray width limit on the date field made it look cut off even though it had a full row of space available.
+- **New: Email Design Settings page** — configure the notification email's header color, organization line (e.g. "Provincial Government of Cavite"), button label, footer text, and which optional sections show, the same way the QR Tracking Slip is already customizable. Reached from the Notification Settings page.
+- **New: Email Log** — a searchable, filterable history of every email the system has attempted to send, showing recipient, subject, type, and whether it succeeded or failed (with the error message for failures).
+
 ## 1.27.0 — 2026-07-02
 - **Fixed: "Select all" on the Users page didn't visibly select any rows** — a data-type mismatch meant the checkboxes never showed as checked even though the selection worked underneath. Both "select all" and selecting rows one at a time now work and look correct.
 - **Removed the "Document Volume" dashboard card** — it wasn't providing enough value in its current form; removed for now rather than leave a stat nobody finds useful.
