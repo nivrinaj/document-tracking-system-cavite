@@ -55,15 +55,24 @@
             </x-stat-card>
         </div>
 
-        {{-- Transmittals — only shown when there are any in view --}}
-        @if($transmittals['count'] > 0)
-            <div class="flex items-center gap-3 rounded-xl border border-indigo-100 dark:border-indigo-900/40 bg-indigo-50/60 dark:bg-indigo-900/15 px-4 py-3">
-                <span class="w-9 h-9 rounded-lg grid place-items-center bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-300 text-lg shrink-0">📄</span>
-                <div class="text-sm text-indigo-800 dark:text-indigo-200">
-                    <strong>{{ $transmittals['count'] }}</strong> transmittal {{ \Illuminate\Support\Str::plural('document', $transmittals['count']) }} covering <strong>{{ $transmittals['quantity'] }}</strong> individual {{ \Illuminate\Support\Str::plural('document', $transmittals['quantity']) }}.
-                </div>
+        {{-- Document volume — today / this week / this month, with transmittal
+             detail folded in next to a real total instead of floating alone. --}}
+        <x-card title="Document Volume" padding="p-4">
+            <div class="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-gray-100 dark:divide-gray-700">
+                @foreach($volumeSummary as $period)
+                    <div class="px-0 sm:px-5 py-3 first:pl-0 first:pt-0 sm:first:pt-3">
+                        <div class="text-[11px] uppercase tracking-wider text-gray-400 mb-1">{{ $period['label'] }}</div>
+                        <div class="text-2xl font-bold leading-none">{{ $period['total'] }}</div>
+                        <div class="text-xs text-gray-400 mt-1">{{ \Illuminate\Support\Str::plural('document', $period['total']) }} encoded</div>
+                        @if($period['transmittal_count'] > 0)
+                            <div class="text-xs text-indigo-600 dark:text-indigo-400 mt-1.5 flex items-center gap-1">
+                                <span>📄</span> Incl. {{ $period['transmittal_count'] }} {{ \Illuminate\Support\Str::plural('transmittal', $period['transmittal_count']) }} → {{ $period['transmittal_quantity'] }} {{ \Illuminate\Support\Str::plural('document', $period['transmittal_quantity']) }}
+                            </div>
+                        @endif
+                    </div>
+                @endforeach
             </div>
-        @endif
+        </x-card>
 
         {{-- ════════ Needs your action (front and center) ════════ --}}
         @php

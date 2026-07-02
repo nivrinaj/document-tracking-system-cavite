@@ -6,6 +6,11 @@ Format based on [Keep a Changelog](https://keepachangelog.com).
 
 ---
 
+## 1.26.0 — 2026-07-02
+- **Fixed: Users page crashed with a server error** — a syntax mistake in the new bulk-delete markup caused the page to fail immediately after the last update. Fixed and verified with a stricter check going forward.
+- **Fixed wording for documents forwarded to a Department Head** — these no longer show the generic "Awaiting Receipt" label, since in practice the document is already sitting in the office and any staff member can pick it up. Regular forwards between two specific people still show "Awaiting Receipt" as before.
+- **Redesigned the dashboard's document-volume summary** — replaced the standalone "N transmittal documents covering M individual documents" line (which had no context) with a Today / This Week / This Month breakdown showing total documents encoded, with transmittal detail folded in only when relevant.
+
 ## 1.25.0 — 2026-07-02
 - **Bulk delete on the Users page** — select several accounts with checkboxes and delete them all at once instead of one at a time. Your own account and any Super Admin account are always protected and can't be selected.
 - **Rows-per-page control** — both the Users page and Document Tracking now have a dropdown to show 12, 25, 50, or 100 rows at a time.

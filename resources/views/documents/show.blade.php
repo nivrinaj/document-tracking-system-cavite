@@ -61,6 +61,15 @@
                                 {{-- Assigned but not released — the encoder still physically holds it. --}}
                                 <div class="font-semibold text-amber-600 dark:text-amber-400">Pending release</div>
                                 <div class="text-xs text-gray-500 dark:text-gray-400">Assigned to {{ $h->name }} ({{ $h->orgShort() }}) — not yet handed over</div>
+                            @elseif($h && $document->isAwaitingHeadClaim())
+                                {{-- forwardToHead() already transferred possession (the clock is running against
+                                     the head), unlike a regular forward where nobody holds it until someone scans
+                                     Receive. It's really just sitting in the office queue, not "in transit". --}}
+                                <div class="font-semibold">{{ $h->name }} (Department Head)</div>
+                                <div class="text-xs text-gray-500 dark:text-gray-400">In the department's queue — any staff member may "Get from Department Head"</div>
+                                @if(! $document->isClosed())
+                                    <div class="mt-1 text-xs text-gray-500 dark:text-gray-400">Held for <span class="font-medium">{{ $document->timeWithCurrentHolder() }}</span></div>
+                                @endif
                             @elseif($h && in_array($document->status, ['released', 'forwarded']))
                                 {{-- Handed over / sent, but the recipient hasn't confirmed receipt yet. --}}
                                 <div class="font-semibold text-amber-600 dark:text-amber-400">Awaiting Receipt</div>

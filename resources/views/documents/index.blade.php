@@ -238,6 +238,9 @@
                                     @elseif($doc->current_holder_id && $doc->status === 'draft')
                                         <span class="text-amber-600 dark:text-amber-400">Pending release</span>
                                         <div class="text-xs text-gray-400">to {{ $doc->currentHolder->name }}</div>
+                                    @elseif($doc->isAwaitingHeadClaim())
+                                        <div class="font-medium">{{ $doc->currentHolder->name }} (Dept Head)</div>
+                                        <div class="text-xs text-gray-400">In queue — any staff may claim</div>
                                     @elseif($doc->current_holder_id && in_array($doc->status, ['released','forwarded']))
                                         <span class="text-amber-600 dark:text-amber-400">Awaiting Receipt</span>
                                         <div class="text-xs text-gray-400">to {{ $doc->currentHolder->name }} · awaiting receipt</div>

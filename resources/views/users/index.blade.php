@@ -81,7 +81,7 @@
             $canBulkDelete = ($settings['enable_user_delete'] ?? '1') === '1';
             $selectableIds = $users->filter(fn ($u) => $u->id !== auth()->id() && ! $u->hasSystemRole(\App\Models\User::SYS_SUPER_ADMIN))->pluck('id');
         @endphp
-        <x-card padding="p-0" @if($canBulkDelete) x-data="{ selected: [], allIds: @js($selectableIds) }" @endif>
+        <x-card padding="p-0" x-data="{ selected: [], allIds: @js($selectableIds) }">
             @if($canBulkDelete)
             <div x-show="selected.length > 0" x-cloak class="flex items-center justify-between gap-3 px-4 py-3 bg-indigo-50 dark:bg-indigo-900/20 border-b border-gray-100 dark:border-gray-700">
                 <span class="text-sm font-medium" x-text="selected.length + ' selected'"></span>
