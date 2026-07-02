@@ -71,6 +71,7 @@ Route::middleware(['auth', 'active', 'password.changed'])->group(function () {
 
     /* -------------------- Admin modules -------------------- */
     Route::post('/users/bulk-destroy', [UserController::class, 'bulkDestroy'])->name('users.bulkDestroy')->middleware('permission:users.manage');
+    Route::post('/users/{user}/reset-password', [UserController::class, 'resetPassword'])->name('users.resetPassword')->middleware('permission:users.manage');
     Route::resource('users', UserController::class)->middleware('permission:users.manage');
     Route::resource('departments', DepartmentController::class)->middleware('permission:departments.manage');
     Route::resource('divisions', DivisionController::class)->middleware('permission:divisions.manage');
@@ -169,6 +170,7 @@ Route::middleware(['auth', 'active', 'password.changed'])->group(function () {
         Route::put('/notifications/settings', [\App\Http\Controllers\NotificationSettingController::class, 'update'])->name('notification-settings.update');
         Route::post('/notifications/settings/test', [\App\Http\Controllers\NotificationSettingController::class, 'sendTest'])->name('notification-settings.test');
         Route::post('/notifications/settings/run/{type}', [\App\Http\Controllers\NotificationSettingController::class, 'runNow'])->name('notification-settings.run')->where('type', '[a-z_]+');
+        Route::get('/notifications/settings/preview/{type}', [\App\Http\Controllers\NotificationSettingController::class, 'preview'])->name('notification-settings.preview')->where('type', '[a-z_]+');
     });
 
     /* -------------------- Profile (Breeze) -------------------- */

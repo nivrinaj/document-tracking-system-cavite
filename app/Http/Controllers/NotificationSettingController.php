@@ -110,6 +110,32 @@ class NotificationSettingController extends Controller
         return back()->with('success', 'Test email sent to '.$data['test_email'].' — check the inbox (and spam folder).');
     }
 
+    /** Render an email design with dummy sample data, so it can be reviewed without a real trigger or send. */
+    public function preview(Request $request, string $type)
+    {
+        if (! array_key_exists($type, NotificationCatalog::types())) {
+            abort(404);
+        }
+
+        return match ($type) {
+            'deadline_reminder' => $this->previewDeadlineReminder($request),
+            default => abort(404),
+        };
+    }
+
+    private function previewDeadlineReminder(Request $request)
+    {
+        $dummyDocs = collect([
+            new \App\Models\Document(['title' => 'Request for Fund Release — Office Supplies', 'tracking_code' => 'F1-2026-000123', 'deadline' => now()->subDays(2)->toDateString(), 'status' => 'received']),
+            new \App\Models\Document(['title' => 'Travel Order Approval — Regional Training', 'tracking_code' => 'F1-2026-000145', 'deadline' => now()->addDay()->toDateString(), 'status' => 'received']),
+            new \App\Models\Document(['title' => 'Payroll Voucher — 2nd Quincena', 'tracking_code' => 'F2-2026-000098', 'deadline' => now()->addDays(3)->toDateString(), 'status' => 'received']),
+        ]);
+
+        $user = $request->user();
+
+        return (new \App\Mail\DeadlineReminderMail($user, $dummyDocs))->render();
+    }
+
     /** Manually trigger a notification type right now, instead of waiting for its schedule — for testing. */
     public function runNow(string $type)
     {

@@ -236,6 +236,23 @@ class UserController extends Controller
         return back()->with('success', 'User deleted.');
     }
 
+    /** Reset an existing account to the default password and force a change on next login — for accounts created before that option existed. */
+    public function resetPassword(Request $request, User $user)
+    {
+        $user->update([
+            'password' => Hash::make(User::DEFAULT_PASSWORD),
+            'must_change_password' => true,
+        ]);
+
+        \App\Models\ActivityLog::record(
+            'users.resetPassword',
+            "Reset password to default for: {$user->name} ({$user->username}) — must change on next login",
+            $user
+        );
+
+        return back()->with('success', "Password reset to the default (\"".User::DEFAULT_PASSWORD."\"). {$user->name} will be required to change it on their next login.");
+    }
+
     /** Bulk-delete selected users. Always skips your own account and Super Admin accounts (same protection resetData() already applies), so you can't accidentally lock yourself out. */
     public function bulkDestroy(Request $request)
     {

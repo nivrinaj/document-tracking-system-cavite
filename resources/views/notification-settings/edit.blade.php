@@ -95,6 +95,18 @@
             </form>
         </x-card>
 
+        <x-card title="Preview an email design">
+            <p class="text-xs text-gray-400 -mt-1 mb-3">Opens the actual email template with sample data, so you can review the look before anything is ever sent to real staff.</p>
+            <div class="flex flex-wrap gap-2">
+                @foreach($types as $key => $meta)
+                    <a href="{{ route('notification-settings.preview', $key) }}" target="_blank" class="input-btn inline-flex items-center gap-1.5 w-auto">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                        Preview "{{ $meta['label'] }}"
+                    </a>
+                @endforeach
+            </div>
+        </x-card>
+
         <x-card title="Manually run a notification now">
             <p class="text-xs text-gray-400 -mt-1 mb-3">Skips the schedule and sends immediately — useful for testing without waiting for the daily run.</p>
             <div class="flex flex-wrap gap-2">

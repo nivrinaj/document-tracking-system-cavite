@@ -104,53 +104,68 @@
                     <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
                 </x-nav-item>
 
-                @canany(['users.manage', 'divisions.manage', 'roles.manage', 'settings.manage'])
-                <div class="pt-4 pb-1 px-3 text-[11px] font-semibold uppercase tracking-wider text-gray-400">Administration</div>
-                @endcanany
+                @php
+                    $isSuperAdminNav = auth()->user()->hasSystemRole(App\Models\User::SYS_SUPER_ADMIN);
+                    $showAdminGroup = auth()->user()->canAny(['users.manage', 'divisions.manage', 'roles.manage', 'settings.manage']) || $isSuperAdminNav;
+                    $showPeopleGroup = auth()->user()->canAny(['users.manage', 'departments.manage', 'roles.manage']);
+                    $showCalendarGroup = auth()->user()->can('calendar.manage') || $isSuperAdminNav;
+                    $showSystemGroup = $isSuperAdminNav || auth()->user()->can('settings.manage');
+                @endphp
 
+                @if($showAdminGroup)
+                <div class="pt-4 pb-1 px-3 text-[11px] font-semibold uppercase tracking-wider text-gray-400">Administration</div>
+                @endif
+
+                @if($showPeopleGroup)
+                <div class="pt-1 pb-1 pl-4 pr-3 text-[10px] font-semibold uppercase tracking-wider text-gray-400/70">People</div>
+                @endif
                 @can('users.manage')
                 <x-nav-item :active="request()->routeIs('users.*')" :href="route('users.index')" label="Users">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m6-1.13a4 4 0 10-4-4 4 4 0 004 4z"/>
                 </x-nav-item>
                 @endcan
-
                 @can('departments.manage')
                 <x-nav-item :active="request()->routeIs('departments.*')" :href="route('departments.index')" label="Departments">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0H5m14 0h2M5 21H3m4-14h2m-2 4h2m6-4h2m-2 4h2M9 21v-4h6v4"/>
                 </x-nav-item>
                 @endcan
-
                 @can('roles.manage')
                 <x-nav-item :active="request()->routeIs('roles.*')" :href="route('roles.index')" label="Roles & Permissions">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
                 </x-nav-item>
                 @endcan
 
-                @if(auth()->user()->hasSystemRole(App\Models\User::SYS_SUPER_ADMIN))
+                @if($isSuperAdminNav)
+                <div class="pt-3 pb-1 pl-4 pr-3 text-[10px] font-semibold uppercase tracking-wider text-gray-400/70">Document Setup</div>
                 <x-nav-item :active="request()->routeIs('document-types.*')" :href="route('document-types.index')" label="Document Types">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M7 7h.01M7 3h5a1.99 1.99 0 011.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.99 1.99 0 013 12V7a4 4 0 014-4z"/>
                 </x-nav-item>
-                @endif
-
-                @if(auth()->user()->hasSystemRole(App\Models\User::SYS_SUPER_ADMIN))
                 <x-nav-item :active="request()->routeIs('accounting.*')" :href="route('accounting.index')" label="Accounting Setup">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M9 7h6m-6 4h6m-2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
                 </x-nav-item>
                 @endif
 
+                @if($showCalendarGroup)
+                <div class="pt-3 pb-1 pl-4 pr-3 text-[10px] font-semibold uppercase tracking-wider text-gray-400/70">Work Calendar</div>
+                @endif
                 @can('calendar.manage')
                 <x-nav-item :active="request()->routeIs('work-calendar.team')" :href="route('work-calendar.team')" label="Work Calendar">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
                 </x-nav-item>
                 @endcan
-
-                @if(auth()->user()->hasSystemRole(App\Models\User::SYS_SUPER_ADMIN))
+                @if($isSuperAdminNav)
                 <x-nav-item :active="request()->routeIs('work-calendar.settings')" :href="route('work-calendar.settings')" label="Work Hours">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
                 </x-nav-item>
                 <x-nav-item :active="request()->routeIs('work-calendar.holidays')" :href="route('work-calendar.holidays')" label="Holidays">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
                 </x-nav-item>
+                @endif
+
+                @if($showSystemGroup)
+                <div class="pt-3 pb-1 pl-4 pr-3 text-[10px] font-semibold uppercase tracking-wider text-gray-400/70">System</div>
+                @endif
+                @if($isSuperAdminNav)
                 <x-nav-item :active="request()->routeIs('backups.*')" :href="route('backups.index')" label="Backups">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M5 8h14M5 8a2 2 0 01-2-2V5a2 2 0 012-2h14a2 2 0 012 2v1a2 2 0 01-2 2M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"/>
                 </x-nav-item>
@@ -158,7 +173,6 @@
                     <path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
                 </x-nav-item>
                 @endif
-
                 @can('settings.manage')
                 <x-nav-item :active="request()->routeIs('settings.*')" :href="route('settings.edit')" label="System Settings">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>

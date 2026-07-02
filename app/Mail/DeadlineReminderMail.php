@@ -34,6 +34,6 @@ class DeadlineReminderMail extends Mailable
 
     public function content(): Content
     {
-        return new Content(markdown: 'emails.deadline-reminder');
+        return new Content(view: 'emails.deadline-reminder');
     }
 }

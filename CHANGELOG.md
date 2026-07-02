@@ -6,6 +6,13 @@ Format based on [Keep a Changelog](https://keepachangelog.com).
 
 ---
 
+## 1.27.0 — 2026-07-02
+- **Fixed: "Select all" on the Users page didn't visibly select any rows** — a data-type mismatch meant the checkboxes never showed as checked even though the selection worked underneath. Both "select all" and selecting rows one at a time now work and look correct.
+- **Removed the "Document Volume" dashboard card** — it wasn't providing enough value in its current form; removed for now rather than leave a stat nobody finds useful.
+- **New: reset a user's password to the default** — on the Edit User page, Super Admin can reset an existing account's password back to the shared default and require them to set their own on next login. Useful for accounts created before that option existed at signup.
+- **Reorganized the Administration sidebar section** — split into labeled groups (People, Document Setup, Work Calendar, System) instead of one long list, so it's easier to scan.
+- **Redesigned the deadline-reminder email** — now a clean, modern, professional-looking email (using the system's own logo and brand color) instead of a plain generic layout, with a clear document list, status badges, and a button straight to the tracking page. Added a "Preview" option in Notification Settings so the design can be reviewed with sample data before turning anything on.
+
 ## 1.26.0 — 2026-07-02
 - **Fixed: Users page crashed with a server error** — a syntax mistake in the new bulk-delete markup caused the page to fail immediately after the last update. Fixed and verified with a stricter check going forward.
 - **Fixed wording for documents forwarded to a Department Head** — these no longer show the generic "Awaiting Receipt" label, since in practice the document is already sitting in the office and any staff member can pick it up. Regular forwards between two specific people still show "Awaiting Receipt" as before.

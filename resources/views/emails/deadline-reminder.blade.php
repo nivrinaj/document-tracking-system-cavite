@@ -1,23 +1,123 @@
-<x-mail::message>
-# Deadline Reminder
+@php
+    $primary = \App\Models\Setting::get('primary_color', '#4f46e5');
+    $appName = \App\Models\Setting::get('app_name', config('app.name'));
+    $orgName = \App\Models\Setting::get('organization', '');
+    $logoPath = \App\Models\Setting::get('logo_path', '');
+    $supportContact = \App\Models\Setting::get('support_contact', '');
+    $loginUrl = route('documents.index');
+    $greetingName = $user->first_name ?: $user->name;
+@endphp
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{ $appName }}</title>
+</head>
+<body style="margin:0; padding:0; background-color:#f1f5f9; font-family:'Segoe UI', Helvetica, Arial, sans-serif;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f1f5f9; padding:32px 16px;">
+<tr>
+<td align="center">
+<table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px; width:100%; background-color:#ffffff; border-radius:12px; overflow:hidden; box-shadow:0 1px 3px rgba(0,0,0,0.08);">
 
-Hi {{ $user->first_name ?: $user->name }},
+    {{-- Header --}}
+    <tr>
+        <td style="background-color:{{ $primary }}; padding:28px 32px;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                    <td valign="middle">
+                        @if($logoPath)
+                            <img src="{{ asset('storage/'.$logoPath) }}" alt="{{ $appName }}" height="36" style="height:36px; display:block;">
+                        @else
+                            <span style="display:inline-block; width:36px; height:36px; line-height:36px; text-align:center; background-color:rgba(255,255,255,0.15); color:#ffffff; font-weight:700; font-size:16px; border-radius:8px;">{{ strtoupper(substr($appName, 0, 1)) }}</span>
+                        @endif
+                    </td>
+                    <td valign="middle" align="right" style="color:#ffffff; font-size:13px; letter-spacing:0.4px; opacity:0.9;">
+                        Document Tracking
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
 
-You are currently holding the following document(s) with an approaching or passed deadline:
+    {{-- Title band --}}
+    <tr>
+        <td style="padding:32px 32px 8px 32px;">
+            <h1 style="margin:0; font-size:20px; line-height:28px; color:#0f172a; font-weight:700;">Deadline Reminder</h1>
+            <p style="margin:6px 0 0 0; font-size:14px; color:#64748b;">{{ now()->format('l, F j, Y') }}</p>
+        </td>
+    </tr>
 
-<x-mail::table>
-| Tracking Code | Title | Deadline | Status |
-| :--- | :--- | :--- | :--- |
-@foreach($documents as $doc)
-@php $highlight = $doc->deadlineHighlight(); @endphp
-| {{ $doc->tracking_code }} | {{ \Illuminate\Support\Str::limit($doc->title, 40) }} | {{ optional($doc->deadline)->format('M j, Y') }} | {{ $highlight['label'] ?? '' }} |
-@endforeach
-</x-mail::table>
+    {{-- Greeting + intro --}}
+    <tr>
+        <td style="padding:16px 32px 8px 32px;">
+            <p style="margin:0 0 12px 0; font-size:15px; line-height:24px; color:#334155;">Hi {{ $greetingName }},</p>
+            <p style="margin:0; font-size:15px; line-height:24px; color:#334155;">
+                The document(s) below are currently assigned to you and are approaching, or have already passed, their deadline. Please review and take action as soon as possible.
+            </p>
+        </td>
+    </tr>
 
-<x-mail::button :url="route('documents.index')">
-View My Documents
-</x-mail::button>
+    {{-- Document list --}}
+    <tr>
+        <td style="padding:20px 32px 8px 32px;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e2e8f0; border-radius:10px; overflow:hidden;">
+                <tr style="background-color:#f8fafc;">
+                    <td style="padding:10px 14px; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; color:#64748b; border-bottom:1px solid #e2e8f0;">Tracking Code</td>
+                    <td style="padding:10px 14px; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; color:#64748b; border-bottom:1px solid #e2e8f0;">Title</td>
+                    <td style="padding:10px 14px; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; color:#64748b; border-bottom:1px solid #e2e8f0;">Deadline</td>
+                    <td style="padding:10px 14px; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; color:#64748b; border-bottom:1px solid #e2e8f0;">Status</td>
+                </tr>
+                @foreach($documents as $doc)
+                    @php $highlight = $doc->deadlineHighlight(); @endphp
+                    <tr>
+                        <td style="padding:12px 14px; font-size:13px; color:#0f172a; font-weight:600; border-bottom:1px solid #f1f5f9;">{{ $doc->tracking_code }}</td>
+                        <td style="padding:12px 14px; font-size:13px; color:#334155; border-bottom:1px solid #f1f5f9;">{{ \Illuminate\Support\Str::limit($doc->title, 34) }}</td>
+                        <td style="padding:12px 14px; font-size:13px; color:#334155; border-bottom:1px solid #f1f5f9; white-space:nowrap;">{{ optional($doc->deadline)->format('M j, Y') }}</td>
+                        <td style="padding:12px 14px; font-size:12px; border-bottom:1px solid #f1f5f9; white-space:nowrap;">
+                            <span style="display:inline-block; padding:3px 10px; border-radius:999px; font-weight:600; background-color:{{ $highlight['color'] ?? '#94a3b8' }}1a; color:{{ $highlight['color'] ?? '#64748b' }};">{{ $highlight['label'] ?? '—' }}</span>
+                        </td>
+                    </tr>
+                @endforeach
+            </table>
+        </td>
+    </tr>
 
-Thanks,<br>
-{{ config('app.name') }}
-</x-mail::message>
+    {{-- CTA --}}
+    <tr>
+        <td style="padding:28px 32px 8px 32px;" align="center">
+            <table role="presentation" cellpadding="0" cellspacing="0">
+                <tr>
+                    <td style="border-radius:8px; background-color:{{ $primary }};">
+                        <a href="{{ $loginUrl }}" style="display:inline-block; padding:12px 28px; font-size:14px; font-weight:600; color:#ffffff; text-decoration:none;">View My Documents</a>
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+
+    {{-- Divider --}}
+    <tr>
+        <td style="padding:28px 32px 0 32px;">
+            <div style="border-top:1px solid #e2e8f0;"></div>
+        </td>
+    </tr>
+
+    {{-- Footer --}}
+    <tr>
+        <td style="padding:20px 32px 32px 32px;">
+            <p style="margin:0 0 6px 0; font-size:12px; line-height:19px; color:#94a3b8;">
+                This is an automated message from {{ $appName }}{{ $orgName ? ' — '.$orgName : '' }}. Please do not reply directly to this email.
+            </p>
+            @if($supportContact)
+                <p style="margin:0; font-size:12px; line-height:19px; color:#94a3b8;">Need help? Contact {{ $supportContact }}.</p>
+            @endif
+        </td>
+    </tr>
+
+</table>
+</td>
+</tr>
+</table>
+</body>
+</html>
