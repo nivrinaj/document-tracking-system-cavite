@@ -6,6 +6,12 @@ Format based on [Keep a Changelog](https://keepachangelog.com).
 
 ---
 
+## 1.21.0 — 2026-07-02
+- **Forward to Department Head available at encode time** — an encoder can now send a brand-new document straight to the Department Head as a "Send as" choice, the same way they'd assign it to a specific staff member.
+- **Fixed: running time now starts with the Department Head immediately** — forwarding to the head hands over the clock right away instead of leaving it counted against the person who forwarded it, even before anyone has clicked Receive or claimed it.
+- **Calendar-days tracking is now a per-document choice** — enabling it for an office only makes the option available; each document can be tracked in calendar days (with its own weekend choice) or working hours individually, instead of every document in that office being forced the same way.
+- **New: Total Time per Staff summary** — once a document is completed or archived, its details page shows a combined total of how long it sat with each person, added up across every time it came back to them, correctly counted in whichever time mode (working hours or calendar days) that document actually used.
+
 ## 1.20.0 — 2026-07-02
 - **Deadline field layout fixed** — the Deadline date field on the encode page no longer looks like a stray half-width field.
 - **Calendar-days tracking: weekend option** — an office using calendar-day tracking can now choose whether Saturday/Sunday count toward the total or are skipped entirely; the "Daily Working Time" panel (a working-hours-only visualization) is now correctly hidden for offices using calendar days, instead of still showing business-hour blocks.

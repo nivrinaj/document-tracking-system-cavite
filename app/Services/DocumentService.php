@@ -383,6 +383,12 @@ class DocumentService
                 'current_holder_id' => $head->id,
                 'forwarded_to_head_at' => now(),
             ]);
+            // Unlike a regular forward (clock stays with the sender until the
+            // recipient scans/receives), forwarding to the head hands the running
+            // clock over immediately — the sender is done with it, and the queue
+            // is the head's responsibility from this moment, even before anyone
+            // has clicked Receive / Get from Department Head.
+            $this->openPossession($document, $head->id, $document->department_id);
             $this->addAssignee($document, $head->id);
             $this->log($document, 'forwarded', $actor, toUserId: $head->id, fromUserId: $from,
                 remarks: $remarks ?: 'Forwarded to the Department Head.');

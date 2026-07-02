@@ -13,6 +13,8 @@
                       transmittalTypes: @js($transmittalTypeNames),
                       isTransmittal: {{ old('is_transmittal', $document->is_transmittal) ? 'true' : 'false' }},
                       get showTransmittal() { return this.transmittalTypes.includes(this.docType); },
+                      calDays: {{ old('time_tracking_mode', $document->time_tracking_mode ?? ($officeCalendarDaysGate ? 'calendar_days' : 'working_hours')) === 'calendar_days' ? 'true' : 'false' }},
+                      calDaysWeekends: {{ old('calendar_days_include_weekends', $document->calendar_days_include_weekends ?? $officeCalendarDaysDefaultWeekends) ? 'true' : 'false' }},
                   }">
                 @csrf
                 @method('PUT')
@@ -62,6 +64,19 @@
                             <x-qty-stepper name="transmittal_quantity" :value="old('transmittal_quantity', $document->transmittal_quantity)" x-bind:required="isTransmittal" />
                         </div>
                     </div>
+                    @if($officeCalendarDaysGate)
+                        <div class="sm:col-span-2 rounded-xl border border-gray-200/80 dark:border-gray-700 p-4">
+                            <x-toggle x-model="calDays" label="Track this document in calendar days">
+                                <span class="block text-xs text-gray-400 mt-0.5">Your office can track documents in plain calendar days instead of official working hours.</span>
+                            </x-toggle>
+                            <input type="hidden" name="time_tracking_mode" :value="calDays ? 'calendar_days' : 'working_hours'">
+                            <div x-show="calDays" x-cloak class="ml-[3.25rem] mt-3">
+                                <x-toggle x-model="calDaysWeekends" name="calendar_days_include_weekends" label="Include weekends">
+                                    <span class="block text-xs text-gray-400 mt-0.5">On: Saturday and Sunday count fully. Off: weekends are skipped, only Monday–Friday count.</span>
+                                </x-toggle>
+                            </div>
+                        </div>
+                    @endif
                     <div>
                         <label class="label">Source / Origin</label>
                         <input type="text" name="source" value="{{ old('source', $document->source) }}" class="input">

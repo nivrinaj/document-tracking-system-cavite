@@ -151,7 +151,15 @@ class DocumentController extends Controller
         $departments = \App\Models\Department::orderByRaw('id = ? desc', [$user->department_id ?? 0])
             ->orderBy('name')->get();
 
+        $departmentHead = Document::departmentHeadFor($user->department_id);
+        $canForwardToHead = (bool) optional($user->department)->forward_to_head_enabled
+            && $departmentHead && $departmentHead->id !== $user->id;
+
         return view('documents.create', [
+            'canForwardToHead' => $canForwardToHead,
+            'departmentHeadName' => $departmentHead?->name,
+            'officeCalendarDaysGate' => optional($user->department)->time_tracking_mode === 'calendar_days',
+            'officeCalendarDaysDefaultWeekends' => (bool) (optional($user->department)->calendar_days_include_weekends ?? true),
             'divisions' => Division::where('is_active', true)->orderBy('name')->get(['id', 'code', 'name', 'department_id']),
             'departments' => $departments,
             'users' => $this->assignableUsers(),
@@ -218,16 +226,30 @@ class DocumentController extends Controller
             'deadline' => ['nullable', 'date', 'after_or_equal:today'],
             'is_transmittal' => ['nullable', 'boolean'],
             'transmittal_quantity' => ['nullable', 'required_if:is_transmittal,1', 'integer', 'min:1', 'max:9999'],
+            'time_tracking_mode' => ['nullable', 'in:working_hours,calendar_days'],
+            'calendar_days_include_weekends' => ['nullable', 'boolean'],
             'division_id' => ['nullable', 'exists:divisions,id'],
             'assignee_id' => ['nullable', 'exists:users,id'],
             'assign_remarks' => ['nullable', 'string'],
-            'broadcast_scope' => ['nullable', 'in:none,division,department,transfer,multi'],
+            'broadcast_scope' => ['nullable', 'in:none,head,division,department,transfer,multi'],
             'to_department_id' => ['nullable', 'required_if:broadcast_scope,transfer', 'exists:departments,id'],
             'recipient_ids' => ['nullable', 'required_if:broadcast_scope,multi', 'array'],
             'recipient_ids.*' => ['integer', 'exists:users,id'],
             'items' => ['nullable', 'array'],
             'items.*' => ['nullable', 'string', 'max:255'],
         ]);
+
+        // Per-document calendar-days override — only honored when the encoder's
+        // own office actually has the feature gated on (defense in depth; the
+        // encode form only shows this choice otherwise).
+        if (optional($request->user()->department)->time_tracking_mode === 'calendar_days') {
+            $data['time_tracking_mode'] = ($data['time_tracking_mode'] ?? null) === 'calendar_days' ? 'calendar_days' : 'working_hours';
+            $data['calendar_days_include_weekends'] = $data['time_tracking_mode'] === 'calendar_days'
+                ? $request->boolean('calendar_days_include_weekends')
+                : null;
+        } else {
+            unset($data['time_tracking_mode'], $data['calendar_days_include_weekends']);
+        }
 
         // Route-slip items only apply when the feature is enabled.
         if (! Document::routeItemsEnabled()) {
@@ -286,6 +308,23 @@ class DocumentController extends Controller
 
             return redirect()->route('documents.show', $document)
                 ->with('success', "Document sent to the selected recipients. Tracking code: {$document->tracking_code}");
+        }
+
+        // Straight to the Department Head — re-checked server-side (defense in
+        // depth; the encode form only shows this option when it's actually allowed).
+        if ($scope === 'head') {
+            $actor = $request->user();
+            $head = Document::departmentHeadFor($actor->department_id);
+            $allowed = (bool) optional($actor->department)->forward_to_head_enabled && $head && $head->id !== $actor->id;
+            if (! $allowed) {
+                return back()->withInput()->withErrors(['broadcast_scope' => 'Forwarding to the Department Head isn\'t available for your office.']);
+            }
+            $document = $service->encode($data, $actor, null);
+            $service->forwardToHead($document, $actor, $data['assign_remarks'] ?? null);
+            \App\Models\ActivityLog::record('documents.store', "Encoded a new document: {$document->title} ({$document->tracking_code}, #{$document->id})", $document);
+
+            return redirect()->route('documents.show', $document)
+                ->with('success', "Document encoded and forwarded to the Department Head. Tracking code: {$document->tracking_code}");
         }
 
         // Transfer to another office's receiving pool (no specific person).
@@ -354,6 +393,8 @@ class DocumentController extends Controller
                 ->filter(fn ($t) => $t->transmittalAllowedFor(Auth::user()->department_id ?? $document->department_id))
                 ->pluck('name')->values(),
             'officeDeadline' => (bool) optional($document->department)->deadline_enabled,
+            'officeCalendarDaysGate' => optional($document->department)->time_tracking_mode === 'calendar_days',
+            'officeCalendarDaysDefaultWeekends' => (bool) (optional($document->department)->calendar_days_include_weekends ?? true),
         ]);
     }
 
@@ -371,6 +412,8 @@ class DocumentController extends Controller
             'deadline' => ['nullable', 'date'],
             'is_transmittal' => ['nullable', 'boolean'],
             'transmittal_quantity' => ['nullable', 'required_if:is_transmittal,1', 'integer', 'min:1', 'max:9999'],
+            'time_tracking_mode' => ['nullable', 'in:working_hours,calendar_days'],
+            'calendar_days_include_weekends' => ['nullable', 'boolean'],
             'division_id' => ['nullable', 'exists:divisions,id'],
         ]);
 
@@ -382,6 +425,17 @@ class DocumentController extends Controller
         $data['is_transmittal'] = $request->boolean('is_transmittal') && $type?->transmittalAllowedFor($request->user()->department_id);
         if (! $data['is_transmittal']) {
             $data['transmittal_quantity'] = null;
+        }
+
+        // Per-document calendar-days override — only honored when this document's
+        // own office actually has the feature gated on.
+        if (optional($document->department)->time_tracking_mode === 'calendar_days') {
+            $data['time_tracking_mode'] = ($data['time_tracking_mode'] ?? null) === 'calendar_days' ? 'calendar_days' : 'working_hours';
+            $data['calendar_days_include_weekends'] = $data['time_tracking_mode'] === 'calendar_days'
+                ? $request->boolean('calendar_days_include_weekends')
+                : null;
+        } else {
+            unset($data['time_tracking_mode'], $data['calendar_days_include_weekends']);
         }
 
         $document->update($data);

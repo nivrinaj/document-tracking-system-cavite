@@ -258,6 +258,33 @@
                                 </div>
                             </section>
                         @endif
+
+                        {{-- ── Total time per user (only meaningful once the document is finished) ── --}}
+                        @if($document->isClosed())
+                            @php $holdingSummary = $document->userHoldingSummary(); @endphp
+                            @if($holdingSummary->isNotEmpty())
+                                <section class="{{ $card }}">
+                                    <header class="{{ $secHdr }}">
+                                        <span class="{{ $ico }}" style="background: var(--color-primary)">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m6-1.13a4 4 0 10-4-4 4 4 0 004 4zm6-1a4 4 0 10-4-4"/></svg>
+                                        </span>
+                                        <h3 class="{{ $secTitle }}">Total Time per Staff</h3>
+                                    </header>
+                                    <p class="px-4 sm:px-5 pt-3 text-[11px] text-gray-400">Combined time each person held this document, added up across every time it came back to them.@if($document->timeTrackingMode() === 'calendar_days') Counted in <strong>calendar days</strong>@unless($document->calendarDaysIncludesWeekends()) (weekends excluded)@endunless, per this document's setting.@endif</p>
+                                    <div class="p-4 sm:p-5 space-y-2.5">
+                                        @foreach($holdingSummary as $row)
+                                            <div class="flex items-center justify-between gap-3">
+                                                <div class="flex items-center gap-2.5 min-w-0">
+                                                    <img src="{{ $row['user']->avatar_url }}" class="w-7 h-7 rounded-full shrink-0">
+                                                    <span class="text-sm truncate">{{ $row['user']->name }}</span>
+                                                </div>
+                                                <span class="text-sm font-semibold tabular-nums shrink-0">{{ \App\Models\Document::humanDuration($row['seconds']) }}</span>
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                </section>
+                            @endif
+                        @endif
                     </div>
                 </x-card>
 

@@ -47,6 +47,8 @@ class Document extends Model
         'is_transmittal',
         'transmittal_quantity',
         'forwarded_to_head_at',
+        'time_tracking_mode',
+        'calendar_days_include_weekends',
     ];
 
     protected $casts = [
@@ -61,6 +63,7 @@ class Document extends Model
         'is_pending' => 'boolean',
         'is_hospital' => 'boolean',
         'is_transmittal' => 'boolean',
+        'calendar_days_include_weekends' => 'boolean',
         'amount' => 'decimal:2',
     ];
 
@@ -279,12 +282,18 @@ class Document extends Model
     /** The Department Head for this document's CURRENT department (by role + department_id FK, never by name). */
     public function departmentHead(): ?User
     {
-        if (! $this->department_id) {
+        return static::departmentHeadFor($this->department_id);
+    }
+
+    /** The Department Head user for a given department (by role + FK, never by name), if any. */
+    public static function departmentHeadFor(?int $departmentId): ?User
+    {
+        if (! $departmentId) {
             return null;
         }
 
         return User::where('is_active', true)
-            ->where('department_id', $this->department_id)
+            ->where('department_id', $departmentId)
             ->whereHas('roles', fn ($q) => $q->where('name', 'Department Head'))
             ->first();
     }
@@ -433,15 +442,35 @@ class Document extends Model
      * CURRENT department, so a future cross-office move naturally switches the
      * display back to working-hours for a department that hasn't opted in.
      */
+    /**
+     * This document's own tracking mode — an explicit per-document choice
+     * (`documents.time_tracking_mode`) wins when set; otherwise it falls back to
+     * its department's default. A department turning calendar-days ON only makes
+     * the choice available to its documents; it doesn't force every one of them.
+     */
     public function timeTrackingMode(): string
     {
+        if ($this->time_tracking_mode) {
+            return $this->time_tracking_mode;
+        }
+
         return $this->department?->time_tracking_mode === 'calendar_days' ? 'calendar_days' : 'working_hours';
+    }
+
+    /** Whether weekends count, for a document in calendar-days mode — document override wins, else the department's setting. */
+    public function calendarDaysIncludesWeekends(): bool
+    {
+        if ($this->calendar_days_include_weekends !== null) {
+            return (bool) $this->calendar_days_include_weekends;
+        }
+
+        return $this->department?->calendar_days_include_weekends ?? true;
     }
 
     /**
      * Elapsed seconds between two instants for THIS document — calendar time when
-     * its department uses calendar-day tracking, otherwise the shared working-hours
-     * engine (unaffected for every other department).
+     * this document (or its department, as a fallback) uses calendar-day tracking,
+     * otherwise the shared working-hours engine (unaffected for every other document).
      */
     public function elapsedSeconds($start, $end = null, ?User $possessor = null): int
     {
@@ -455,7 +484,7 @@ class Document extends Model
                 return 0;
             }
 
-            return ($this->department?->calendar_days_include_weekends ?? true)
+            return $this->calendarDaysIncludesWeekends()
                 ? (int) $start->diffInSeconds($end)
                 : static::weekdaySeconds($start, $end);
         }
@@ -727,6 +756,32 @@ class Document extends Model
     public function totalPausedTime(): string
     {
         return static::humanDuration($this->totalPausedSeconds());
+    }
+
+    /**
+     * Combined time each user held this document, summed across every segment
+     * they ever held it (a document can bounce back to the same person more
+     * than once). Honors this document's own time-tracking mode (working hours,
+     * or calendar days with its own weekend choice) for every segment — the
+     * same rules used everywhere else on the document.
+     */
+    public function userHoldingSummary(): \Illuminate\Support\Collection
+    {
+        $totals = [];
+        foreach ($this->possessions as $seg) {
+            if (! $seg->holder_id) {
+                continue; // office-pool segment, no specific person
+            }
+            $end = $seg->ended_at ?? ($this->isClosed() ? $this->completed_at : now());
+            $totals[$seg->holder_id] = ($totals[$seg->holder_id] ?? 0)
+                + $this->elapsedSeconds($seg->started_at, $end, $seg->holder);
+        }
+
+        return collect($totals)
+            ->map(fn ($seconds, $userId) => ['user' => $this->possessions->firstWhere('holder_id', $userId)?->holder, 'seconds' => $seconds])
+            ->filter(fn ($row) => $row['user'] !== null)
+            ->sortByDesc('seconds')
+            ->values();
     }
 
     /**

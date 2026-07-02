@@ -81,17 +81,17 @@
 {{-- Internal time-tracking display (calendar days vs. working hours) --}}
 <div class="border-t border-gray-100 dark:border-gray-700 pt-4 mt-2"
      x-data="{ calDays: {{ old('time_tracking_mode', $department?->time_tracking_mode) === 'calendar_days' ? 'true' : 'false' }}, includeWeekends: {{ old('calendar_days_include_weekends', $department?->calendar_days_include_weekends ?? true) ? 'true' : 'false' }} }">
-    <x-toggle x-model="calDays" label="Show calendar days instead of working hours for this office's documents">
+    <x-toggle x-model="calDays" label="Enable calendar-days tracking for this office">
         <span class="block text-xs text-gray-400 mt-0.5">
-            For this office's own view only — age/idle/turnaround on documents currently with them count plain calendar days rather than official working hours.
+            Makes calendar-day tracking available to this office's staff — it does <strong>not</strong> apply it to every document automatically. Each document can then be individually tracked in calendar days (with its own weekend choice) at encode/edit time, instead of official working hours.
             The underlying working-hours engine keeps running unchanged for everyone else, so this stays safe to turn on/off per office as more offices get interconnected later.
         </span>
     </x-toggle>
     <input type="hidden" name="time_tracking_mode" :value="calDays ? 'calendar_days' : 'working_hours'">
 
     <div x-show="calDays" x-cloak class="ml-[3.25rem] mt-3">
-        <x-toggle x-model="includeWeekends" name="calendar_days_include_weekends" label="Include weekends">
-            <span class="block text-xs text-gray-400 mt-0.5">On: Saturday and Sunday count fully toward the total. Off: weekends are skipped entirely (only Monday–Friday count, each as a full day).</span>
+        <x-toggle x-model="includeWeekends" name="calendar_days_include_weekends" label="Default: include weekends">
+            <span class="block text-xs text-gray-400 mt-0.5">The starting choice shown for a new document (staff can still turn it off per document). On: Saturday and Sunday count fully. Off: weekends are skipped, only Monday–Friday count.</span>
         </x-toggle>
     </div>
 </div>

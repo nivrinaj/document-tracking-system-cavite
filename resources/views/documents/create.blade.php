@@ -14,6 +14,8 @@
                   transmittalTypes: @js($transmittalTypeNames),
                   isTransmittal: {{ old('is_transmittal') ? 'true' : 'false' }},
                   get showTransmittal() { return this.transmittalTypes.includes(this.docType); },
+                  calDays: {{ old('time_tracking_mode', $officeCalendarDaysGate ? 'calendar_days' : 'working_hours') === 'calendar_days' ? 'true' : 'false' }},
+                  calDaysWeekends: {{ old('calendar_days_include_weekends', $officeCalendarDaysDefaultWeekends) ? 'true' : 'false' }},
                   isAccounting: {{ ($isAccounting ?? false) ? 'true' : 'false' }},
                   get acct() { return this.isAccounting && (this.docType === 'Voucher' || this.docType === 'Payroll'); },
                   srcOffice: '{{ old('source_department_id') }}',
@@ -201,6 +203,20 @@
                         </div>
                     </div>
 
+                    @if($officeCalendarDaysGate)
+                        <div class="sm:col-span-2 rounded-xl border border-gray-200/80 dark:border-gray-700 p-4">
+                            <x-toggle x-model="calDays" label="Track this document in calendar days">
+                                <span class="block text-xs text-gray-400 mt-0.5">Your office can track documents in plain calendar days instead of official working hours. On by default for your office — turn off to use working hours for just this one document.</span>
+                            </x-toggle>
+                            <input type="hidden" name="time_tracking_mode" :value="calDays ? 'calendar_days' : 'working_hours'">
+                            <div x-show="calDays" x-cloak class="ml-[3.25rem] mt-3">
+                                <x-toggle x-model="calDaysWeekends" name="calendar_days_include_weekends" label="Include weekends">
+                                    <span class="block text-xs text-gray-400 mt-0.5">On: Saturday and Sunday count fully. Off: weekends are skipped, only Monday–Friday count.</span>
+                                </x-toggle>
+                            </div>
+                        </div>
+                    @endif
+
                     <div class="sm:col-span-2">
                         <label class="label">Description</label>
                         <textarea name="description" rows="3" class="input" placeholder="Short description of the document…">{{ old('description') }}</textarea>
@@ -312,6 +328,9 @@
                     <label class="label">Send as</label>
                     <select name="broadcast_scope" x-model="scope" @change="div=''" class="input">
                         <option value="none">👤 Assign to a staff in my office</option>
+                        @if($canForwardToHead)
+                            <option value="head">📨 Forward to Department Head</option>
+                        @endif
                         @if($crossDept)
                             <option value="transfer">📤 Transfer to another office (their receiving staff will claim &amp; assign)</option>
                         @endif
@@ -378,6 +397,15 @@
                     </div>
                 </div>
 
+                {{-- Forward straight to the Department Head --}}
+                @if($canForwardToHead)
+                    <div x-show="scope === 'head'" x-cloak class="border-t border-gray-100 dark:border-gray-700 pt-4">
+                        <div class="p-3 rounded-lg bg-violet-50 dark:bg-violet-900/20 text-xs text-violet-700 dark:text-violet-300">
+                            Goes straight to <strong>{{ $departmentHeadName }}</strong> (Department Head). Any other staff in your office can also pick it up with “Get from Department Head” — whoever acts first becomes the holder.
+                        </div>
+                    </div>
+                @endif
+
                 {{-- Transfer to another office's receiving pool --}}
                 @if($crossDept)
                     <div x-show="scope === 'transfer'" x-cloak class="border-t border-gray-100 dark:border-gray-700 pt-4">
@@ -441,9 +469,9 @@
                     </template>
                 </div>
 
-                {{-- Shared remarks for assign / transfer / multi --}}
-                <div x-show="scope === 'none' || scope === 'transfer' || scope === 'multi'" x-cloak class="mt-4">
-                    <label class="label" x-text="scope === 'transfer' ? 'Note to the receiving office' : (scope === 'multi' ? 'Note to recipients' : 'Assignment remarks')"></label>
+                {{-- Shared remarks for assign / head / transfer / multi --}}
+                <div x-show="scope === 'none' || scope === 'head' || scope === 'transfer' || scope === 'multi'" x-cloak class="mt-4">
+                    <label class="label" x-text="scope === 'transfer' ? 'Note to the receiving office' : (scope === 'multi' ? 'Note to recipients' : (scope === 'head' ? 'Note to the Department Head' : 'Assignment remarks'))"></label>
                     <input type="text" name="assign_remarks" value="{{ old('assign_remarks') }}" class="input" placeholder="Optional instructions / note…">
                 </div>
             </x-card>
