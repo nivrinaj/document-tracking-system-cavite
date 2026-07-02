@@ -17,9 +17,8 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->trustProxies(at: '*');
 
         $middleware->alias([
-            'role' => \Spatie\Permission\Middleware\RoleMiddleware::class,
             'permission' => \Spatie\Permission\Middleware\PermissionMiddleware::class,
-            'role_or_permission' => \Spatie\Permission\Middleware\RoleOrPermissionMiddleware::class,
+            'system-role' => \App\Http\Middleware\EnsureSystemRole::class,
             'active' => \App\Http\Middleware\EnsureUserIsActive::class,
             'password.changed' => \App\Http\Middleware\EnsurePasswordChanged::class,
         ]);

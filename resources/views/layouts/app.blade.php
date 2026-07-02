@@ -151,6 +151,9 @@
                 <x-nav-item :active="request()->routeIs('work-calendar.holidays')" :href="route('work-calendar.holidays')" label="Holidays">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
                 </x-nav-item>
+                <x-nav-item :active="request()->routeIs('backups.*')" :href="route('backups.index')" label="Backups">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 8h14M5 8a2 2 0 01-2-2V5a2 2 0 012-2h14a2 2 0 012 2v1a2 2 0 01-2 2M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"/>
+                </x-nav-item>
                 @endif
 
                 @can('settings.manage')

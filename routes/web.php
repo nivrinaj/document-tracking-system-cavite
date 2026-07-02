@@ -105,7 +105,7 @@ Route::middleware(['auth', 'active', 'password.changed'])->group(function () {
     Route::get('/logs', [LogController::class, 'index'])->name('logs.index');
 
     /* -------------------- Accounting setup (funds, RC, nature) -------------------- */
-    Route::middleware('role:Super Admin')->prefix('accounting')->name('accounting.')->group(function () {
+    Route::middleware('system-role:super_admin')->prefix('accounting')->name('accounting.')->group(function () {
         Route::get('/setup', [\App\Http\Controllers\AccountingController::class, 'index'])->name('index');
         Route::post('/funds', [\App\Http\Controllers\AccountingController::class, 'storeFund'])->name('funds.store');
         Route::put('/funds/{fund}', [\App\Http\Controllers\AccountingController::class, 'updateFund'])->name('funds.update');
@@ -124,7 +124,7 @@ Route::middleware(['auth', 'active', 'password.changed'])->group(function () {
     });
 
     /* -------------------- Work calendar (working hours, holidays, leave) -------------------- */
-    Route::middleware('role:Super Admin')->prefix('work-calendar')->name('work-calendar.')->group(function () {
+    Route::middleware('system-role:super_admin')->prefix('work-calendar')->name('work-calendar.')->group(function () {
         Route::get('/settings', [WorkCalendarController::class, 'settings'])->name('settings');
         Route::put('/settings', [WorkCalendarController::class, 'saveSettings'])->name('settings.save');
         Route::get('/holidays', [WorkCalendarController::class, 'holidays'])->name('holidays');
@@ -140,10 +140,10 @@ Route::middleware(['auth', 'active', 'password.changed'])->group(function () {
     /* -------------------- System configuration -------------------- */
     Route::get('/settings', [SettingController::class, 'edit'])->name('settings.edit')->middleware('permission:settings.manage');
     Route::put('/settings', [SettingController::class, 'update'])->name('settings.update')->middleware('permission:settings.manage');
-    Route::post('/settings/reset-data', [SettingController::class, 'resetData'])->name('settings.resetData')->middleware('role:Super Admin');
+    Route::post('/settings/reset-data', [SettingController::class, 'resetData'])->name('settings.resetData')->middleware('system-role:super_admin');
 
     /* -------------------- Documentation & Changelog (Super Admin only) -------------------- */
-    Route::middleware('role:Super Admin')->group(function () {
+    Route::middleware('system-role:super_admin')->group(function () {
         Route::get('/reports/settings', [ReportController::class, 'settings'])->name('reports.settings');
         Route::put('/reports/settings', [ReportController::class, 'saveSettings'])->name('reports.settings.save');
         Route::get('/qr-slip/settings', [\App\Http\Controllers\QrSlipController::class, 'edit'])->name('qr-slip.settings');
@@ -157,6 +157,11 @@ Route::middleware(['auth', 'active', 'password.changed'])->group(function () {
         Route::get('/documentation/{page:slug}/edit', [DocumentationController::class, 'edit'])->name('documentation.edit');
         Route::put('/documentation/{page}', [DocumentationController::class, 'update'])->name('documentation.update');
         Route::delete('/documentation/{page}', [DocumentationController::class, 'destroy'])->name('documentation.destroy');
+
+        Route::get('/backups', [\App\Http\Controllers\BackupController::class, 'index'])->name('backups.index');
+        Route::post('/backups', [\App\Http\Controllers\BackupController::class, 'store'])->name('backups.store');
+        Route::get('/backups/{filename}/download', [\App\Http\Controllers\BackupController::class, 'download'])->name('backups.download')->where('filename', '[A-Za-z0-9_\-\.]+');
+        Route::delete('/backups/{filename}', [\App\Http\Controllers\BackupController::class, 'destroy'])->name('backups.destroy')->where('filename', '[A-Za-z0-9_\-\.]+');
     });
 
     /* -------------------- Profile (Breeze) -------------------- */

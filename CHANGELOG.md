@@ -6,6 +6,11 @@ Format based on [Keep a Changelog](https://keepachangelog.com).
 
 ---
 
+## 1.23.0 — 2026-07-02
+- **New: Backups module** — Super Admin can now create a one-click backup (full database + every attachment, bundled into one downloadable file) from a new Backups page, see all past backups with their size and date, download any of them, and delete old ones. Restoring is intentionally left out of the web interface — that stays a deliberate, manual action to prevent an accidental one-click wipe of current data.
+- **New: Storage &amp; disk visibility** — the Backups page also shows database size, attachment storage size, backups storage size, and how much free space is left on the server, with a warning banner when the server disk is running low.
+- **Hardened a few remaining Super-Admin-only pages** — some admin-only sections (Accounting Setup, Work Hours, Document Types, the data reset tool) were still checking access by the role's exact name under the hood; they now use the same rename-safe check as everywhere else, so renaming that role can never accidentally lock out or expose those pages.
+
 ## 1.22.0 — 2026-07-02
 - **Roles can now be renamed safely** — a role's display name (e.g. "Department Head") can be changed from the Roles & Permissions page without breaking any feature that depends on that role, including Super Admin itself.
 - **More resilient role-based access checks throughout the system** — every place that used to check a role by its exact name (page visibility, document routing, tracking filters, danger-zone resets, chat exclusions, work calendar grouping) now checks a stable internal identifier instead, so renaming a role can never silently break functionality.

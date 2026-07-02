@@ -38,6 +38,14 @@ return [
             'report' => false,
         ],
 
+        // Never public — database/attachment backups must not be web-accessible.
+        'backups' => [
+            'driver' => 'local',
+            'root' => storage_path('app/backups'),
+            'throw' => false,
+            'report' => false,
+        ],
+
         'public' => [
             'driver' => 'local',
             'root' => storage_path('app/public'),
